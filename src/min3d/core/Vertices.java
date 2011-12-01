@@ -180,4 +180,8 @@ public class Vertices
 		Vertices v = new Vertices(_points.clone(), _uvs.clone(), _normals.clone(), _colors.clone());
 		return v;
 	}
+
+    public void setUv(int x, float u, float v) {
+        _uvs.set(x,u,v);
+    }
 }
