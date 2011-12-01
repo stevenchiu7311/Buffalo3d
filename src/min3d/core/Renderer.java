@@ -2,7 +2,7 @@ package min3d.core;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-
+import java.util.ArrayList;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
@@ -12,8 +12,11 @@ import min3d.Shared;
 import min3d.animation.AnimationObject3d;
 import min3d.vos.FrustumManaged;
 import min3d.vos.Light;
+import min3d.vos.Number3d;
+import min3d.vos.Ray;
 import min3d.vos.RenderType;
 import min3d.vos.TextureVo;
+
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -47,6 +50,12 @@ public class Renderer implements GLSurfaceView.Renderer
 	private ActivityManager _activityManager;
 	private ActivityManager.MemoryInfo _memoryInfo;
 
+    private MatrixGrabber mg = new MatrixGrabber();
+
+    private int mWidth = 0;
+    private int mHeight = 0;
+
+    private ArrayList<Object3d> mObjectPicked = new ArrayList<Object3d>();
 
 	public Renderer(Scene $scene)
 	{
@@ -87,6 +96,9 @@ public class Renderer implements GLSurfaceView.Renderer
 		_gl.glLoadIdentity();
 		
 		updateViewFrustrum();
+
+		mWidth = w;
+		mHeight = h;
 	}
 	
 	public void onDrawFrame(GL10 gl)
@@ -98,6 +110,7 @@ public class Renderer implements GLSurfaceView.Renderer
 		drawSetup();
 		drawScene();
 
+        mg.getCurrentState(gl);
 		if (_logFps) doFps();
 	}
 	
@@ -407,10 +420,8 @@ public class Renderer implements GLSurfaceView.Renderer
 		    _gl.glEnable(GL10.GL_CULL_FACE);
 		}
 		
-
 		drawObject_textures($o);
 
-		
 		// Matrix operations in modelview
 
 		_gl.glPushMatrix();
@@ -674,4 +685,63 @@ public class Renderer implements GLSurfaceView.Renderer
 		// Scene object init only happens here, when we get GL for the first time
 		//
 	}
+
+    public Ray getViewRay(float x, float y) {
+        float[] eyeFar = new float[4];
+        float[] eyeNear = new float[4];
+        // view port
+        int[] viewport = {0, 0, mWidth, mHeight};
+        // far eye point
+        GLU.gluUnProject(x, viewport[3] - y, 1.0f, mg.mModelView, 0,
+                mg.mProjection, 0, viewport, 0, eyeFar, 0);
+        GLU.gluUnProject(x, viewport[3] - y, 0.0f, mg.mModelView, 0,
+                mg.mProjection, 0, viewport, 0, eyeNear, 0);
+
+        if (eyeFar[3] != 0) {
+            eyeFar[0] = eyeFar[0] / eyeFar[3];
+            eyeFar[1] = eyeFar[1] / eyeFar[3];
+            eyeFar[2] = eyeFar[2] / eyeFar[3];
+        }
+
+        if (eyeNear[3] != 0) {
+            eyeNear[0] = eyeNear[0] / eyeNear[3];
+            eyeNear[1] = eyeNear[1] / eyeNear[3];
+            eyeNear[2] = eyeNear[2] / eyeNear[3];
+        }
+
+        Number3d source = new Number3d(eyeNear[0],eyeNear[1],eyeNear[2]);
+        Number3d direction = new Number3d(eyeFar[0] - eyeNear[0],eyeFar[1] - eyeNear[1],eyeFar[2] - eyeNear[2]);
+        direction.normalize();
+
+        return new Ray(source,direction);
+    }
+
+    public ArrayList<Object3d> getPickedObject(Ray ray) {
+        mObjectPicked.clear();
+        for (int i = 0; i < _scene.children().size(); i++) {
+            Object3d o = _scene.children().get(i);
+            pickObjectWithRay(ray, o);
+        }
+        return mObjectPicked;
+    }
+
+    private void pickObjectWithRay(Ray ray, Object3d node) {
+        FloatBuffer[] buffer = new FloatBuffer[1];
+        buffer[0] = node.vertices().points().buffer();
+        node.containAABB(buffer);
+        if (node.intersects(ray)) {
+            mObjectPicked.add(node);
+        }
+        if (node instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer) node;
+            for (int i = 0; i < container.children().size(); i++) {
+                Object3d o = container.children().get(i);
+                pickObjectWithRay(ray, o);
+            }
+        }
+    }
+
+    public Scene getScene() {
+        return _scene;
+    }
 }

@@ -1,11 +1,18 @@
 package min3d.core;
 
+import java.util.ArrayList;
+
 import min3d.Shared;
 import min3d.interfaces.ISceneController;
+import min3d.listeners.OnActionMoveListener;
+import min3d.listeners.OnClick3dObjectListener;
 import android.app.Activity;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
+import android.widget.Toast;
+
+import javax.microedition.khronos.opengles.GL;
 
 /**
  * Extend this class when creating your min3d-based Activity. 
@@ -17,16 +24,16 @@ import android.os.Handler;
  * To update 3d scene-related variables from within the the main UI thread,  
  * override onUpdateScene() and onUpdateScene() as needed.
  */
-public class RendererActivity extends Activity implements ISceneController
+public class RendererActivity extends Activity implements ISceneController,OnClick3dObjectListener,OnActionMoveListener
 {
 	public Scene scene;
-	protected GLSurfaceView _glSurfaceView;
+	protected Min3dGLSurfaceView _glSurfaceView;
 	
 	protected Handler _initSceneHander;
 	protected Handler _updateSceneHander;
 	
     private boolean _renderContinuously;
-    
+    private Toast mToast = null;
 
 	final Runnable _initSceneRunnable = new Runnable() 
 	{
@@ -41,7 +48,6 @@ public class RendererActivity extends Activity implements ISceneController
             onUpdateScene();
         }
     };
-    
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) 
@@ -59,11 +65,19 @@ public class RendererActivity extends Activity implements ISceneController
 		Renderer r = new Renderer(scene);
 		Shared.renderer(r);
 		
-		_glSurfaceView = new GLSurfaceView(this);
+		_glSurfaceView = new Min3dGLSurfaceView(this);
         glSurfaceViewConfig();
 		_glSurfaceView.setRenderer(r);
+		_glSurfaceView.setRender(r);
 		_glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
-		
+		_glSurfaceView.setGLWrapper(
+                new GLSurfaceView.GLWrapper()
+                {
+                    @Override
+                    public GL wrap(GL gl) { return new MatrixTrackingGL(gl); }
+                });
+		_glSurfaceView.setOnClicObject3dListener(this);
+		_glSurfaceView.setOnActionMoveListener(this);
         onCreateSetContentView();
 	}
     
@@ -177,5 +191,31 @@ public class RendererActivity extends Activity implements ISceneController
     public Runnable getUpdateSceneRunnable()
     {
     	return _updateSceneRunnable;
+    }
+
+    @Override
+    public void onClick(ArrayList<Object3d> object3dList, float x, float y) {
+        String text = "Click on:";
+        for (int i=0;i<object3dList.size();i++) {
+            Object3d mObject3d = object3dList.get(i);
+            text = text + "\n" + mObject3d.name();
+        }
+        if (object3dList.size()>0) {
+            if (mToast != null) mToast.cancel();
+            mToast = Toast.makeText(this.getApplicationContext(), text, 100);
+            mToast.show();
+        }
+    }
+
+    @Override
+    public void onActionMove(ArrayList<Object3d> object3dList,
+            float x, float y) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void onStopMoving(ArrayList<Object3d> onActionDownGeoObjects,
+            float x, float y) {
+        // TODO Auto-generated method stub
     }
 }

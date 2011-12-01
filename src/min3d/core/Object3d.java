@@ -1,14 +1,17 @@
 package min3d.core;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.opengl.Matrix;
 import android.util.Log;
 
 import min3d.interfaces.IObject3dContainer;
 import min3d.vos.Color4;
 import min3d.vos.Number3d;
+import min3d.vos.Ray;
 import min3d.vos.RenderType;
 import min3d.vos.ShadeModel;
 
@@ -17,10 +20,20 @@ import min3d.vos.ShadeModel;
  */
 public class Object3d
 {
+    private String TAG = Object3d.class.toString();
 	private String _name;
 	
 	private RenderType _renderType = RenderType.TRIANGLES;
 	
+    public final static Number3d UNIT_X = new Number3d(1, 0, 0);
+    public final static Number3d UNIT_Y = new Number3d(0, 1, 0);
+    public final static Number3d UNIT_Z = new Number3d(0, 0, 1);
+    public final static Number3d UNIT_XYZ = new Number3d(1, 1, 1);
+
+    public final static int TRANSLATE = 0x1;
+    public final static int ROTATE = 0x2;
+    public final static int SCALE = 0x4;
+
 	private boolean _isVisible = true;
 	private boolean _vertexColorsEnabled = true;
 	private boolean _doubleSidedEnabled = false;
@@ -53,6 +66,13 @@ public class Object3d
 	
 	private Scene _scene;
 	private IObject3dContainer _parent;
+
+    private Number3d mCenter = new Number3d();
+    private Number3d mExtent = new Number3d();
+
+    public float[] mRotM = new float[16];
+    public float[] mTranslateM = new float[16];
+    public float[] mScaleM = new float[16];
 
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
@@ -488,4 +508,192 @@ public class Object3d
 		
 		return clone;
 	}
+
+    public void containAABB(FloatBuffer[] points) {
+        Number3d compVect = new Number3d();
+        if (points == null || points.length == 0) {
+            Log.i(TAG, "contain nothing, return!!!");
+            return;
+        }
+
+        float minX = Float.MAX_VALUE;
+        float minY = Float.MAX_VALUE;
+        float minZ = Float.MAX_VALUE;
+        float maxX = Float.MIN_VALUE;
+        float maxY = Float.MIN_VALUE;
+        float maxZ = Float.MIN_VALUE;
+        for (int idx = 0; idx < points.length; idx++) {
+            points[idx].rewind();
+            if (points[idx] == null || points[idx].remaining() <= 2) {
+                continue;
+            }
+            for (int i = 0, len = points[idx].remaining() / 3; i < len; i++) {
+                populateFromBuffer(compVect, points[idx], i);
+
+                if (compVect.x < minX)
+                    minX = compVect.x;
+                else if (compVect.x > maxX) {
+                    maxX = compVect.x;
+                }
+
+                if (compVect.y < minY)
+                    minY = compVect.y;
+                else if (compVect.y > maxY) {
+                    maxY = compVect.y;
+                }
+
+                if (compVect.z < minZ)
+                    minZ = compVect.z;
+                else if (compVect.z > maxZ) {
+                    maxZ = compVect.z;
+                }
+            }
+        }
+
+        mCenter.x = (minX + maxX) / 2;
+        mCenter.y = (minY + maxY) / 2;
+        mCenter.z = (minZ + maxZ) / 2;
+
+        mExtent.x = maxX - mCenter.x;
+        mExtent.y = maxY - mCenter.y;
+        mExtent.z = maxZ - mCenter.z;
+
+        calcAABBPos();
+    }
+
+    private static void populateFromBuffer(Number3d vector, FloatBuffer buf,
+            int index) {
+        vector.x = buf.get(index * 3);
+        vector.y = buf.get(index * 3 + 1);
+        vector.z = buf.get(index * 3 + 2);
+    }
+
+    private void calcAABBPos() {
+        Number3d angle = new Number3d(_rotation.x, _rotation.y, _rotation.z);
+        Matrix.setIdentityM(mTranslateM, 0);
+        Matrix.translateM(mTranslateM, 0, _position.x, _position.y, _position.z);
+
+        Matrix.setIdentityM(mRotM, 0);
+
+        Matrix.rotateM(mRotM, 0, angle.x, 1, 0, 0);
+        Matrix.rotateM(mRotM, 0, angle.y, 0, 1, 0);
+        Matrix.rotateM(mRotM, 0, angle.z, 0, 0, 1);
+
+        Matrix.setIdentityM(mScaleM, 0);
+        Matrix.scaleM(mScaleM, 0, _scale.x, _scale.y, _scale.z);
+
+        float[] absRotM = new float[16];
+        for (int i = 0; i < mRotM.length; i++) {
+            absRotM[i] = Math.abs(mRotM[i]);
+        }
+
+        float[] result = new float[4];
+        result[0] = mCenter.x;
+        result[1] = mCenter.y;
+        result[2] = mCenter.z;
+        result[3] = 1;
+
+        Matrix.multiplyMV(result, 0, mTranslateM, 0, result, 0);
+
+        if (_parent != null && _parent instanceof Object3d) {
+            calcAABBPos((Object3d) parent(), TRANSLATE | ROTATE | SCALE, result);
+        }
+
+        mCenter.x = result[0];
+        mCenter.y = result[1];
+        mCenter.z = result[2];
+
+        result[0] = mExtent.x;
+        result[1] = mExtent.y;
+        result[2] = mExtent.z;
+        result[3] = 1;
+
+        // Matrix.multiplyMV(result, 0, absRotM, 0, result, 0);
+        Matrix.multiplyMV(result, 0, mScaleM, 0, result, 0);
+
+        if (_parent != null && _parent instanceof Object3d) {
+            calcAABBPos((Object3d) parent(), SCALE, result);
+        }
+
+        mExtent.x = result[0];
+        mExtent.y = result[1];
+        mExtent.z = result[2];
+
+        Log.i(TAG, "Name:" + _name + " Center:" + mCenter + " Extent:"
+                + mExtent);
+    }
+
+    private void calcAABBPos(Object3d parent, int mode, float[] result) {
+        if ((mode & SCALE) != 0) {
+            Matrix.multiplyMV(result, 0, parent.mScaleM, 0, result, 0);
+        }
+        if ((mode & ROTATE) != 0) {
+            Matrix.multiplyMV(result, 0, parent.mRotM, 0, result, 0);
+        }
+        if ((mode & TRANSLATE) != 0) {
+            Matrix.multiplyMV(result, 0, parent.mTranslateM, 0, result, 0);
+        }
+        if (parent != null && parent.parent() instanceof Object3d) {
+            calcAABBPos((Object3d) parent.parent(), mode, result);
+        }
+    }
+
+    public boolean intersects(Ray ray) {
+        float rhs;
+
+        Number3d diff = new Number3d(ray.getPoint().x - mCenter.x,
+                ray.getPoint().y - mCenter.y, ray.getPoint().z - mCenter.z);
+
+        final float[] fWdU = new float[3];
+        final float[] fAWdU = new float[3];
+        final float[] fDdU = new float[3];
+        final float[] fADdU = new float[3];
+        final float[] fAWxDdU = new float[3];
+
+        fWdU[0] = Number3d.dot(ray.getVector(), UNIT_X);
+        fAWdU[0] = Math.abs(fWdU[0]);
+        fDdU[0] = Number3d.dot(diff, UNIT_X);
+        fADdU[0] = Math.abs(fDdU[0]);
+        if (fADdU[0] > mExtent.x && fDdU[0] * fWdU[0] >= 0.0) {
+            return false;
+        }
+
+        fWdU[1] = Number3d.dot(ray.getVector(), UNIT_Y);
+        fAWdU[1] = Math.abs(fWdU[1]);
+        fDdU[1] = Number3d.dot(diff, UNIT_Y);
+        fADdU[1] = Math.abs(fDdU[1]);
+        if (fADdU[1] > mExtent.y && fDdU[1] * fWdU[1] >= 0.0) {
+            return false;
+        }
+
+        fWdU[2] = Number3d.dot(ray.getVector(), UNIT_Z);
+        fAWdU[2] = Math.abs(fWdU[2]);
+        fDdU[2] = Number3d.dot(diff, UNIT_Z);
+        fADdU[2] = Math.abs(fDdU[2]);
+        if (fADdU[2] > mExtent.z && fDdU[2] * fWdU[2] >= 0.0) {
+            return false;
+        }
+
+        Number3d wCrossD = Number3d.cross(ray.getVector(), diff);
+
+        fAWxDdU[0] = Math.abs(Number3d.dot(wCrossD, UNIT_X));
+        rhs = mExtent.y * fAWdU[2] + mExtent.z * fAWdU[1];
+        if (fAWxDdU[0] > rhs) {
+            return false;
+        }
+
+        fAWxDdU[1] = Math.abs(Number3d.dot(wCrossD, UNIT_Y));
+        rhs = mExtent.x * fAWdU[2] + mExtent.z * fAWdU[0];
+        if (fAWxDdU[1] > rhs) {
+            return false;
+        }
+
+        fAWxDdU[2] = Math.abs(Number3d.dot(wCrossD, UNIT_Z));
+        rhs = mExtent.x * fAWdU[1] + mExtent.y * fAWdU[0];
+        if (fAWxDdU[2] > rhs) {
+            return false;
+        }
+
+        return true;
+    }
 }
