@@ -50,7 +50,7 @@ public class Renderer implements GLSurfaceView.Renderer
 	private ActivityManager _activityManager;
 	private ActivityManager.MemoryInfo _memoryInfo;
 
-    private MatrixGrabber mg = new MatrixGrabber();
+    private MatrixGrabber mMg = new MatrixGrabber();
 
     private int mWidth = 0;
     private int mHeight = 0;
@@ -103,6 +103,8 @@ public class Renderer implements GLSurfaceView.Renderer
 	
 	public void onDrawFrame(GL10 gl)
 	{
+	    // Refresh matrix grabber before update scene raised.
+	    mMg.getCurrentState(gl);
 		// Update 'model'
 		_scene.update();
 		
@@ -110,7 +112,6 @@ public class Renderer implements GLSurfaceView.Renderer
 		drawSetup();
 		drawScene();
 
-        mg.getCurrentState(gl);
 		if (_logFps) doFps();
 	}
 	
@@ -692,10 +693,10 @@ public class Renderer implements GLSurfaceView.Renderer
         // view port
         int[] viewport = {0, 0, mWidth, mHeight};
         // far eye point
-        GLU.gluUnProject(x, viewport[3] - y, 1.0f, mg.mModelView, 0,
-                mg.mProjection, 0, viewport, 0, eyeFar, 0);
-        GLU.gluUnProject(x, viewport[3] - y, 0.0f, mg.mModelView, 0,
-                mg.mProjection, 0, viewport, 0, eyeNear, 0);
+        GLU.gluUnProject(x, viewport[3] - y, 1.0f, mMg.mModelView, 0,
+                mMg.mProjection, 0, viewport, 0, eyeFar, 0);
+        GLU.gluUnProject(x, viewport[3] - y, 0.0f, mMg.mModelView, 0,
+                mMg.mProjection, 0, viewport, 0, eyeNear, 0);
 
         if (eyeFar[3] != 0) {
             eyeFar[0] = eyeFar[0] / eyeFar[3];
@@ -739,6 +740,24 @@ public class Renderer implements GLSurfaceView.Renderer
                 pickObjectWithRay(ray, o);
             }
         }
+    }
+
+    public Number3d getWorldPlaneSize(float depth) {
+        float[] eye = new float[4];
+        float[] size = new float[4];
+        int[] viewport = { 0, 0, mWidth, mHeight };
+        FrustumManaged vf = _scene.camera().frustum;
+        float distance = _scene.camera().position.z + depth;
+        float winZ = (1.0f / vf.zNear() - 1.0f / distance)
+                / (1.0f / vf.zNear() - 1.0f / vf.zFar());
+        GLU.gluUnProject(viewport[2], 0, winZ, mMg.mModelView, 0,
+                mMg.mProjection, 0, viewport, 0, eye, 0);
+        if (eye[3] != 0) {
+            size[0] = Math.abs(eye[0] / eye[3] * 2);
+            size[1] = Math.abs(eye[1] / eye[3] * 2);
+            size[2] = eye[2] / eye[3];
+        }
+        return new Number3d(size[0], size[1], size[2]);
     }
 
     public Scene getScene() {
