@@ -5,11 +5,16 @@ import java.util.ArrayList;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.opengl.GLU;
 import android.opengl.Matrix;
 import android.util.Log;
+import android.view.MotionEvent;
 
+import min3d.Shared;
 import min3d.interfaces.IObject3dContainer;
+import min3d.listeners.OnTouchListener;
 import min3d.vos.Color4;
+import min3d.vos.FrustumManaged;
 import min3d.vos.Number3d;
 import min3d.vos.Ray;
 import min3d.vos.RenderType;
@@ -73,6 +78,8 @@ public class Object3d
     public float[] mRotM = new float[16];
     public float[] mTranslateM = new float[16];
     public float[] mScaleM = new float[16];
+
+    private OnTouchListener mOnTouchListener;
 
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
@@ -695,5 +702,37 @@ public class Object3d
         }
 
         return true;
+    }
+
+    public void processTouchEvent(Ray ray, MotionEvent e) {
+        if (mOnTouchListener == null) {
+            return;
+        }
+        if (intersects(ray)) {
+            mOnTouchListener.onTouch(this, e, getIntersectPoint(e.getX(),e.getY(),mCenter.z));
+        }
+    }
+
+    public Number3d getIntersectPoint(float x, float y, float z) {
+        int w = Shared.renderer().getWidth();
+        int h = Shared.renderer().getHeight();
+        float[] eye = new float[4];
+        int[] viewport = { 0, 0, w, h };
+        FrustumManaged vf = _scene.camera().frustum;
+        float distance = _scene.camera().position.z + z;
+        float winZ = (1.0f / vf.zNear() - 1.0f / distance)
+                / (1.0f / vf.zNear() - 1.0f / vf.zFar());
+        GLU.gluUnProject(x, w - y ,winZ, Shared.renderer().getMatrixGrabber().mModelView, 0,
+                Shared.renderer().getMatrixGrabber().mProjection, 0, viewport, 0, eye, 0);
+        if (eye[3] != 0) {
+            eye[0] = eye[0] / eye[3];
+            eye[1] = eye[1] / eye[3];
+            eye[2] = eye[2] / eye[3];
+        }
+        return new Number3d(eye[0], eye[1], -eye[2]);
+    }
+
+    public void setOnTouchListener(OnTouchListener listener) {
+        mOnTouchListener = listener;
     }
 }

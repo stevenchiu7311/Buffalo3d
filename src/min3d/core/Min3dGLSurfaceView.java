@@ -56,6 +56,7 @@ public class Min3dGLSurfaceView extends GLSurfaceView {
     public boolean onTouchEvent(MotionEvent e) {
         float x = e.getX();
         float y = e.getY();
+        dispatchTouchEventToChild(e);
 
         switch (e.getAction()) {
         case MotionEvent.ACTION_UP:
@@ -82,6 +83,25 @@ public class Min3dGLSurfaceView extends GLSurfaceView {
 
         return true;
 
+    }
+
+    private void dispatchTouchEventToChild(MotionEvent e) {
+        Ray ray = mRenderer.getViewRay(e.getX(), e.getY());
+        for (int i = 0; i < mRenderer.getScene().children().size(); i++) {
+            Object3d o = mRenderer.getScene().children().get(i);
+            rursiveDispatchTouchEvent(o, ray ,e);
+        }
+    }
+
+    private void rursiveDispatchTouchEvent(Object3d node, Ray ray, MotionEvent e) {
+        node.processTouchEvent(ray,e);
+        if (node instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer) node;
+            for (int i = 0; i < container.children().size(); i++) {
+                Object3d o = container.children().get(i);
+                rursiveDispatchTouchEvent(o, ray, e);
+            }
+        }
     }
 
     public void setOnActionUpListener(OnActionMoveListener listener) {

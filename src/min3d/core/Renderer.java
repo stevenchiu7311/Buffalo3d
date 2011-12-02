@@ -763,4 +763,17 @@ public class Renderer implements GLSurfaceView.Renderer
     public Scene getScene() {
         return _scene;
     }
+
+    public MatrixGrabber getMatrixGrabber() {
+        return mMg;
+    }
+
+    public int getWidth() {
+        return mWidth;
+    }
+
+    public int getHeight() {
+        return mHeight;
+    }
+
 }
