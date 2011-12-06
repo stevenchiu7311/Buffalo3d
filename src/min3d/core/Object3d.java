@@ -2,6 +2,7 @@ package min3d.core;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.microedition.khronos.opengles.GL10;
 
@@ -12,6 +13,7 @@ import android.view.MotionEvent;
 
 import min3d.Shared;
 import min3d.interfaces.IObject3dContainer;
+import min3d.listeners.OnClickListener;
 import min3d.listeners.OnTouchListener;
 import min3d.vos.Color4;
 import min3d.vos.FrustumManaged;
@@ -25,7 +27,8 @@ import min3d.vos.ShadeModel;
  */
 public class Object3d
 {
-    private String TAG = Object3d.class.toString();
+    private final static String TAG = "Object3d";
+    private final static boolean DEBUG = false;
 	private String _name;
 	
 	private RenderType _renderType = RenderType.TRIANGLES;
@@ -75,11 +78,15 @@ public class Object3d
     private Number3d mCenter = new Number3d();
     private Number3d mExtent = new Number3d();
 
-    public float[] mRotM = new float[16];
-    public float[] mTranslateM = new float[16];
-    public float[] mScaleM = new float[16];
+    private float[] mRotM = new float[16];
+    private float[] mTranslateM = new float[16];
+    private float[] mScaleM = new float[16];
 
     private OnTouchListener mOnTouchListener;
+    private OnClickListener mOnClickListener;
+
+    private List<Object3d> mDownList = null;
+    private List<Object3d> mUpList = null;
 
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
@@ -615,7 +622,7 @@ public class Object3d
         result[2] = mExtent.z;
         result[3] = 1;
 
-        // Matrix.multiplyMV(result, 0, absRotM, 0, result, 0);
+        Matrix.multiplyMV(result, 0, absRotM, 0, result, 0);
         Matrix.multiplyMV(result, 0, mScaleM, 0, result, 0);
 
         if (_parent != null && _parent instanceof Object3d) {
@@ -626,7 +633,7 @@ public class Object3d
         mExtent.y = result[1];
         mExtent.z = result[2];
 
-        Log.i(TAG, "Name:" + _name + " Center:" + mCenter + " Extent:"
+        if (DEBUG) Log.i(TAG, "Name:" + _name + " Center:" + mCenter + " Extent:"
                 + mExtent);
     }
 
@@ -705,11 +712,42 @@ public class Object3d
     }
 
     public void processTouchEvent(Ray ray, MotionEvent e) {
-        if (mOnTouchListener == null) {
+        if (mOnTouchListener == null && mOnClickListener == null) {
             return;
         }
-        if (intersects(ray)) {
-            mOnTouchListener.onTouch(this, e, getIntersectPoint(e.getX(),e.getY(),mCenter.z));
+
+        ArrayList<Object3d> list =
+                (ArrayList<Object3d>)Shared.renderer().getPickedObject(ray, this).clone();
+
+        Number3d coordinates = getIntersectPoint(e.getX(),e.getY(),mCenter.z);
+
+        if (mOnTouchListener != null && list.size() > 0) {
+            mOnTouchListener.onTouch(this, e, list, coordinates);
+        }
+
+        if (mOnClickListener != null) {
+            if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                mDownList = (List<Object3d>)list.clone();
+            } else if (e.getAction() == MotionEvent.ACTION_UP) {
+                mUpList = (List<Object3d>)list.clone();
+
+                for (int i = 0; i < mUpList.size(); i++) {
+                    boolean intersected = false;
+                    for (int j = 0; j < mDownList.size(); j++) {
+                        if (mUpList.contains(mDownList.get(j))) {
+                            intersected = true;
+                        }
+                    }
+                    if (!intersected) {
+                        mUpList.remove(i);
+                    }
+                }
+
+                if (mUpList.size() > 0) {
+                    mOnClickListener.onClick(this, e, mUpList, coordinates);
+                }
+                mDownList.clear();
+            }
         }
     }
 
@@ -734,5 +772,9 @@ public class Object3d
 
     public void setOnTouchListener(OnTouchListener listener) {
         mOnTouchListener = listener;
+    }
+
+    public void setOnClickListener(OnClickListener listener) {
+        mOnClickListener = listener;
     }
 }

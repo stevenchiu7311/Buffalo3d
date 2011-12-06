@@ -55,8 +55,6 @@ public class Renderer implements GLSurfaceView.Renderer
     private int mWidth = 0;
     private int mHeight = 0;
 
-    private ArrayList<Object3d> mObjectPicked = new ArrayList<Object3d>();
-
 	public Renderer(Scene $scene)
 	{
 		_scene = $scene;
@@ -717,27 +715,43 @@ public class Renderer implements GLSurfaceView.Renderer
         return new Ray(source,direction);
     }
 
-    public ArrayList<Object3d> getPickedObject(Ray ray) {
-        mObjectPicked.clear();
-        for (int i = 0; i < _scene.children().size(); i++) {
-            Object3d o = _scene.children().get(i);
-            pickObjectWithRay(ray, o);
-        }
-        return mObjectPicked;
+    public ArrayList<Object3d> getPickedObject(Ray ray, Object3d root) {
+        ArrayList<Object3d> objPickedList = new ArrayList<Object3d>();
+        return detectIntersectedObject(ray, root, objPickedList);
     }
 
-    private void pickObjectWithRay(Ray ray, Object3d node) {
-        FloatBuffer[] buffer = new FloatBuffer[1];
-        buffer[0] = node.vertices().points().buffer();
-        node.containAABB(buffer);
+    public ArrayList<Object3d> detectIntersectedObject(Ray ray, Object3d node, ArrayList<Object3d> list) {
         if (node.intersects(ray)) {
-            mObjectPicked.add(node);
+            list.add(node);
         }
+
         if (node instanceof Object3dContainer) {
             Object3dContainer container = (Object3dContainer) node;
             for (int i = 0; i < container.children().size(); i++) {
-                Object3d o = container.children().get(i);
-                pickObjectWithRay(ray, o);
+                Object3d child = container.children().get(i);
+                detectIntersectedObject(ray, child, list);
+            }
+        }
+        return list;
+    }
+
+    public void updateAABBCoord() {
+        for (int i = 0; i < _scene.children().size(); i++) {
+            Object3d child = _scene.children().get(i);
+            updateAABBCoordWithRay(child);
+        }
+    }
+
+    private void updateAABBCoordWithRay(Object3d node) {
+        FloatBuffer[] buffer = new FloatBuffer[1];
+        buffer[0] = node.vertices().points().buffer();
+        node.containAABB(buffer);
+
+        if (node instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer) node;
+            for (int i = 0; i < container.children().size(); i++) {
+                Object3d child = container.children().get(i);
+                updateAABBCoordWithRay(child);
             }
         }
     }

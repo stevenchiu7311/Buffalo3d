@@ -1,6 +1,5 @@
 package min3d.listeners;
 
-
 import android.view.MotionEvent;
 
 import min3d.core.Object3d;
@@ -8,7 +7,7 @@ import min3d.vos.Number3d;
 
 import java.util.List;
 
-public interface OnTouchListener {
+public interface OnClickListener {
 
     /**
      * Get the clicked objects inside the {@link BeyondarGLSurfaceView}
@@ -22,6 +21,6 @@ public interface OnTouchListener {
      * @param coordinate
      *            The coordinate of 3d world
     */
-    public void onTouch(Object3d obj, MotionEvent event, List<Object3d> list, Number3d coordinate);
+    public void onClick(Object3d obj, MotionEvent event, List<Object3d> list, Number3d coordinate);
 
 }
