@@ -113,14 +113,12 @@ public class RendererActivity extends Activity implements ISceneController,OnCli
 	protected void onResume() 
 	{
 		super.onResume();
-		_glSurfaceView.onResume();
 	}
 	
 	@Override
 	protected void onPause() 
 	{
 		super.onPause();
-		_glSurfaceView.onPause();
 	}
 
 	/**
