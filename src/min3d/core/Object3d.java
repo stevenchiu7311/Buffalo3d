@@ -78,9 +78,12 @@ public class Object3d
     private Number3d mCenter = new Number3d();
     private Number3d mExtent = new Number3d();
 
-    private float[] mRotM = new float[16];
-    private float[] mTranslateM = new float[16];
-    private float[] mScaleM = new float[16];
+    private float[] mRotMC = new float[16];
+    private float[] mTransMC = new float[16];
+    private float[] mScaleMC = new float[16];
+
+    private float[] mRotMExt = new float[16];
+    private float[] mScaleMExt = new float[16];
 
     private OnTouchListener mOnTouchListener;
     private OnClickListener mOnClickListener;
@@ -583,23 +586,17 @@ public class Object3d
     }
 
     private void calcAABBPos() {
-        Number3d angle = new Number3d(_rotation.x, _rotation.y, _rotation.z);
-        Matrix.setIdentityM(mTranslateM, 0);
-        Matrix.translateM(mTranslateM, 0, _position.x, _position.y, _position.z);
+        Matrix.setIdentityM(mTransMC, 0);
+        Matrix.translateM(mTransMC, 0, _position.x, _position.y, _position.z);
 
-        Matrix.setIdentityM(mRotM, 0);
+        Matrix.setIdentityM(mRotMC, 0);
 
-        Matrix.rotateM(mRotM, 0, angle.x, 1, 0, 0);
-        Matrix.rotateM(mRotM, 0, angle.y, 0, 1, 0);
-        Matrix.rotateM(mRotM, 0, angle.z, 0, 0, 1);
+        Matrix.rotateM(mRotMC, 0, _rotation.x, 1, 0, 0);
+        Matrix.rotateM(mRotMC, 0, _rotation.y, 0, 1, 0);
+        Matrix.rotateM(mRotMC, 0, _rotation.z, 0, 0, 1);
 
-        Matrix.setIdentityM(mScaleM, 0);
-        Matrix.scaleM(mScaleM, 0, _scale.x, _scale.y, _scale.z);
-
-        float[] absRotM = new float[16];
-        for (int i = 0; i < mRotM.length; i++) {
-            absRotM[i] = Math.abs(mRotM[i]);
-        }
+        Matrix.setIdentityM(mScaleMC, 0);
+        Matrix.scaleM(mScaleMC, 0, _scale.x, _scale.y, _scale.z);
 
         float[] result = new float[4];
         result[0] = mCenter.x;
@@ -607,7 +604,7 @@ public class Object3d
         result[2] = mCenter.z;
         result[3] = 1;
 
-        Matrix.multiplyMV(result, 0, mTranslateM, 0, result, 0);
+        Matrix.multiplyMV(result, 0, mTransMC, 0, result, 0);
 
         if (_parent != null && _parent instanceof Object3d) {
             calcAABBPos((Object3d) parent(), TRANSLATE | ROTATE | SCALE, result);
@@ -622,12 +619,29 @@ public class Object3d
         result[2] = mExtent.z;
         result[3] = 1;
 
-        Matrix.multiplyMV(result, 0, absRotM, 0, result, 0);
-        Matrix.multiplyMV(result, 0, mScaleM, 0, result, 0);
+        Number3d accmlR = new Number3d(_rotation.x, _rotation.y, _rotation.z);
+        Number3d accmlS = new Number3d(_scale.x, _scale.y, _scale.z);
 
         if (_parent != null && _parent instanceof Object3d) {
-            calcAABBPos((Object3d) parent(), SCALE, result);
+            accmlAABBTrans((Object3d) parent(), ROTATE, accmlR);
         }
+
+        Matrix.setIdentityM(mRotMExt, 0);
+
+        Matrix.rotateM(mRotMExt, 0, accmlR.x, 1, 0, 0);
+        Matrix.rotateM(mRotMExt, 0, accmlR.y, 0, 1, 0);
+        Matrix.rotateM(mRotMExt, 0, accmlR.z, 0, 0, 1);
+
+        float[] absRotMExt = new float[16];
+        for (int i = 0; i < mRotMExt.length; i++) {
+            absRotMExt[i] = Math.abs(mRotMExt[i]);
+        }
+
+        Matrix.setIdentityM(mScaleMExt, 0);
+        Matrix.scaleM(mScaleMExt, 0, accmlS.x, accmlS.y, accmlS.z);
+
+        Matrix.multiplyMV(result, 0, absRotMExt, 0, result, 0);
+        Matrix.multiplyMV(result, 0, mScaleMExt, 0, result, 0);
 
         mExtent.x = result[0];
         mExtent.y = result[1];
@@ -639,16 +653,27 @@ public class Object3d
 
     private void calcAABBPos(Object3d parent, int mode, float[] result) {
         if ((mode & SCALE) != 0) {
-            Matrix.multiplyMV(result, 0, parent.mScaleM, 0, result, 0);
+            Matrix.multiplyMV(result, 0, parent.mScaleMC, 0, result, 0);
         }
         if ((mode & ROTATE) != 0) {
-            Matrix.multiplyMV(result, 0, parent.mRotM, 0, result, 0);
+            Matrix.multiplyMV(result, 0, parent.mRotMC, 0, result, 0);
         }
         if ((mode & TRANSLATE) != 0) {
-            Matrix.multiplyMV(result, 0, parent.mTranslateM, 0, result, 0);
+            Matrix.multiplyMV(result, 0, parent.mTransMC, 0, result, 0);
         }
         if (parent != null && parent.parent() instanceof Object3d) {
             calcAABBPos((Object3d) parent.parent(), mode, result);
+        }
+    }
+
+    private void accmlAABBTrans(Object3d parent, int mode, Number3d result) {
+        // Only rotation value is inherited between parent and child
+        // in 3d engine.
+        if (mode == ROTATE) {
+            result.add(parent.rotation());
+        }
+        if (parent != null && parent.parent() instanceof Object3d) {
+            accmlAABBTrans((Object3d) parent.parent(), mode, result);
         }
     }
 
