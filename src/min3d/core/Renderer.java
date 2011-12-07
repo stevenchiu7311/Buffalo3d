@@ -86,7 +86,7 @@ public class Renderer implements GLSurfaceView.Renderer
 	{
 		Log.i(Min3d.TAG, "Renderer.onSurfaceChanged()");
 		
-		setGl(_gl);
+		setGl(gl);
 		_surfaceAspectRatio = (float)w / (float)h;
 		
 		_gl.glViewport(0, 0, w, h);
