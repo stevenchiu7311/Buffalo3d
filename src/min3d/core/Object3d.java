@@ -624,6 +624,7 @@ public class Object3d
 
         if (_parent != null && _parent instanceof Object3d) {
             accmlAABBTrans((Object3d) parent(), ROTATE, accmlR);
+            accmlAABBTrans((Object3d) parent(), SCALE, accmlS);
         }
 
         Matrix.setIdentityM(mRotMExt, 0);
@@ -667,10 +668,15 @@ public class Object3d
     }
 
     private void accmlAABBTrans(Object3d parent, int mode, Number3d result) {
-        // Only rotation value is inherited between parent and child
-        // in 3d engine.
+        if (mode == SCALE) {
+            Number3d multiply = Number3d.multiply(result,parent.scale());
+            result.setAllFrom(multiply);
+        }
         if (mode == ROTATE) {
             result.add(parent.rotation());
+        }
+        if (mode == TRANSLATE) {
+            result.add(parent.position());
         }
         if (parent != null && parent.parent() instanceof Object3d) {
             accmlAABBTrans((Object3d) parent.parent(), mode, result);
