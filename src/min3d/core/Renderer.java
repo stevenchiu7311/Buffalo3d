@@ -743,6 +743,10 @@ public class Renderer implements GLSurfaceView.Renderer
     }
 
     private void updateAABBCoordWithRay(Object3d node) {
+        if (!node.isVisible()) {
+            return;
+        }
+
         FloatBuffer[] buffer = new FloatBuffer[1];
         buffer[0] = node.vertices().points().buffer();
         node.containAABB(buffer);

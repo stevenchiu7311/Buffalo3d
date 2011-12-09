@@ -45,6 +45,9 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
     }
 
     private void rursiveDispatchTouchEvent(Object3d node, Ray ray, MotionEvent e) {
+        if (!node.isVisible()) {
+            return;
+        }
         node.processTouchEvent(ray,e);
         if (node instanceof Object3dContainer) {
             Object3dContainer container = (Object3dContainer) node;
