@@ -7,33 +7,25 @@ import android.view.MotionEvent;
 
 import min3d.vos.Ray;
 
-public class Min3dGLSurfaceView extends GLSurfaceView {
+public class RendererGLSurfaceViewProxy extends GLSurfaceView {
 
-    private min3d.core.Renderer mRenderer;
+    protected min3d.core.Renderer mRenderer;
 
-    // Listeners stuff
-    private OnClickListener mOnClickObjectListener = null;
-
-    // End listeners stuff
-
-    public Min3dGLSurfaceView(Context context) {
+    public RendererGLSurfaceViewProxy(Context context) {
         super(context);
-
     }
 
-    public Min3dGLSurfaceView(Context context, AttributeSet attrs) {
+    public RendererGLSurfaceViewProxy(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
     @Override
     public void onPause() {
-        // Log.d(StaticValues.TAG, "Pause");
         super.onPause();
     }
 
     @Override
     public void onResume() {
-        // Log.d(StaticValues.TAG, "resume");
         super.onResume();
     }
 

@@ -23,7 +23,7 @@ import javax.microedition.khronos.opengles.GL;
 public class RendererActivity extends Activity implements ISceneController
 {
 	public Scene scene;
-	protected Min3dGLSurfaceView _glSurfaceView;
+	protected RendererGLSurfaceViewProxy _glSurfaceView;
 	
 	protected Handler _initSceneHander;
 	protected Handler _updateSceneHander;
@@ -60,7 +60,7 @@ public class RendererActivity extends Activity implements ISceneController
 		Renderer r = new Renderer(scene);
 		Shared.renderer(r);
 		
-		_glSurfaceView = new Min3dGLSurfaceView(this);
+		_glSurfaceView = new RendererGLSurfaceViewProxy(this);
         glSurfaceViewConfig();
 		_glSurfaceView.setRenderer(r);
 		_glSurfaceView.setRender(r);
