@@ -91,6 +91,8 @@ public class Object3d
     private List<Object3d> mDownList = null;
     private List<Object3d> mUpList = null;
 
+    private boolean mTracking = false;
+
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
 	 */
@@ -752,7 +754,14 @@ public class Object3d
 
         Number3d coordinates = getIntersectPoint(e.getX(),e.getY(),mCenter.z);
 
-        if (mOnTouchListener != null && list.size() > 0) {
+        if (mOnTouchListener != null && (list.size() > 0 || mTracking)) {
+            if (e.getAction() == MotionEvent.ACTION_DOWN
+                    || e.getAction() == MotionEvent.ACTION_MOVE) {
+                mTracking = true;
+            } else if (e.getAction() == MotionEvent.ACTION_UP
+                    || e.getAction() == MotionEvent.ACTION_CANCEL) {
+                mTracking = false;
+            }
             mOnTouchListener.onTouch(this, e, list, coordinates);
         }
 
@@ -777,6 +786,9 @@ public class Object3d
                 if (mUpList.size() > 0) {
                     mOnClickListener.onClick(this, e, mUpList, coordinates);
                 }
+                mDownList.clear();
+            } else if (e.getAction() == MotionEvent.ACTION_CANCEL) {
+                mUpList.clear();
                 mDownList.clear();
             }
         }
