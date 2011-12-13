@@ -24,9 +24,6 @@ import min3d.vos.Color4;
 public class TextObject extends Object3dContainer {
     private static final String TAG = "TextObject";
     private static final float MAPPING_PIXEL = 256.0f;
-    public static final int TEXT_BITMAP_WIDTH = 1000;
-    public static final int TEXT_BITMAP_HIGHT = 800;
-    private static Bitmap mTextBitmap;
 
     private Color4[] mColors;
     private float mWidth;
@@ -36,8 +33,10 @@ public class TextObject extends Object3dContainer {
     private float mStringWidth;
     private float mStringHeight;
     private int mFontSize = 14;
-    private Color4 mFontColor = new Color4(255, 0, 0, 255);
-    private Color4 mBackgroundColor = new Color4(0, 0, 255, 255);
+    private Color4 mFontColor = new Color4(0, 0, 0, 255);
+    private Color4 mBackgroundColor = new Color4(0, 0, 0, 0);
+    private int mTextBitmapWidth;
+    private int mTextBitmapHeight;
 
     public TextObject(float width, float height, float depth,
             Color4[] sixColor4s, Boolean useUvs, Boolean useNormals,
@@ -74,13 +73,24 @@ public class TextObject extends Object3dContainer {
             this.mHeight = mStringHeight / MAPPING_PIXEL;
             this.mWidth = mStringWidth / MAPPING_PIXEL;
         }
-        Bitmap bitmap = TextObject.getSharedTextBitmap();
+        float tempTextBitmapWidth = mWidth * MAPPING_PIXEL;
+        float tempTextBitmapHeight = mHeight * MAPPING_PIXEL;
+        mTextBitmapWidth = ((tempTextBitmapWidth) - (int) (tempTextBitmapWidth)) > 0 ? (int) (tempTextBitmapWidth) + 1
+                : (int) (tempTextBitmapWidth);
+        mTextBitmapHeight = ((tempTextBitmapHeight) - (int) (tempTextBitmapHeight)) > 0 ? (int) (tempTextBitmapHeight) + 1
+                : (int) (tempTextBitmapHeight);
+        if (mTextBitmapWidth % 2 == 1) {
+            mTextBitmapWidth += 1;
+        }
+        if (mTextBitmapHeight % 2 == 1) {
+            mTextBitmapHeight += 1;
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(mTextBitmapWidth, mTextBitmapHeight, Bitmap.Config.ARGB_4444);;
         // get a canvas to paint over the bitmap
         Canvas canvas = new Canvas(bitmap);
         bitmap.eraseColor(Color.argb(mBackgroundColor.a, mBackgroundColor.r,
                 mBackgroundColor.g, mBackgroundColor.b));
-
-        // draw the text centered
         canvas.drawText(text, 0, mStringHeight, textPaint);
         if (Shared.textureManager().contains(this.toString())) {
             Shared.textureManager().deleteTexture(this.toString());
@@ -89,6 +99,7 @@ public class TextObject extends Object3dContainer {
         this.textures().removeAll();
         this.textures().addById(this.toString());
         //saveBitmap(bitmap, "/data/data/min3d.sampleProject1/test.png", "test");
+        bitmap.recycle();
         createVertices();
     }
 
@@ -181,11 +192,11 @@ public class TextObject extends Object3dContainer {
         short ul, ur, lr, ll;
         float uvX, uvY;
         if (mWrapContent) {
-            uvX = mStringWidth / TEXT_BITMAP_WIDTH;
-            uvY = mStringHeight / TEXT_BITMAP_HIGHT;
+            uvX = mStringWidth / mTextBitmapWidth;
+            uvY = mStringHeight / mTextBitmapHeight;
         } else {
-            uvX = (mWidth * 256.0f) / TEXT_BITMAP_WIDTH;
-            uvY = (mHeight * 256.0f) / TEXT_BITMAP_HIGHT;
+            uvX = (mWidth * 256.0f) / mTextBitmapWidth;
+            uvY = (mHeight * 256.0f) / mTextBitmapHeight;
         }
         if (vertices().size() == 0) {
             ul = this.vertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1,
@@ -205,12 +216,5 @@ public class TextObject extends Object3dContainer {
             this.vertices().setUv(2, uvX, uvY);
             this.vertices().setUv(3, 0f, uvY);
         }
-    }
-
-    public static Bitmap getSharedTextBitmap() {
-        if (mTextBitmap == null) {
-            mTextBitmap = Bitmap.createBitmap(TEXT_BITMAP_WIDTH,TEXT_BITMAP_HIGHT, Bitmap.Config.ARGB_4444);
-        }
-        return mTextBitmap;
     }
 }
