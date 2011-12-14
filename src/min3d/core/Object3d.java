@@ -8,12 +8,15 @@ import javax.microedition.khronos.opengles.GL10;
 
 import android.opengl.GLU;
 import android.opengl.Matrix;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.MotionEvent;
 
 import min3d.Shared;
 import min3d.interfaces.IObject3dContainer;
 import min3d.listeners.OnClickListener;
+import min3d.listeners.OnLongClickListener;
 import min3d.listeners.OnTouchListener;
 import min3d.vos.Color4;
 import min3d.vos.FrustumManaged;
@@ -41,6 +44,66 @@ public class Object3d
     public final static int TRANSLATE = 0x1;
     public final static int ROTATE = 0x2;
     public final static int SCALE = 0x4;
+
+    private static final int PRESSED_STATE_DURATION = 125;
+    private static final int DEFAULT_LONG_PRESS_TIMEOUT = 500;
+
+    /**
+     * Defines the duration in milliseconds we will wait to see if a touch event
+     * is a tap or a scroll. If the user does not move within this interval, it is
+     * considered to be a tap.
+     */
+    private static final int TAP_TIMEOUT = 180;
+
+    private static final int PRESSED = 0x00004000;
+
+    /**
+     * This view is enabled. Intrepretation varies by subclass.
+     * Use with ENABLED_MASK when calling setFlags.
+     * {@hide}
+     */
+    static final int ENABLED = 0x00000000;
+
+    /**
+     * This view is disabled. Intrepretation varies by subclass.
+     * Use with ENABLED_MASK when calling setFlags.
+     * {@hide}
+     */
+    static final int DISABLED = 0x00000020;
+
+   /**
+    * Mask for use with setFlags indicating bits used for indicating whether
+    * this view is enabled
+    * {@hide}
+    */
+    static final int ENABLED_MASK = 0x00000020;
+
+    /**
+     * <p>Indicates this view can be clicked. When clickable, a View reacts
+     * to clicks by notifying the OnClickListener.<p>
+     * {@hide}
+     */
+    static final int CLICKABLE = 0x00004000;
+
+    /**
+     * <p>
+     * Indicates this view can be long clicked. When long clickable, a View
+     * reacts to long clicks by notifying the OnLongClickListener or showing a
+     * context menu.
+     * </p>
+     * {@hide}
+     */
+    static final int LONG_CLICKABLE = 0x00200000;
+
+    /**
+     * Indicates a prepressed state;
+     * the short time between ACTION_DOWN and recognizing
+     * a 'real' press. Prepressed is used to recognize quick taps
+     * even when they are shorter than ViewConfiguration.getTapTimeout().
+     *
+     * @hide
+     */
+    private static final int PREPRESSED = 0x02000000;
 
 	private boolean _isVisible = true;
 	private boolean _vertexColorsEnabled = true;
@@ -87,11 +150,23 @@ public class Object3d
 
     private OnTouchListener mOnTouchListener;
     private OnClickListener mOnClickListener;
+    private OnLongClickListener mOnLongClickListener;
 
     private List<Object3d> mDownList = null;
     private List<Object3d> mUpList = null;
 
-    private boolean mTracking = false;
+    private Object3d mMotionTarget = null;
+
+    /* Variable for Touch handler */
+    UnsetPressedState mUnsetPressedState;
+    Handler mHandler = null;
+    CheckForLongPress mPendingCheckForLongPress;
+    CheckForTap mPendingCheckForTap = null;
+    PerformClick mPerformClick;
+    int mViewFlags = ENABLED;
+    int mPrivateFlags;
+    int mWindowAttachCount;
+    boolean mHasPerformedLongPress;
 
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
@@ -686,6 +761,10 @@ public class Object3d
     }
 
     public boolean intersects(Ray ray) {
+        if (!_isVisible) {
+            return false;
+        }
+
         float rhs;
 
         Number3d diff = new Number3d(ray.getPoint().x - mCenter.x,
@@ -744,55 +823,196 @@ public class Object3d
         return true;
     }
 
-    public void processTouchEvent(Ray ray, MotionEvent e) {
-        if (mOnTouchListener == null && mOnClickListener == null) {
-            return;
-        }
-
+    public void dispatchTouchEvent(Ray ray, MotionEvent ev) {
         ArrayList<Object3d> list =
-                (ArrayList<Object3d>)Shared.renderer().getPickedObject(ray, this).clone();
+            (ArrayList<Object3d>)Shared.renderer().getPickedObject(ray, this);
 
-        Number3d coordinates = getIntersectPoint(e.getX(),e.getY(),mCenter.z);
+        boolean hit = (list.size() > 0)?true:false;
 
-        if (mOnTouchListener != null && (list.size() > 0 || mTracking)) {
-            if (e.getAction() == MotionEvent.ACTION_DOWN
-                    || e.getAction() == MotionEvent.ACTION_MOVE) {
-                mTracking = true;
-            } else if (e.getAction() == MotionEvent.ACTION_UP
-                    || e.getAction() == MotionEvent.ACTION_CANCEL) {
-                mTracking = false;
-            }
-            mOnTouchListener.onTouch(this, e, list, coordinates);
+        final int action = ev.getAction();
+
+        if (action == MotionEvent.ACTION_DOWN && _isVisible && hit) {
+            mMotionTarget = this;
         }
 
-        if (mOnClickListener != null) {
-            if (e.getAction() == MotionEvent.ACTION_DOWN) {
-                mDownList = (List<Object3d>)list.clone();
-            } else if (e.getAction() == MotionEvent.ACTION_UP) {
-                mUpList = (List<Object3d>)list.clone();
+        boolean isUpOrCancel = (action == MotionEvent.ACTION_UP)
+                || (action == MotionEvent.ACTION_CANCEL);
 
-                for (int i = 0; i < mUpList.size(); i++) {
-                    boolean intersected = false;
-                    for (int j = 0; j < mDownList.size(); j++) {
-                        if (mUpList.contains(mDownList.get(j))) {
-                            intersected = true;
-                        }
-                    }
-                    if (!intersected) {
-                        mUpList.remove(i);
-                    }
-                }
+        if (mMotionTarget != null) {
+            mMotionTarget.onTouchEvent(ray,ev,list);
+        }
 
-                if (mUpList.size() > 0) {
-                    mOnClickListener.onClick(this, e, mUpList, coordinates);
-                }
-                mDownList.clear();
-            } else if (e.getAction() == MotionEvent.ACTION_CANCEL) {
-                mUpList.clear();
-                mDownList.clear();
+        if (isUpOrCancel) {
+            mMotionTarget = null;
+        }
+
+        if (this instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer) this;
+            for (int i = 0; i < container.children().size(); i++) {
+                Object3d child = container.children().get(i);
+                child.dispatchTouchEvent(ray, ev);
             }
         }
     }
+
+    public boolean onTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
+        if (mOnTouchListener == null && mOnClickListener == null) {
+            return false;
+        }
+
+        Number3d coordinates = getIntersectPoint(event.getX(),event.getY(),mCenter.z);
+
+        final int viewFlags = mViewFlags;
+
+        if ((viewFlags & ENABLED_MASK) == DISABLED) {
+            if (event.getAction() == MotionEvent.ACTION_UP && (mPrivateFlags & PRESSED) != 0) {
+                mPrivateFlags &= ~PRESSED;
+                refreshDrawableState();
+            }
+            // A disabled view that is clickable still consumes the touch
+            // events, it just doesn't respond to them.
+            return (((viewFlags & CLICKABLE) == CLICKABLE ||
+                    (viewFlags & LONG_CLICKABLE) == LONG_CLICKABLE));
+        }
+
+        if (mOnTouchListener != null) {
+            mOnTouchListener.onTouch(this, event, list, coordinates);
+        }
+
+        if (((viewFlags & CLICKABLE) == CLICKABLE ||
+                (viewFlags & LONG_CLICKABLE) == LONG_CLICKABLE)) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_UP:
+                    boolean prepressed = (mPrivateFlags & PREPRESSED) != 0;
+                    if ((mPrivateFlags & PRESSED) != 0 || prepressed) {
+                        if (mDownList != null) {
+                            mUpList = (List<Object3d>)list.clone();
+                            for (int i = 0; i < mUpList.size(); i++) {
+                                boolean intersected = false;
+                                for (int j = 0; j < mDownList.size(); j++) {
+                                    if (mUpList.contains(mDownList.get(j))) {
+                                        intersected = true;
+                                    }
+                                }
+                                if (!intersected) {
+                                    mUpList.remove(i);
+                                }
+                            }
+                            mDownList.clear();
+                            mDownList = null;
+                        }
+
+                        // take focus if we don't have it already and we should in
+                        // touch mode.
+                        boolean focusTaken = false;
+                        /*if (isFocusable() && isFocusableInTouchMode() && !isFocused()) {
+                            focusTaken = requestFocus();
+                        }*/
+
+                        if (prepressed) {
+                            // The button is being released before we actually
+                            // showed it as pressed.  Make it show the pressed
+                            // state now (before scheduling the click) to ensure
+                            // the user sees it.
+                            mPrivateFlags |= PRESSED;
+                            refreshDrawableState();
+                        }
+
+                        if (!mHasPerformedLongPress) {
+                            // This is a tap, so remove the longpress check
+                            removeLongPressCallback();
+
+                            // Only perform take click actions if we were in the pressed state
+                            if (!focusTaken) {
+                                // Use a Runnable and post this rather than calling
+                                // performClick directly. This lets other visual state
+                                // of the view update before click actions start.
+                                if (mPerformClick == null) {
+                                    mPerformClick = new PerformClick(event, mUpList, coordinates);
+                                }
+
+                                if (!post(mPerformClick)) {
+                                    performClick(event, mUpList, coordinates);
+                                }
+                            }
+                        }
+
+                        if (mUnsetPressedState == null) {
+                            mUnsetPressedState = new UnsetPressedState();
+                        }
+
+                        if (prepressed) {
+                            postDelayed(mUnsetPressedState,
+                                    PRESSED_STATE_DURATION);
+                        } else if (!post(mUnsetPressedState)) {
+                            // If the post failed, unpress right now
+                            mUnsetPressedState.run();
+                        }
+                        removeTapCallback();
+                    }
+                    break;
+
+                case MotionEvent.ACTION_DOWN:
+                    mDownList = (List<Object3d>)list.clone();
+
+                    mHasPerformedLongPress = false;
+
+                    if (performButtonActionOnTouchDown(event)) {
+                        break;
+                    }
+
+                    // Walk up the hierarchy to determine if we're inside a scrolling container.
+                    boolean isInScrollingContainer = isInScrollingContainer();
+
+                    // For views inside a scrolling container, delay the pressed feedback for
+                    // a short period in case this is a scroll.
+                    if (isInScrollingContainer) {
+                        mPrivateFlags |= PREPRESSED;
+                        if (mPendingCheckForTap == null) {
+                            mPendingCheckForTap = new CheckForTap();
+                        }
+                        postDelayed(mPendingCheckForTap, TAP_TIMEOUT);
+                    } else {
+                        // Not inside a scrolling container, so show the feedback right away
+                        mPrivateFlags |= PRESSED;
+                        refreshDrawableState();
+                        checkForLongClick(0);
+                    }
+                    break;
+
+                case MotionEvent.ACTION_CANCEL:
+                    if (mDownList != null) {
+                        mDownList.clear();
+                        mDownList = null;
+                    }
+
+                    mPrivateFlags &= ~PRESSED;
+                    refreshDrawableState();
+                    removeTapCallback();
+                    break;
+
+                case MotionEvent.ACTION_MOVE:
+                    // Be lenient about moving outside of buttons
+                    if (list.size() == 0) {
+                        // Outside button
+                        removeTapCallback();
+                        if ((mPrivateFlags & PRESSED) != 0) {
+                            // Remove any future long press/tap checks
+                            removeLongPressCallback();
+
+                            // Need to switch from pressed to not pressed
+                            mPrivateFlags &= ~PRESSED;
+                            refreshDrawableState();
+                        }
+                    }
+                    break;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
 
     public Number3d getIntersectPoint(float x, float y, float z) {
         int w = Shared.renderer().getWidth();
@@ -818,6 +1038,290 @@ public class Object3d
     }
 
     public void setOnClickListener(OnClickListener listener) {
+        if (!isClickable()) {
+            setClickable(true);
+        }
         mOnClickListener = listener;
+    }
+
+    public void setOnLongClickListener(OnLongClickListener listener) {
+        if (!isLongClickable()) {
+            setLongClickable(true);
+        }
+        mOnLongClickListener = listener;
+    }
+
+    public boolean isClickable() {
+        return (mViewFlags & CLICKABLE) == CLICKABLE;
+    }
+
+    public void setClickable(boolean clickable) {
+        setFlags(clickable ? CLICKABLE : 0, CLICKABLE);
+    }
+
+    public boolean isLongClickable() {
+        return (mViewFlags & LONG_CLICKABLE) == LONG_CLICKABLE;
+    }
+
+    public void setLongClickable(boolean longClickable) {
+        setFlags(longClickable ? LONG_CLICKABLE : 0, LONG_CLICKABLE);
+    }
+
+    /**
+     * Indicates whether the view is currently in pressed state. Unless
+     * {@link #setPressed(boolean)} is explicitly called, only clickable views can enter
+     * the pressed state.
+     *
+     * @see #setPressed(boolean)
+     * @see #isClickable()
+     * @see #setClickable(boolean)
+     *
+     * @return true if the view is currently pressed, false otherwise
+     */
+    public boolean isPressed() {
+        return (mPrivateFlags & PRESSED) == PRESSED;
+    }
+
+    /**
+     * Sets the pressed state for this view.
+     *
+     * @see #isClickable()
+     * @see #setClickable(boolean)
+     *
+     * @param pressed Pass true to set the View's internal state to "pressed", or false to reverts
+     *        the View's internal state from a previously set "pressed" state.
+     */
+    public void setPressed(boolean pressed) {
+        if (pressed) {
+            mPrivateFlags |= PRESSED;
+        } else {
+            mPrivateFlags &= ~PRESSED;
+        }
+        refreshDrawableState();
+        dispatchSetPressed(pressed);
+    }
+
+    /**
+     * Dispatch setPressed to all of this View's children.
+     *
+     * @see #setPressed(boolean)
+     *
+     * @param pressed The new pressed state
+     */
+    protected void dispatchSetPressed(boolean pressed) {
+    }
+
+    private final class PerformClick implements Runnable {
+        MotionEvent mEvent;
+        List<Object3d> mList;
+        Number3d mCoord;
+
+        public PerformClick(MotionEvent event, List<Object3d> list, Number3d coord) {
+            mEvent = event;
+            mList = list;
+            mCoord = coord;
+        }
+
+        public void run() {
+            performClick(mEvent,mList,mCoord);
+        }
+    }
+
+    /**
+     * Call this view's OnClickListener, if it is defined.
+     *
+     * @return True there was an assigned OnClickListener that was called, false
+     *         otherwise is returned.
+     */
+    public boolean performClick(MotionEvent event, List<Object3d> list, Number3d coord) {
+        if (mOnClickListener != null) {
+            mOnClickListener.onClick(this,event,list,coord);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean isInScrollingContainer() {
+        return false;
+    }
+
+    /**
+     * @return A handler associated with the thread running the View. This
+     * handler can be used to pump events in the UI events queue.
+     */
+    public Handler getHandler() {
+        if (mHandler == null) {
+            HandlerThread ht = new HandlerThread("");
+            ht.start();
+            mHandler = new Handler(ht.getLooper());
+        }
+        return mHandler;
+    }
+
+    /**
+     * <p>Causes the Runnable to be added to the message queue.
+     * The runnable will be run on the user interface thread.</p>
+     *
+     * <p>This method can be invoked from outside of the UI thread
+     * only when this View is attached to a window.</p>
+     *
+     * @param action The Runnable that will be executed.
+     *
+     * @return Returns true if the Runnable was successfully placed in to the
+     *         message queue.  Returns false on failure, usually because the
+     *         looper processing the message queue is exiting.
+     */
+    public boolean post(Runnable action) {
+        Handler handler = getHandler();
+        return handler.post(action);
+    }
+
+    /**
+     * <p>Causes the Runnable to be added to the message queue, to be run
+     * after the specified amount of time elapses.
+     * The runnable will be run on the user interface thread.</p>
+     *
+     * <p>This method can be invoked from outside of the UI thread
+     * only when this View is attached to a window.</p>
+     *
+     * @param action The Runnable that will be executed.
+     * @param delayMillis The delay (in milliseconds) until the Runnable
+     *        will be executed.
+     *
+     * @return true if the Runnable was successfully placed in to the
+     *         message queue.  Returns false on failure, usually because the
+     *         looper processing the message queue is exiting.  Note that a
+     *         result of true does not mean the Runnable will be processed --
+     *         if the looper is quit before the delivery time of the message
+     *         occurs then the message will be dropped.
+     */
+    public boolean postDelayed(Runnable action, long delayMillis) {
+        Handler handler = getHandler();
+        return handler.postDelayed(action, delayMillis);
+    }
+
+    /**
+     * <p>Removes the specified Runnable from the message queue.</p>
+     *
+     * <p>This method can be invoked from outside of the UI thread
+     * only when this View is attached to a window.</p>
+     *
+     * @param action The Runnable to remove from the message handling queue
+     *
+     * @return true if this view could ask the Handler to remove the Runnable,
+     *         false otherwise. When the returned value is true, the Runnable
+     *         may or may not have been actually removed from the message queue
+     *         (for instance, if the Runnable was not in the queue already.)
+     */
+    public boolean removeCallbacks(Runnable action) {
+        Handler handler = getHandler();
+        handler.removeCallbacks(action);
+        return true;
+    }
+
+    /**
+     * Remove the longpress detection timer.
+     */
+    private void removeLongPressCallback() {
+        if (mPendingCheckForLongPress != null) {
+            removeCallbacks(mPendingCheckForLongPress);
+        }
+    }
+
+    /**
+     * Remove the tap detection timer.
+     */
+    private void removeTapCallback() {
+        if (mPendingCheckForTap != null) {
+            mPrivateFlags &= ~PREPRESSED;
+            removeCallbacks(mPendingCheckForTap);
+        }
+    }
+
+    private final class UnsetPressedState implements Runnable {
+        public void run() {
+            setPressed(false);
+        }
+    }
+
+    class CheckForLongPress implements Runnable {
+        private int mOriginalWindowAttachCount;
+
+        public void run() {
+            if (isPressed() && (parent() != null)
+                    /*&& mOriginalWindowAttachCount == mWindowAttachCount*/) {
+                if (performLongClick()) {
+                    mHasPerformedLongPress = true;
+                }
+            }
+        }
+
+        public void rememberWindowAttachCount() {
+            mOriginalWindowAttachCount = mWindowAttachCount;
+        }
+    }
+
+    /**
+     * Call this view's OnLongClickListener, if it is defined. Invokes the context menu if the
+     * OnLongClickListener did not consume the event.
+     *
+     * @return True if one of the above receivers consumed the event, false otherwise.
+     */
+    public boolean performLongClick() {
+        boolean handled = false;
+        if (mOnLongClickListener != null) {
+            handled = mOnLongClickListener.onLongClick(this);
+        }
+        return handled;
+    }
+
+    private final class CheckForTap implements Runnable {
+        public void run() {
+            mPrivateFlags &= ~PREPRESSED;
+            mPrivateFlags |= PRESSED;
+            refreshDrawableState();
+            checkForLongClick(TAP_TIMEOUT);
+        }
+    }
+
+    private void checkForLongClick(int delayOffset) {
+        if ((mViewFlags & LONG_CLICKABLE) == LONG_CLICKABLE) {
+            mHasPerformedLongPress = false;
+
+            if (mPendingCheckForLongPress == null) {
+                mPendingCheckForLongPress = new CheckForLongPress();
+            }
+            mPendingCheckForLongPress.rememberWindowAttachCount();
+            postDelayed(mPendingCheckForLongPress,
+                    DEFAULT_LONG_PRESS_TIMEOUT - delayOffset);
+        }
+    }
+
+    void setFlags(int flags, int mask) {
+        int old = mViewFlags;
+        mViewFlags = (mViewFlags & ~mask) | (flags & mask);
+
+        int changed = mViewFlags ^ old;
+        if (changed == 0) {
+            return;
+        }
+    }
+
+    public void refreshDrawableState() {
+        // TODO: Handler for drawable state refresh.
+    }
+
+    /**
+     * Performs button-related actions during a touch down event.
+     *
+     * @param event The event.
+     * @return True if the down was consumed.
+     *
+     * @hide
+     */
+    protected boolean performButtonActionOnTouchDown(MotionEvent event) {
+        // TODO: Button action for touch down.
+        return false;
     }
 }

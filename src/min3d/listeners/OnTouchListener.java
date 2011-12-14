@@ -22,6 +22,6 @@ public interface OnTouchListener {
      * @param coordinate
      *            The coordinate of 3d world
     */
-    public void onTouch(Object3d obj, MotionEvent event, List<Object3d> list, Number3d coordinate);
+    public boolean onTouch(Object3d obj, MotionEvent event, List<Object3d> list, Number3d coordinate);
 
 }

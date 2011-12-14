@@ -39,22 +39,7 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
         Ray ray = mRenderer.getViewRay(e.getX(), e.getY());
         mRenderer.updateAABBCoord();
         for (int i = 0; i < mRenderer.getScene().children().size(); i++) {
-            Object3d child = mRenderer.getScene().children().get(i);
-            rursiveDispatchTouchEvent(child, ray ,e);
-        }
-    }
-
-    private void rursiveDispatchTouchEvent(Object3d node, Ray ray, MotionEvent e) {
-        if (!node.isVisible()) {
-            return;
-        }
-        node.processTouchEvent(ray,e);
-        if (node instanceof Object3dContainer) {
-            Object3dContainer container = (Object3dContainer) node;
-            for (int i = 0; i < container.children().size(); i++) {
-                Object3d child = container.children().get(i);
-                rursiveDispatchTouchEvent(child, ray, e);
-            }
+            mRenderer.getScene().children().get(i).dispatchTouchEvent(ray ,e);
         }
     }
 
