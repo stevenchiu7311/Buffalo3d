@@ -1,12 +1,20 @@
 package min3d.core;
 
-import java.util.ArrayList;
+import android.view.MotionEvent;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
+import min3d.Shared;
 import min3d.interfaces.IObject3dContainer;
+import min3d.vos.Ray;
 
 public class Object3dContainer extends Object3d implements IObject3dContainer
 {
 	protected ArrayList<Object3d> _children = new ArrayList<Object3d>();
+
+    private Object3d mMotionTarget = null;
 
 	public Object3dContainer()
 	{
@@ -41,7 +49,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		_children.add($o);
 		
 		$o.parent(this);
-		$o.scene(this.scene());
+		$o.scene(Shared.renderer().getScene());
 	}
 	
 	public void addChildAt(Object3d $o, int $index) 
@@ -49,7 +57,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		_children.add($index, $o);
 		
 		$o.parent(this);
-		$o.scene(this.scene());
+		$o.scene(Shared.renderer().getScene());
 	}
 
 	public boolean removeChild(Object3d $o)
@@ -134,4 +142,108 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		return clone;
 	}
 
+    public boolean dispatchTouchEvent(Ray ray, MotionEvent ev, ArrayList<Object3d> list) {
+        final int action = ev.getAction();
+        if (action == MotionEvent.ACTION_DOWN) {
+            if (mMotionTarget != null) {
+                // this is weird, we got a pen down, but we thought it was
+                // already down!
+                // XXX: We should probably send an ACTION_UP to the current
+                // target.
+                mMotionTarget = null;
+            }
+            Object3dContainer container = (Object3dContainer) this;
+            ArrayList<Object3d> children = (ArrayList<Object3d>) container.children().clone();
+            Collections.sort(children, new DepthSort(DepthSort.UP));
+            for (int i = children.size() - 1; i >= 0; i--) {
+                Object3d child = null;
+                for (int j = 0; j < container.numChildren(); j++) {
+                    if (children.get(i).equals(container.getChildAt(j))) {
+                        child = container.getChildAt(j);
+                    }
+                }
+
+                boolean find = false;
+                for (Object3d obj : list) {
+                    find = isAncestorOf(this,obj);
+                }
+
+                if (child != null && child.isVisible() && find) {
+                    if (child.dispatchTouchEvent(ray, ev, list)) {
+                        mMotionTarget = child;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        final Object3d target = mMotionTarget;
+        if (target == null) {
+            return super.dispatchTouchEvent(ray, ev, list);
+        }
+
+        boolean isUpOrCancel = (action == MotionEvent.ACTION_UP)
+                || (action == MotionEvent.ACTION_CANCEL);
+
+        if (isUpOrCancel) {
+            mMotionTarget = null;
+        }
+
+        return target.dispatchTouchEvent(ray, ev, list);
+    }
+
+    private boolean isAncestorOf(Object3d src, Object3d node) {
+        if (node.equals(src)) {
+            return true;
+        }
+        if (src instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer) src;
+            for (int i = 0; i < container.children().size(); i++) {
+                Object3d child = container.children().get(i);
+                boolean find = isAncestorOf(child,node);
+                if (find) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public class DepthSort implements Comparator<Object3d> {
+        private final static int UP = 1;
+        private final static int DOWM = -1;
+
+        private int state;
+
+        public DepthSort(int state) {
+            this.state = state;
+        }
+
+        public int compare(Object3d o1, Object3d o2) {
+            if (state == DepthSort.DOWM) {
+                return sortDown(o1, o2);
+            }
+            return sortUp(o1, o2);
+        }
+
+        private int sortUp(Object3d o1, Object3d o2) {
+            if (o1.center().z < o2.center().z) {
+                return -1;
+            } else if (o1.center().z > o2.center().z) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+
+        private int sortDown(Object3d o1, Object3d o2) {
+            if (o1.center().z > o2.center().z) {
+                return -1;
+            } else if (o1.center().z < o2.center().z) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
 }

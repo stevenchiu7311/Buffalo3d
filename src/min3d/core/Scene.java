@@ -15,8 +15,6 @@ import android.util.Log;
 
 public class Scene implements IObject3dContainer, IDirtyParent
 {
-	private ArrayList<Object3d> _children = new ArrayList<Object3d>();
-
 	private ManagedLightList _lights;
 	private CameraVo _camera;
 	
@@ -31,6 +29,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
 
 	private ISceneController _sceneController;
 	
+	private Object3dContainer mObject3dContainer;
 
 	public Scene(ISceneController $sceneController) 
 	{
@@ -41,6 +40,10 @@ public class Scene implements IObject3dContainer, IDirtyParent
 		_fogFar = 10;
 		_fogType = FogType.LINEAR;
 		_fogEnabled = false;
+
+        mObject3dContainer = new Object3dContainer();
+        mObject3dContainer.name("Root");
+        mObject3dContainer.scene(this);
 	}
 
 	/**
@@ -68,7 +71,9 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	{
 		clearChildren(this);
 
-		_children = new ArrayList<Object3d>();
+        mObject3dContainer = new Object3dContainer();
+        mObject3dContainer.name("Root");
+        mObject3dContainer.scene(this);
 
 		_camera = new CameraVo();
 		
@@ -85,19 +90,12 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	 */
 	public void addChild(Object3d $o)
 	{
-		if (_children.contains($o)) return;
-		
-		_children.add($o);
-		
-		$o.parent(this);
-		$o.scene(this);
+        mObject3dContainer.addChild($o);
 	}
 	
 	public void addChildAt(Object3d $o, int $index)
 	{
-		if (_children.contains($o)) return;
-
-		_children.add($index, $o);
+        mObject3dContainer.addChildAt($o, $index);
 	}
 	
 	/**
@@ -106,25 +104,17 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	 */
 	public boolean removeChild(Object3d $o)
 	{
-		$o.parent(null);
-		$o.scene(null);
-		return _children.remove($o);
+        return mObject3dContainer.removeChild($o);
 	}
 	
 	public Object3d removeChildAt(int $index)
 	{
-		Object3d o = _children.remove($index);
-		
-		if (o != null) {
-			o.parent(null);
-			o.scene(null);
-		}
-		return o;
+        return mObject3dContainer.removeChildAt($index);
 	}
 	
 	public Object3d getChildAt(int $index)
 	{
-		return _children.get($index);
+        return mObject3dContainer.getChildAt($index);
 	}
 	
 	/**
@@ -132,22 +122,23 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	 */
 	public Object3d getChildByName(String $name)
 	{
-		for (int i = 0; i < _children.size(); i++)
-		{
-			if (_children.get(0).name() == $name) return _children.get(0); 
-		}
-		return null;
+        return mObject3dContainer.getChildByName($name);
 	}
 	
 	public int getChildIndexOf(Object3d $o)
 	{
-		return _children.indexOf($o);
+        return mObject3dContainer.getChildIndexOf($o);
 	}
 	
 	public int numChildren()
 	{
-		return _children.size();
+        return mObject3dContainer.numChildren();
 	}
+
+    public Object3dContainer root()
+    {
+        return mObject3dContainer;
+    }
 
 	/**
 	 * Scene's camera
@@ -266,7 +257,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	 */
 	ArrayList<Object3d> children() /*package-private*/ 
 	{
-		return _children;
+        return mObject3dContainer.children();
 	}
 	
 	private void clearChildren(IObject3dContainer $c)

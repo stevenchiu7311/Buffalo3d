@@ -5,6 +5,9 @@ import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
+import java.util.ArrayList;
+
+import min3d.Shared;
 import min3d.vos.Ray;
 
 public class RendererGLSurfaceViewProxy extends GLSurfaceView {
@@ -38,9 +41,9 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
     private void dispatchTouchEventToChild(MotionEvent e) {
         Ray ray = mRenderer.getViewRay(e.getX(), e.getY());
         mRenderer.updateAABBCoord();
-        for (int i = 0; i < mRenderer.getScene().children().size(); i++) {
-            mRenderer.getScene().children().get(i).dispatchTouchEvent(ray ,e);
-        }
+        Object3dContainer root = (Object3dContainer) mRenderer.getScene().root();
+        ArrayList<Object3d> list = (ArrayList<Object3d>)Shared.renderer().getPickedObject(ray, root);
+        root.dispatchTouchEvent(ray ,e, list);
     }
 
     public void setRender(min3d.core.Renderer renderer) {

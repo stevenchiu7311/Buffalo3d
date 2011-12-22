@@ -96,6 +96,13 @@ public class Object3d
     static final int LONG_CLICKABLE = 0x00200000;
 
     /**
+     * Indicates that the view should filter touches when its window is obscured.
+     * Refer to the class comments for more information about this security feature.
+     * {@hide}
+     */
+    static final int FILTER_TOUCHES_WHEN_OBSCURED = 0x00000400;
+
+    /**
      * Indicates a prepressed state;
      * the short time between ACTION_DOWN and recognizing
      * a 'real' press. Prepressed is used to recognize quick taps
@@ -154,8 +161,6 @@ public class Object3d
 
     private List<Object3d> mDownList = null;
     private List<Object3d> mUpList = null;
-
-    private Object3d mMotionTarget = null;
 
     /* Variable for Touch handler */
     UnsetPressedState mUnsetPressedState;
@@ -603,6 +608,10 @@ public class Object3d
 		return clone;
 	}
 
+    public Number3d center() {
+        return mCenter;
+    }
+
     public void containAABB(FloatBuffer[] points) {
         Number3d compVect = new Number3d();
         if (points == null || points.length == 0) {
@@ -823,45 +832,22 @@ public class Object3d
         return true;
     }
 
-    public void dispatchTouchEvent(Ray ray, MotionEvent ev) {
-        ArrayList<Object3d> list =
-            (ArrayList<Object3d>)Shared.renderer().getPickedObject(ray, this);
-
-        boolean hit = (list.size() > 0)?true:false;
-
-        final int action = ev.getAction();
-
-        if (action == MotionEvent.ACTION_DOWN && _isVisible && hit) {
-            mMotionTarget = this;
-        }
-
-        boolean isUpOrCancel = (action == MotionEvent.ACTION_UP)
-                || (action == MotionEvent.ACTION_CANCEL);
-
-        if (mMotionTarget != null) {
-            mMotionTarget.onTouchEvent(ray,ev,list);
-        }
-
-        if (isUpOrCancel) {
-            mMotionTarget = null;
-        }
-
-        if (this instanceof Object3dContainer) {
-            Object3dContainer container = (Object3dContainer) this;
-            for (int i = 0; i < container.children().size(); i++) {
-                Object3d child = container.children().get(i);
-                child.dispatchTouchEvent(ray, ev);
-            }
-        }
-    }
-
-    public boolean onTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
-        if (mOnTouchListener == null && mOnClickListener == null) {
+    public boolean dispatchTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
+        if (!onFilterTouchEventForSecurity(event)) {
             return false;
         }
 
         Number3d coordinates = getIntersectPoint(event.getX(),event.getY(),mCenter.z);
+        if (mOnTouchListener != null && (mViewFlags & ENABLED_MASK) == ENABLED &&
+                mOnTouchListener.onTouch(this, event, list, coordinates)) {
+            return true;
+        }
+        return onTouchEvent(ray, event, list);
+    }
 
+    public boolean onTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
+        Number3d coordinates = getIntersectPoint(event.getX(),event.getY(),mCenter.z);
+        list = (ArrayList<Object3d>)Shared.renderer().getPickedObject(ray, this);
         final int viewFlags = mViewFlags;
 
         if ((viewFlags & ENABLED_MASK) == DISABLED) {
@@ -876,7 +862,9 @@ public class Object3d
         }
 
         if (mOnTouchListener != null) {
-            mOnTouchListener.onTouch(this, event, list, coordinates);
+            if (mOnTouchListener.onTouch(this, event, list, coordinates)) {
+                return true;
+            }
         }
 
         if (((viewFlags & CLICKABLE) == CLICKABLE ||
@@ -1012,7 +1000,6 @@ public class Object3d
 
         return false;
     }
-
 
     public Number3d getIntersectPoint(float x, float y, float z) {
         int w = Shared.renderer().getWidth();
@@ -1323,5 +1310,22 @@ public class Object3d
     protected boolean performButtonActionOnTouchDown(MotionEvent event) {
         // TODO: Button action for touch down.
         return false;
+    }
+
+    /**
+     * Filter the touch event to apply security policies.
+     *
+     * @param event The motion event to be filtered.
+     * @return True if the event should be dispatched, false if the event should be dropped.
+     *
+     * @see #getFilterTouchesWhenObscured
+     */
+    public boolean onFilterTouchEventForSecurity(MotionEvent event) {
+        if ((mViewFlags & FILTER_TOUCHES_WHEN_OBSCURED) != 0
+                && (event.getFlags() & MotionEvent.FLAG_WINDOW_IS_OBSCURED) != 0) {
+            // Window is obscured, drop this touch.
+            return false;
+        }
+        return true;
     }
 }

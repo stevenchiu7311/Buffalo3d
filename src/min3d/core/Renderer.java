@@ -736,10 +736,7 @@ public class Renderer implements GLSurfaceView.Renderer
     }
 
     public void updateAABBCoord() {
-        for (int i = 0; i < _scene.children().size(); i++) {
-            Object3d child = _scene.children().get(i);
-            updateAABBCoordWithRay(child);
-        }
+        updateAABBCoordWithRay(_scene.root());
     }
 
     private void updateAABBCoordWithRay(Object3d node) {

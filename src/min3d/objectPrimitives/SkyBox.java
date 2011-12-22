@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import min3d.Shared;
 import min3d.Utils;
 import min3d.core.Object3dContainer;
+import min3d.listeners.OnTouchListener;
 import min3d.vos.Color4;
 
 public class SkyBox extends Object3dContainer {
@@ -81,8 +82,19 @@ public class SkyBox extends Object3dContainer {
 		addChild(west);
 		addChild(up);
 		addChild(down);
+
+        name(SkyBox.class.getName());
+        for (int i = 0; i < numChildren(); i++) {
+            getChildAt(i).name(SkyBox.class.getName());
+        }
 	}
-	
+
+    public void setOnTouchListener(OnTouchListener listener) {
+        for (int i = 0; i < numChildren(); i++) {
+            getChildAt(i).setOnTouchListener(listener);
+        }
+    }
+
 	public void addTexture(Face face, int resourceId, String id) {
 		Bitmap bitmap = Utils.makeBitmapFromResourceId(resourceId);
 		if (Shared.textureManager().contains(id) == false) {
