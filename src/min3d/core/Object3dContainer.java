@@ -165,7 +165,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 
                 boolean find = false;
                 for (Object3d obj : list) {
-                    find = isAncestorOf(this,obj);
+                    find = contain(this,obj);
                 }
 
                 if (child != null && child.isVisible() && find) {
@@ -192,7 +192,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
         return target.dispatchTouchEvent(ray, ev, list);
     }
 
-    private boolean isAncestorOf(Object3d src, Object3d node) {
+    public boolean contain(Object3d src, Object3d node) {
         if (node.equals(src)) {
             return true;
         }
@@ -200,7 +200,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
             Object3dContainer container = (Object3dContainer) src;
             for (int i = 0; i < container.children().size(); i++) {
                 Object3d child = container.children().get(i);
-                boolean find = isAncestorOf(child,node);
+                boolean find = contain(child,node);
                 if (find) {
                     return true;
                 }

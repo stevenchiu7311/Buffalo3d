@@ -1,5 +1,6 @@
 package min3d.core;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -75,6 +76,24 @@ public class TextureManager
 		return s;
 	}
 
+    public String addTextureId(InputStream input, String $id, boolean $generateMipMap)
+    {
+        if (_idToTextureName.containsKey($id)) throw new Error("Texture id \"" + $id + "\" already exists.");
+
+        int glId = Shared.renderer().uploadTextureAndReturnId(input, $generateMipMap);
+
+        String s = $id;
+        _idToTextureName.put(s, glId);
+        _idToHasMipMap.put(s, $generateMipMap);
+
+        _counter++;
+
+        // For debugging purposes (potentially adds a lot of chatter)
+        // logContents();
+
+        return s;
+    }
+
 	/**
 	 * Alternate signature for "addTextureId", with MIP mapping set to false by default.
 	 * Kept for API backward-compatibility. 
@@ -124,7 +143,7 @@ public class TextureManager
 	 * Used by Renderer
 	 * 
 	 */
-	int getGlTextureId(String $textureId) /*package-private*/
+	public int getGlTextureId(String $textureId) /*package-private*/
 	{
 		return _idToTextureName.get($textureId);
 	}
@@ -132,7 +151,7 @@ public class TextureManager
 	/**
 	 * Used by Renderer
 	 */
-	boolean hasMipMap(String $textureId) /*package-private*/
+	public boolean hasMipMap(String $textureId) /*package-private*/
 	{
 		return _idToHasMipMap.get($textureId);
 	}

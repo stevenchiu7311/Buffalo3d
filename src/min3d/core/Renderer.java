@@ -1,5 +1,7 @@
 package min3d.core;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -20,9 +22,12 @@ import min3d.vos.TextureVo;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.opengl.ETC1Util;
+import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLU;
 import android.opengl.GLUtils;
+import android.opengl.Matrix;
 import android.util.Log;
 
 
@@ -55,6 +60,9 @@ public class Renderer implements GLSurfaceView.Renderer
     private int mWidth = 0;
     private int mHeight = 0;
 
+    protected float[] mProjMatrix = new float[16];
+    protected float[] mVMatrix = new float[16];
+
 	public Renderer(Scene $scene)
 	{
 		_scene = $scene;
@@ -84,35 +92,74 @@ public class Renderer implements GLSurfaceView.Renderer
 	
 	public void onSurfaceChanged(GL10 gl, int w, int h) 
 	{
-		Log.i(Min3d.TAG, "Renderer.onSurfaceChanged()");
-		
-		setGl(gl);
-		_surfaceAspectRatio = (float)w / (float)h;
-		
-		_gl.glViewport(0, 0, w, h);
-		_gl.glMatrixMode(GL10.GL_PROJECTION);
-		_gl.glLoadIdentity();
-		
-		updateViewFrustrum();
+        Log.i(Min3d.TAG, "Renderer.onSurfaceChanged()");
 
-		mWidth = w;
-		mHeight = h;
+        setGl(gl);
+        _surfaceAspectRatio = (float) w / (float) h;
+
+        if (RenderCaps.openGlVersion() == 2.0) {
+            GLES20.glViewport(0, 0, w, h);
+        } else {
+            _gl.glViewport(0, 0, w, h);
+            _gl.glMatrixMode(GL10.GL_PROJECTION);
+            _gl.glLoadIdentity();
+        }
+
+        updateViewFrustrum();
+
+        mWidth = w;
+        mHeight = h;
 	}
 	
 	public void onDrawFrame(GL10 gl)
 	{
-	    // Refresh matrix grabber before update scene raised.
-	    mMg.getCurrentState(gl);
-		// Update 'model'
-		_scene.update();
-		
-		// Update 'view'
-		drawSetup();
-		drawScene();
+        if (RenderCaps.openGlVersion() == 1.1f) {
+            // Refresh matrix grabber before update scene raised.
+            mMg.getCurrentState(gl);
+            mProjMatrix = mMg.mProjection;
+            mVMatrix = mMg.mModelView;
+        }
 
-		if (_logFps) doFps();
+        // Update 'model'
+        _scene.update();
+
+        if (RenderCaps.openGlVersion() == 2.0f) {
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+            GLES20.glClearColor(
+                    (float) _scene.backgroundColor().r() / 255f,
+                    (float) _scene.backgroundColor().g() / 255f,
+                    (float) _scene.backgroundColor().b() / 255f,
+                    (float) _scene.backgroundColor().a() / 255f);
+
+            mVMatrix = getViewMatrix();
+
+            for (int i = 0; i < _scene.children().size(); i++) {
+                Object3d o = _scene.children().get(i);
+                if (o.animationEnabled()) {
+                    ((AnimationObject3d) o).update();
+                }
+                o.render(_scene.camera(), mProjMatrix, mVMatrix);
+            }
+        } else {
+            // Update 'view'
+            drawSetup();
+            drawScene();
+        }
+
+        if (_logFps) doFps();
 	}
-	
+
+    public float[] getViewMatrix() {
+        if (RenderCaps.openGlVersion() == 2.0) {
+            Matrix.setLookAtM(mVMatrix, 0,
+                    _scene.camera().position.x,_scene.camera().position.y,_scene.camera().position.z,
+                    _scene.camera().target.x,_scene.camera().target.y,_scene.camera().target.z,
+                    _scene.camera().upAxis.x,_scene.camera().upAxis.y,_scene.camera().upAxis.z);
+        } else {
+            mVMatrix = mMg.mModelView;
+        }
+        return mVMatrix;
+   }
 	//
 	
 	/**
@@ -571,6 +618,39 @@ public class Renderer implements GLSurfaceView.Renderer
 		return glTextureId;
 	}
 	
+    /**
+     * Used by TextureManager
+     */
+    int uploadTextureAndReturnId(InputStream input, boolean $generateMipMap) /*package-private*/
+    {
+        int glTextureId;
+
+        int[] a = new int[1];
+        _gl.glGenTextures(1, a, 0); // create a 'texture name' and put it in array element 0
+        glTextureId = a[0];
+        _gl.glBindTexture(GL10.GL_TEXTURE_2D, glTextureId);
+
+        if($generateMipMap && _gl instanceof GL11) {
+            _gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
+        } else {
+            _gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_FALSE);
+        }
+
+        try {
+            ETC1Util.loadTexture(GL11.GL_TEXTURE_2D, 0, 0,
+                    GL11.GL_RGB, GLES20.GL_UNSIGNED_SHORT_5_6_5, input);
+        } catch (IOException e) {
+            Log.w("", "Could not load texture: " + e);
+        } finally {
+            try {
+                input.close();
+            } catch (IOException e) {
+                // ignore exception thrown from close.
+            }
+        }
+
+        return glTextureId;
+    }
 
 	/**
 	 * Used by TextureManager
@@ -601,10 +681,14 @@ public class Renderer implements GLSurfaceView.Renderer
 			top *= 1f/_surfaceAspectRatio;
 		}
 		
-		_gl.glMatrixMode(GL10.GL_PROJECTION);
-		_gl.glLoadIdentity();
-		_gl.glFrustumf(lt,rt, btm,top, vf.zNear(), vf.zFar());
-		
+        if (RenderCaps.openGlVersion() == 2.0) {
+            Matrix.frustumM(mProjMatrix, 0, lt, rt, btm, top, vf.zNear(), vf.zFar());
+        } else {
+            _gl.glMatrixMode(GL10.GL_PROJECTION);
+            _gl.glLoadIdentity();
+            _gl.glFrustumf(lt,rt, btm,top, vf.zNear(), vf.zFar());
+        }
+
 		vf.clearDirtyFlag();
 	}
 
@@ -650,6 +734,8 @@ public class Renderer implements GLSurfaceView.Renderer
 		// Reset TextureManager
 		Shared.textureManager().reset();
 
+        if (RenderCaps.openGlVersion() == 2.0) return;
+
 		// Do OpenGL settings which we are using as defaults, or which we will not be changing on-draw
 		
 	    // Explicit depth settings
@@ -691,10 +777,10 @@ public class Renderer implements GLSurfaceView.Renderer
         // view port
         int[] viewport = {0, 0, mWidth, mHeight};
         // far eye point
-        GLU.gluUnProject(x, viewport[3] - y, 1.0f, mMg.mModelView, 0,
-                mMg.mProjection, 0, viewport, 0, eyeFar, 0);
-        GLU.gluUnProject(x, viewport[3] - y, 0.0f, mMg.mModelView, 0,
-                mMg.mProjection, 0, viewport, 0, eyeNear, 0);
+        GLU.gluUnProject(x, viewport[3] - y, 1.0f, mVMatrix, 0,
+                mProjMatrix, 0, viewport, 0, eyeFar, 0);
+        GLU.gluUnProject(x, viewport[3] - y, 0.0f, mVMatrix, 0,
+                mProjMatrix, 0, viewport, 0, eyeNear, 0);
 
         if (eyeFar[3] != 0) {
             eyeFar[0] = eyeFar[0] / eyeFar[3];
@@ -765,8 +851,9 @@ public class Renderer implements GLSurfaceView.Renderer
         float distance = _scene.camera().position.z + depth;
         float winZ = (1.0f / vf.zNear() - 1.0f / distance)
                 / (1.0f / vf.zNear() - 1.0f / vf.zFar());
-        GLU.gluUnProject(viewport[2], 0, winZ, mMg.mModelView, 0,
-                mMg.mProjection, 0, viewport, 0, eye, 0);
+        mVMatrix = getViewMatrix();
+        GLU.gluUnProject(viewport[2], 0, winZ, mVMatrix, 0,
+                mProjMatrix, 0, viewport, 0, eye, 0);
         if (eye[3] != 0) {
             size[0] = Math.abs(eye[0] / eye[3] * 2);
             size[1] = Math.abs(eye[1] / eye[3] * 2);

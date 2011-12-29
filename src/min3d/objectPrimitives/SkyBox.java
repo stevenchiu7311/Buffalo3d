@@ -1,6 +1,9 @@
 package min3d.objectPrimitives;
 
 import android.graphics.Bitmap;
+
+import java.io.InputStream;
+
 import min3d.Shared;
 import min3d.Utils;
 import min3d.core.Object3dContainer;
@@ -104,6 +107,14 @@ public class SkyBox extends Object3dContainer {
 		addTexture(face, bitmap, id);
 	}
 	
+    public void addTextureETC1(Face face, int resourceId, String id) {
+        InputStream input = Shared.context().getResources().openRawResource(resourceId);
+        if (Shared.textureManager().contains(id) == false) {
+            Shared.textureManager().addTextureId(input, id, false);
+        }
+        addTexture(face, null, id);
+    }
+
 	public void addTexture(Face face, Bitmap bitmap, String id) {
 		if(face == Face.All)
 		{

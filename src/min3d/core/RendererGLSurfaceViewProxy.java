@@ -2,6 +2,7 @@ package min3d.core;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
@@ -11,15 +12,29 @@ import min3d.Shared;
 import min3d.vos.Ray;
 
 public class RendererGLSurfaceViewProxy extends GLSurfaceView {
+    static final public int CURRENT_SDK_INT = Build.VERSION.SDK_INT;
 
     protected min3d.core.Renderer mRenderer;
+    protected MultisampleConfigChooser mConfigChooser = null;
 
     public RendererGLSurfaceViewProxy(Context context) {
         super(context);
+        int version = CURRENT_SDK_INT;
+        if (version >= Build.VERSION_CODES.FROYO) {
+            setEGLContextClientVersion(2);
+            // Create an OpenGL ES 2.0 context.
+            setEGLConfigChooser(mConfigChooser = new MultisampleConfigChooser());
+        }
     }
 
     public RendererGLSurfaceViewProxy(Context context, AttributeSet attrs) {
         super(context, attrs);
+        int version = CURRENT_SDK_INT;
+        if (version >= Build.VERSION_CODES.FROYO) {
+            setEGLContextClientVersion(2);
+            // Create an OpenGL ES 2.0 context.
+            setEGLConfigChooser(mConfigChooser = new MultisampleConfigChooser());
+        }
     }
 
     @Override

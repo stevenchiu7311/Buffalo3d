@@ -35,9 +35,8 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
 
         glSurfaceViewConfig();
         setRenderer(mRenderer);
-        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        renderContinuously(true);
         setGLWrapper(new GLSurfaceView.GLWrapper() {
-            @Override
             public GL wrap(GL gl) {
                 return new MatrixTrackingGL(gl);
             }

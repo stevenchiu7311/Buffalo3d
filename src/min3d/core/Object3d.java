@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.opengl.GLES20;
 import android.opengl.GLU;
 import android.opengl.Matrix;
 import android.os.Handler;
@@ -18,6 +19,9 @@ import min3d.interfaces.IObject3dContainer;
 import min3d.listeners.OnClickListener;
 import min3d.listeners.OnLongClickListener;
 import min3d.listeners.OnTouchListener;
+import min3d.materials.AMaterial;
+import min3d.materials.SimpleMaterial;
+import min3d.vos.CameraVo;
 import min3d.vos.Color4;
 import min3d.vos.FrustumManaged;
 import min3d.vos.Number3d;
@@ -120,10 +124,12 @@ public class Object3d
 	private boolean _ignoreFaces = false;
 	private boolean _colorMaterialEnabled = false;
 	private boolean _lightingEnabled = true;
+	private boolean mTransparent = true;
+	private boolean mForcedDepth = true;
 
-	private Number3d _position = new Number3d(0,0,0);
-	private Number3d _rotation = new Number3d(0,0,0);
-	private Number3d _scale = new Number3d(1,1,1);
+	private Number3d mPosition = new Number3d(0,0,0);
+	private Number3d mRotation = new Number3d(0,0,0);
+	private Number3d mScale = new Number3d(1,1,1);
 
 	private Color4 _defaultColor = new Color4();
 	
@@ -172,6 +178,19 @@ public class Object3d
     int mPrivateFlags;
     int mWindowAttachCount;
     boolean mHasPerformedLongPress;
+
+    /* Variable for ES 2.0 */
+    float[] mMVPMatrix = new float[16];
+    float[] mMMatrix = new float[16];
+    float[] mProjMatrix;
+
+    float[] mScaleMatrix = new float[16];
+    float[] mTranslateMatrix = new float[16];
+    float[] mRotateMatrix = new float[16];
+    float[] mRotateMatrixTmp = new float[16];
+    float[] mTmpMatrix = new float[16];
+
+    AMaterial mMaterial;
 
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
@@ -459,7 +478,7 @@ public class Object3d
 	 */
 	public Number3d position()
 	{
-		return _position;
+		return mPosition;
 	}
 	
 	/**
@@ -468,7 +487,7 @@ public class Object3d
 	 */
 	public Number3d rotation()
 	{
-		return _rotation;
+		return mRotation;
 	}
 
 	/**
@@ -476,7 +495,7 @@ public class Object3d
 	 */
 	public Number3d scale()
 	{
-		return _scale;
+		return mScale;
 	}
 	
 	/**
@@ -612,6 +631,154 @@ public class Object3d
         return mCenter;
     }
 
+    public boolean transparentEnabled() {
+        return mTransparent;
+    }
+
+    public void transparentEnabled(Boolean transparent) {
+        mTransparent = transparent;
+    }
+
+    public boolean depthEnabled() {
+        return mForcedDepth;
+    }
+
+    public void forceDepthEnabled(Boolean forceDepth) {
+        mForcedDepth = forceDepth;
+    }
+
+    public void render(CameraVo camera, float[] projMatrix, float[] vMatrix) {
+        render(camera, projMatrix, vMatrix, null);
+    }
+
+    public void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
+        if (isVisible() == false) return;
+
+        if (mMaterial == null) {
+            mMaterial = new SimpleMaterial();
+        }
+        if(true) {
+            mProjMatrix = projMatrix;
+            if (doubleSidedEnabled()) {
+                GLES20.glDisable(GL10.GL_CULL_FACE);
+            } else {
+                GLES20.glEnable(GL10.GL_CULL_FACE);
+            }
+
+            if(mTransparent) {
+                GLES20.glEnable(GLES20.GL_BLEND);
+                GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+            }
+
+            if (mForcedDepth) {
+                GLES20.glEnable(GL10.GL_DEPTH_TEST);
+                GLES20.glClearDepthf(1.0f);
+                GLES20.glDepthFunc(GL10.GL_LESS);
+                GLES20.glDepthRangef(0, 1f);
+                GLES20.glDepthMask(true);
+            }
+
+            mMaterial.useProgram();
+            mMaterial.bindTextures(this);
+            mMaterial.setCamera(camera);
+            mMaterial.setVertices(_vertices.points().buffer());
+            if (_vertices.uvs() != null) {
+                mMaterial.setTextureCoords(_vertices.uvs().buffer());
+            }
+            if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
+                mMaterial.setColors(_vertices.colors().buffer());
+            } else {
+                mMaterial.setColors(defaultColor());
+            }
+            if (hasNormals() && normalsEnabled() && _vertices.normals() != null) {
+                mMaterial.setNormals(_vertices.normals().buffer());
+            }
+            setShaderParams();
+        }
+
+        //doTransformations();
+
+        Matrix.setIdentityM(mMMatrix, 0);
+
+        Matrix.setIdentityM(mTranslateMatrix, 0);
+        Matrix.translateM(mTranslateMatrix, 0, mPosition.x, mPosition.y, mPosition.z);
+
+        Matrix.setIdentityM(mScaleMatrix, 0);
+        Matrix.scaleM(mScaleMatrix, 0, mScale.x, mScale.y, mScale.z);
+
+        Matrix.setIdentityM(mRotateMatrix, 0);
+
+        rotateM(mRotateMatrix, 0, mRotation.x, 1.0f, 0.0f, 0.0f);
+        rotateM(mRotateMatrix, 0, mRotation.y, 0.0f, 1.0f, 0.0f);
+        rotateM(mRotateMatrix, 0, mRotation.z, 0.0f, 0.0f, 1.0f);
+
+        System.arraycopy(mTranslateMatrix, 0, mMMatrix, 0, 16);
+        Matrix.setIdentityM(mTmpMatrix, 0);
+        Matrix.multiplyMM(mTmpMatrix, 0, mMMatrix, 0, mScaleMatrix, 0);
+        Matrix.multiplyMM(mMMatrix, 0, mTmpMatrix, 0, mRotateMatrix, 0);
+        if(parentMatrix != null)
+        {
+            Matrix.multiplyMM(mTmpMatrix, 0, parentMatrix, 0, mMMatrix, 0);
+            System.arraycopy(mTmpMatrix, 0, mMMatrix, 0, 16);
+        }
+        Matrix.multiplyMM(mMVPMatrix, 0, vMatrix, 0, mMMatrix, 0);
+        Matrix.multiplyMM(mMVPMatrix, 0, projMatrix, 0, mMVPMatrix, 0);
+
+        if(true) {
+            mMaterial.setMVPMatrix(mMVPMatrix);
+            mMaterial.setModelMatrix(mMMatrix);
+            mMaterial.setViewMatrix(vMatrix);
+
+            vertices().points().buffer().position(0);
+            if (!ignoreFaces()) {
+                int pos, len;
+
+                if (! faces().renderSubsetEnabled()) {
+                    pos = 0;
+                    len = faces().size();
+                }
+                else {
+                    pos = faces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
+                    len = faces().renderSubsetLength();
+                }
+
+                faces().buffer().position(pos);
+
+                GLES20.glDrawElements(
+                        renderType().glValue(),
+                        len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
+                        GLES20.GL_UNSIGNED_SHORT,
+                        faces().buffer());
+                GLES20.glDisable(GLES20.GL_BLEND);
+                GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+            } else {
+                GLES20.glDrawArrays(renderType().glValue(), 0, vertices().size());
+            }
+        }
+
+        if (this instanceof Object3dContainer)
+        {
+            Object3dContainer container = (Object3dContainer)this;
+
+            for (int i = 0; i < container.children().size(); i++)
+            {
+                Object3d o = container.children().get(i);
+                o.render(camera, projMatrix, vMatrix, mMMatrix);
+            }
+        }
+    }
+
+    protected void rotateM(float[] m, int mOffset, float a, float x, float y, float z) {
+        Matrix.setIdentityM(mRotateMatrixTmp, 0);
+        Matrix.setRotateM(mRotateMatrixTmp, 0, a, x, y, z);
+        System.arraycopy(m, 0, mTmpMatrix, 0, 16);
+        Matrix.multiplyMM(m, mOffset, mTmpMatrix, mOffset, mRotateMatrixTmp, 0);
+    }
+
+    protected void setShaderParams() {
+        //mMaterial.setLight(mLight);
+    };
+
     public void containAABB(FloatBuffer[] points) {
         Number3d compVect = new Number3d();
         if (points == null || points.length == 0) {
@@ -673,16 +840,16 @@ public class Object3d
 
     private void calcAABBPos() {
         Matrix.setIdentityM(mTransMC, 0);
-        Matrix.translateM(mTransMC, 0, _position.x, _position.y, _position.z);
+        Matrix.translateM(mTransMC, 0, mPosition.x, mPosition.y, mPosition.z);
 
         Matrix.setIdentityM(mRotMC, 0);
 
-        Matrix.rotateM(mRotMC, 0, _rotation.x, 1, 0, 0);
-        Matrix.rotateM(mRotMC, 0, _rotation.y, 0, 1, 0);
-        Matrix.rotateM(mRotMC, 0, _rotation.z, 0, 0, 1);
+        Matrix.rotateM(mRotMC, 0, mRotation.x, 1, 0, 0);
+        Matrix.rotateM(mRotMC, 0, mRotation.y, 0, 1, 0);
+        Matrix.rotateM(mRotMC, 0, mRotation.z, 0, 0, 1);
 
         Matrix.setIdentityM(mScaleMC, 0);
-        Matrix.scaleM(mScaleMC, 0, _scale.x, _scale.y, _scale.z);
+        Matrix.scaleM(mScaleMC, 0, mScale.x, mScale.y, mScale.z);
 
         float[] result = new float[4];
         result[0] = mCenter.x;
@@ -705,8 +872,8 @@ public class Object3d
         result[2] = mExtent.z;
         result[3] = 1;
 
-        Number3d accmlR = new Number3d(_rotation.x, _rotation.y, _rotation.z);
-        Number3d accmlS = new Number3d(_scale.x, _scale.y, _scale.z);
+        Number3d accmlR = new Number3d(mRotation.x, mRotation.y, mRotation.z);
+        Number3d accmlS = new Number3d(mScale.x, mScale.y, mScale.z);
 
         if (_parent != null && _parent instanceof Object3d) {
             accmlAABBTrans((Object3d) parent(), ROTATE, accmlR);

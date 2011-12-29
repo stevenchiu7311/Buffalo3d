@@ -68,7 +68,6 @@ public class RendererActivity extends Activity implements ISceneController
 		_glSurfaceView.setGLWrapper(
                 new GLSurfaceView.GLWrapper()
                 {
-                    @Override
                     public GL wrap(GL gl) { return new MatrixTrackingGL(gl); }
                 });
         onCreateSetContentView();

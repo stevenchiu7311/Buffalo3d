@@ -13,6 +13,7 @@ import min3d.Shared;
 import min3d.Utils;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
+import min3d.vos.TextureVo;
 
 /**
  * Note how each 'face' (quad) of the box uses its own set of 4 vertices each,
@@ -95,9 +96,12 @@ public class TextObject extends Object3dContainer {
         if (Shared.textureManager().contains(this.toString())) {
             Shared.textureManager().deleteTexture(this.toString());
         }
-        Shared.textureManager().addTextureId(bitmap, this.toString(), true);
+        Shared.textureManager().addTextureId(bitmap, this.toString(), false);
+        TextureVo textureText = new TextureVo(this.toString());
+        textureText.repeatU = false;
+        textureText.repeatV = false;
         this.textures().removeAll();
-        this.textures().addById(this.toString());
+        this.textures().add(textureText);
         //saveBitmap(bitmap, "/data/data/min3d.sampleProject1/test.png", "test");
         bitmap.recycle();
         createVertices();
