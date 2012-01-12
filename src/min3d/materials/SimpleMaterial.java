@@ -14,7 +14,7 @@ public class SimpleMaterial extends AMaterial {
 		"void main() {\n" +
 		"	gl_Position = uMVPMatrix * aPosition;\n" +
 		"	vTextureCoord = aTextureCoord;\n" +
-		"	vColor = aColor;\n" +
+		"	vColor = (aColor / 255.0);\n" +
 		"}\n";
 
 	protected static final String mFShader =
@@ -28,6 +28,7 @@ public class SimpleMaterial extends AMaterial {
 
 		"void main() {\n" +
 		"	gl_FragColor = uUseTexture ? texture2D(uTexture0, vTextureCoord) : vColor;\n" +
+		"   gl_FragColor.a *= vColor.a;\n" +
 		"}\n";
 
 	public SimpleMaterial() {

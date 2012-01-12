@@ -8,7 +8,7 @@ public class Rectangle extends Object3dContainer
 {
 	public Rectangle(float $width, float $height, int $segsW, int $segsH)
 	{
-		this($width, $height, $segsW, $segsH, new Color4(255, 0, 0, 255));
+		this($width, $height, $segsW, $segsH, new Color4());
 	}
 	
 	public Rectangle(float $width, float $height, int $segsW, int $segsH, Color4 color)

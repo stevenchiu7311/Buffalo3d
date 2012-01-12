@@ -143,6 +143,7 @@ public class Object3d
 	protected ArrayList<Object3d> _children;
 	
 	protected Vertices _vertices; 
+    protected Color4BufferList mColors;
 	protected TextureList _textures;
 	protected FacesBufferedList _faces;
 
@@ -469,9 +470,19 @@ public class Object3d
 		return _defaultColor;
 	}
 	
-	public void defaultColor(Color4 color) {
-		_defaultColor = color;
-	}
+    public void defaultColor(Color4 color) {
+        _defaultColor = color;
+        if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
+            for (int i = 0; i < _vertices.capacity(); i++) {
+                _vertices.colors().set(i, color);
+            }
+        } else {
+            mColors = new Color4BufferList(_vertices.capacity());
+            for (int i = 0; i < _vertices.capacity(); i++) {
+                mColors.set(i, color);
+            }
+        }
+    }
 
 	/**
 	 * X/Y/Z position of object. 
@@ -688,7 +699,11 @@ public class Object3d
             if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
                 mMaterial.setColors(_vertices.colors().buffer());
             } else {
-                mMaterial.setColors(defaultColor());
+                if (mColors != null) {
+                    mMaterial.setColors(mColors.buffer());
+                } else {
+                    mMaterial.setColors(defaultColor());
+                }
             }
             if (hasNormals() && normalsEnabled() && _vertices.normals() != null) {
                 mMaterial.setNormals(_vertices.normals().buffer());
