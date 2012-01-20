@@ -12,6 +12,7 @@ import javax.microedition.khronos.opengles.GL11;
 import min3d.Min3d;
 import min3d.Shared;
 import min3d.animation.AnimationObject3d;
+import min3d.core.Object3d.VBO_ID;
 import min3d.vos.FrustumManaged;
 import min3d.vos.Light;
 import min3d.vos.Number3d;
@@ -23,6 +24,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.opengl.ETC1Util;
+import android.opengl.GLES11;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLU;
@@ -358,20 +360,30 @@ public class Renderer implements GLSurfaceView.Renderer
 
 	protected void drawObject(Object3d $o)
 	{
-		if ($o.isVisible() == false) return;		
+        if ($o.isVisible() == false) return;
+
+        if (!$o.mBuffered) {
+            $o.makeVertextBufferObject();
+            $o.mBuffered = true;
+        }
 
 		// Various per-object settings:
 		
-		// Normals
+        // Normals
 
-		if ($o.hasNormals() && $o.normalsEnabled()) {
-			$o.vertices().normals().buffer().position(0);
-			_gl.glNormalPointer(GL10.GL_FLOAT, 0, $o.vertices().normals().buffer());
-			_gl.glEnableClientState(GL10.GL_NORMAL_ARRAY);
-		}
-		else {
-			_gl.glDisableClientState(GL10.GL_NORMAL_ARRAY);
-		}
+        if ($o.hasNormals() && $o.normalsEnabled()) {
+            if ($o.vertexBufferObjectEnabled()) {
+                GLES11.glBindBuffer(GL11.GL_ARRAY_BUFFER, $o.mBuffers[VBO_ID.NORMAL.ordinal()]);
+                GLES11.glNormalPointer(GL10.GL_FLOAT, 0, 0);
+            } else {
+                $o.vertices().normals().buffer().position(0);
+                _gl.glNormalPointer(GL10.GL_FLOAT, 0, $o.vertices().normals().buffer());
+            }
+            _gl.glEnableClientState(GL10.GL_NORMAL_ARRAY);
+        }
+        else {
+            _gl.glDisableClientState(GL10.GL_NORMAL_ARRAY);
+        }
 		
 		// Is lighting enabled for object...
 		
@@ -403,22 +415,27 @@ public class Renderer implements GLSurfaceView.Renderer
 			_gl.glShadeModel($o.shadeModel().glConstant());
 		}
 		
-		// Colors: either per-vertex, or per-object
+        // Colors: either per-vertex, or per-object
 
-		if ($o.hasVertexColors() && $o.vertexColorsEnabled()) {
-			$o.vertices().colors().buffer().position(0);
-			_gl.glColorPointer(4, GL10.GL_UNSIGNED_BYTE, 0, $o.vertices().colors().buffer());
-			_gl.glEnableClientState(GL10.GL_COLOR_ARRAY); 
-		}
-		else {
-			_gl.glColor4f(
-				(float)$o.defaultColor().r / 255f, 
-				(float)$o.defaultColor().g / 255f, 
-				(float)$o.defaultColor().b / 255f, 
-				(float)$o.defaultColor().a / 255f
-			);
-			_gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
-		}
+        if ($o.hasVertexColors() && $o.vertexColorsEnabled()) {
+            if ($o.vertexBufferObjectEnabled()) {
+                GLES11.glBindBuffer(GL11.GL_ARRAY_BUFFER, $o.mBuffers[VBO_ID.COLOR.ordinal()]);
+                GLES11.glColorPointer(4, GL10.GL_UNSIGNED_BYTE, 0, 0);
+            } else {
+                $o.vertices().colors().buffer().position(0);
+                _gl.glColorPointer(4, GL10.GL_UNSIGNED_BYTE, 0, $o.vertices().colors().buffer());
+            }
+            _gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
+        }
+        else {
+            _gl.glColor4f(
+                (float)$o.defaultColor().r / 255f,
+                (float)$o.defaultColor().g / 255f,
+                (float)$o.defaultColor().b / 255f,
+                (float)$o.defaultColor().a / 255f
+            );
+            _gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
+        }
 		
 		// Colormaterial
 		
@@ -480,37 +497,52 @@ public class Renderer implements GLSurfaceView.Renderer
 		
 		_gl.glScalef($o.scale().x, $o.scale().y, $o.scale().z);
 		
-		// Draw
+        // Draw
 
-		$o.vertices().points().buffer().position(0);
-		_gl.glVertexPointer(3, GL10.GL_FLOAT, 0, $o.vertices().points().buffer());
+        if ($o.vertexBufferObjectEnabled()) {
+            GLES11.glBindBuffer(GL11.GL_ARRAY_BUFFER, $o.mBuffers[VBO_ID.POINT.ordinal()]);
+            GLES11.glVertexPointer(3, GL10.GL_FLOAT, 0, 0);
+        } else {
+            $o.vertices().points().buffer().position(0);
+            _gl.glVertexPointer(3, GL10.GL_FLOAT, 0, $o.vertices().points().buffer());
+        }
 
-		if (! $o.ignoreFaces())
-		{
-			int pos, len;
-			
-			if (! $o.faces().renderSubsetEnabled()) {
-				pos = 0;
-				len = $o.faces().size();
-			}
-			else {
-				pos = $o.faces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
-				len = $o.faces().renderSubsetLength();
-			}
+        if (! $o.ignoreFaces())
+        {
+            int pos, len;
 
-			$o.faces().buffer().position(pos);
+            if (! $o.faces().renderSubsetEnabled()) {
+                pos = 0;
+                len = $o.faces().size();
+            }
+            else {
+                pos = $o.faces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
+                len = $o.faces().renderSubsetLength();
+            }
 
-			_gl.glDrawElements(
-					$o.renderType().glValue(),
-					len * FacesBufferedList.PROPERTIES_PER_ELEMENT, 
-					GL10.GL_UNSIGNED_SHORT, 
-					$o.faces().buffer());
-		}
-		else
-		{
-			_gl.glDrawArrays($o.renderType().glValue(), 0, $o.vertices().size());
-		}
-		
+            if ($o.mVertexBufferObject) {
+                GLES11.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, $o.mBuffers[VBO_ID.FACE.ordinal()]);
+                GLES11.glDrawElements(
+                        $o.renderType().glValue(),
+                        len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
+                        GL10.GL_UNSIGNED_SHORT,
+                        pos);
+            } else {
+                $o.faces().buffer().position(pos);
+                _gl.glDrawElements(
+                        $o.renderType().glValue(),
+                        len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
+                        GL10.GL_UNSIGNED_SHORT,
+                        $o.faces().buffer());
+            }
+        }
+        else
+        {
+            _gl.glDrawArrays($o.renderType().glValue(), 0, $o.vertices().size());
+        }
+
+		GLES11.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+
 		//
 		// Recurse on children
 		//
@@ -542,8 +574,14 @@ public class Renderer implements GLSurfaceView.Renderer
 
 			if ($o.hasUvs() && $o.texturesEnabled())
 			{
-				$o.vertices().uvs().buffer().position(0);
-				_gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, $o.vertices().uvs().buffer());
+                if ($o.vertexBufferObjectEnabled()) {
+                    GLES11.glBindBuffer(GL11.GL_ARRAY_BUFFER, $o.mBuffers[VBO_ID.UV.ordinal()]);
+                    GLES11.glTexCoordPointer(2, GL10.GL_FLOAT, 0, 0);
+                } else {
+                    $o.vertices().uvs().buffer().position(0);
+                    _gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, $o.vertices().uvs().buffer());
+                }
+
 
 				TextureVo textureVo = ((i < $o.textures().size())) ? textureVo = $o.textures().get(i) : null;
 
@@ -737,20 +775,19 @@ public class Renderer implements GLSurfaceView.Renderer
         if (RenderCaps.openGlVersion() == 2.0) return;
 
 		// Do OpenGL settings which we are using as defaults, or which we will not be changing on-draw
-		
-	    // Explicit depth settings
-		_gl.glEnable(GL10.GL_DEPTH_TEST);									
-		_gl.glClearDepthf(1.0f);
-		_gl.glDepthFunc(GL10.GL_LESS);										
-		_gl.glDepthRangef(0,1f);											
-		_gl.glDepthMask(true);												
 
-		// Alpha enabled
-		_gl.glEnable(GL10.GL_BLEND);										
-		_gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA); 	
-		
-		// "Transparency is best implemented using glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) 
-		// with primitives sorted from farthest to nearest."
+        // Explicit depth settings
+        _gl.glEnable(GL10.GL_DEPTH_TEST);
+        _gl.glClearDepthf(1.0f);
+        _gl.glDepthFunc(GL10.GL_LESS);
+        _gl.glDepthRangef(0,1f);
+        _gl.glDepthMask(true);
+
+        // Alpha enabled
+        _gl.glEnable(GL10.GL_BLEND);
+        _gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+
+        // "Transparency is best implemented using glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 		// Texture
 		_gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST); // (OpenGL default is GL_NEAREST_MIPMAP)

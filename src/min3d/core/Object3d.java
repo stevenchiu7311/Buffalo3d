@@ -106,6 +106,8 @@ public class Object3d
      */
     static final int FILTER_TOUCHES_WHEN_OBSCURED = 0x00000400;
 
+    public enum VBO_ID {POINT,UV,COLOR,NORMAL,FACE,TOTAL};
+
     /**
      * Indicates a prepressed state;
      * the short time between ACTION_DOWN and recognizing
@@ -192,6 +194,10 @@ public class Object3d
     float[] mTmpMatrix = new float[16];
 
     AMaterial mMaterial;
+
+    boolean mVertexBufferObject = true;
+    boolean mBuffered = !mVertexBufferObject;
+    int mBuffers[] = {0,0,0,0,0};
 
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
@@ -650,12 +656,25 @@ public class Object3d
         mTransparent = transparent;
     }
 
-    public boolean depthEnabled() {
+    public boolean forcedDepthEnabled() {
         return mForcedDepth;
     }
 
-    public void forceDepthEnabled(Boolean forceDepth) {
-        mForcedDepth = forceDepth;
+    public void forcedDepthEnabled(Boolean forcedDepth) {
+        mForcedDepth = forcedDepth;
+    }
+
+    public boolean vertexBufferObjectEnabled() {
+        return mVertexBufferObject;
+    }
+
+    // hide
+    private void vertexBufferObjectEnabled(Boolean vertexBufferObject) {
+        mVertexBufferObject = vertexBufferObject;
+        mBuffered = !mVertexBufferObject;
+        if (!vertexBufferObject) {
+            GLES20.glDeleteBuffers(VBO_ID.TOTAL.ordinal(), mBuffers, 0);
+        }
     }
 
     public void render(CameraVo camera, float[] projMatrix, float[] vMatrix) {
@@ -663,53 +682,83 @@ public class Object3d
     }
 
     public void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
-        if (isVisible() == false) return;
+        if (!isVisible()) return;
 
         if (mMaterial == null) {
             mMaterial = new SimpleMaterial();
         }
-        if(true) {
-            mProjMatrix = projMatrix;
-            if (doubleSidedEnabled()) {
-                GLES20.glDisable(GL10.GL_CULL_FACE);
-            } else {
-                GLES20.glEnable(GL10.GL_CULL_FACE);
-            }
+        mProjMatrix = projMatrix;
+        if (doubleSidedEnabled()) {
+            GLES20.glDisable(GL10.GL_CULL_FACE);
+        } else {
+            GLES20.glEnable(GL10.GL_CULL_FACE);
+        }
 
-            if(mTransparent) {
-                GLES20.glEnable(GLES20.GL_BLEND);
-                GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-            }
+        if(mTransparent) {
+            GLES20.glEnable(GLES20.GL_BLEND);
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        }
 
-            if (mForcedDepth) {
-                GLES20.glEnable(GL10.GL_DEPTH_TEST);
-                GLES20.glClearDepthf(1.0f);
-                GLES20.glDepthFunc(GL10.GL_LESS);
-                GLES20.glDepthRangef(0, 1f);
-                GLES20.glDepthMask(true);
-            }
+        if (mForcedDepth) {
+            GLES20.glEnable(GL10.GL_DEPTH_TEST);
+            GLES20.glClearDepthf(1.0f);
+            GLES20.glDepthFunc(GL10.GL_LESS);
+            GLES20.glDepthRangef(0, 1f);
+            GLES20.glDepthMask(true);
+        }
 
-            mMaterial.useProgram();
-            mMaterial.bindTextures(this);
-            mMaterial.setCamera(camera);
+        mMaterial.useProgram();
+        mMaterial.bindTextures(this);
+        mMaterial.setCamera(camera);
+
+        if (!mBuffered) {
+            makeVertextBufferObject();
+            mBuffered = true;
+        }
+
+        if (mVertexBufferObject) {
+            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.POINT.ordinal()]);
+            mMaterial.setVertices();
+        } else {
             mMaterial.setVertices(_vertices.points().buffer());
-            if (_vertices.uvs() != null) {
+        }
+
+        if (_vertices.uvs() != null) {
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.UV.ordinal()]);
+                mMaterial.setTextureCoords();
+            } else {
                 mMaterial.setTextureCoords(_vertices.uvs().buffer());
             }
-            if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
-                mMaterial.setColors(_vertices.colors().buffer());
+        }
+
+        if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.COLOR.ordinal()]);
+                mMaterial.setColors();
             } else {
-                if (mColors != null) {
-                    mMaterial.setColors(mColors.buffer());
-                } else {
-                    mMaterial.setColors(defaultColor());
-                }
+                mMaterial.setColors(_vertices.colors().buffer());
             }
-            if (hasNormals() && normalsEnabled() && _vertices.normals() != null) {
+        } else if (mColors != null) {
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.COLOR.ordinal()]);
+                mMaterial.setColors();
+            } else {
+                mMaterial.setColors(mColors.buffer());
+            }
+        } else {
+            mMaterial.setColors(defaultColor());
+        }
+
+        if (hasNormals() && normalsEnabled() && _vertices.normals() != null) {
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.NORMAL.ordinal()]);
+                mMaterial.setNormals();
+            } else {
                 mMaterial.setNormals(_vertices.normals().buffer());
             }
-            setShaderParams();
         }
+        setShaderParams();
 
         //doTransformations();
 
@@ -731,52 +780,56 @@ public class Object3d
         Matrix.setIdentityM(mTmpMatrix, 0);
         Matrix.multiplyMM(mTmpMatrix, 0, mMMatrix, 0, mScaleMatrix, 0);
         Matrix.multiplyMM(mMMatrix, 0, mTmpMatrix, 0, mRotateMatrix, 0);
-        if(parentMatrix != null)
-        {
+        if(parentMatrix != null) {
             Matrix.multiplyMM(mTmpMatrix, 0, parentMatrix, 0, mMMatrix, 0);
             System.arraycopy(mTmpMatrix, 0, mMMatrix, 0, 16);
         }
         Matrix.multiplyMM(mMVPMatrix, 0, vMatrix, 0, mMMatrix, 0);
         Matrix.multiplyMM(mMVPMatrix, 0, projMatrix, 0, mMVPMatrix, 0);
 
-        if(true) {
-            mMaterial.setMVPMatrix(mMVPMatrix);
-            mMaterial.setModelMatrix(mMMatrix);
-            mMaterial.setViewMatrix(vMatrix);
+        mMaterial.setMVPMatrix(mMVPMatrix);
+        mMaterial.setModelMatrix(mMMatrix);
+        mMaterial.setViewMatrix(vMatrix);
 
-            vertices().points().buffer().position(0);
-            if (!ignoreFaces()) {
-                int pos, len;
+        vertices().points().buffer().position(0);
+        if (!ignoreFaces()) {
+            int pos, len;
 
-                if (! faces().renderSubsetEnabled()) {
-                    pos = 0;
-                    len = faces().size();
-                }
-                else {
-                    pos = faces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
-                    len = faces().renderSubsetLength();
-                }
+            if (!faces().renderSubsetEnabled()) {
+                pos = 0;
+                len = faces().size();
+            } else {
+                pos = faces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
+                len = faces().renderSubsetLength();
+            }
 
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, mBuffers[VBO_ID.FACE.ordinal()]);
+                GLES20.glDrawElements(
+                        renderType().glValue(),
+                        len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
+                        GLES20.GL_UNSIGNED_SHORT,
+                        0);
+            } else {
                 faces().buffer().position(pos);
-
                 GLES20.glDrawElements(
                         renderType().glValue(),
                         len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
                         GLES20.GL_UNSIGNED_SHORT,
                         faces().buffer());
-                GLES20.glDisable(GLES20.GL_BLEND);
-                GLES20.glDisable(GLES20.GL_DEPTH_TEST);
-            } else {
-                GLES20.glDrawArrays(renderType().glValue(), 0, vertices().size());
             }
+        } else {
+            GLES20.glDrawArrays(renderType().glValue(), 0, vertices().size());
         }
 
-        if (this instanceof Object3dContainer)
-        {
+        GLES20.glDisable(GLES20.GL_BLEND);
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+
+        if (this instanceof Object3dContainer) {
             Object3dContainer container = (Object3dContainer)this;
 
-            for (int i = 0; i < container.children().size(); i++)
-            {
+            for (int i = 0; i < container.children().size(); i++) {
                 Object3d o = container.children().get(i);
                 o.render(camera, projMatrix, vMatrix, mMMatrix);
             }
@@ -793,6 +846,60 @@ public class Object3d
     protected void setShaderParams() {
         //mMaterial.setLight(mLight);
     };
+
+    public void makeVertextBufferObject() {
+        GLES20.glDeleteBuffers(VBO_ID.TOTAL.ordinal(), mBuffers, 0);
+        GLES20.glGenBuffers(VBO_ID.TOTAL.ordinal(), mBuffers, 0);
+
+        _vertices.points().buffer().position(0);
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.POINT.ordinal()]);
+        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
+                _vertices.points().capacity() * Number3dBufferList.PROPERTIES_PER_ELEMENT * Number3dBufferList.BYTES_PER_PROPERTY,
+                _vertices.points().buffer(),
+                GLES20.GL_STATIC_DRAW);
+
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.UV.ordinal()]);
+        if (_vertices.uvs() != null) {
+            _vertices.uvs().buffer().position(0);
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
+                    _vertices.uvs().capacity() * UvBufferList.PROPERTIES_PER_ELEMENT * UvBufferList.BYTES_PER_PROPERTY,
+                    _vertices.uvs().buffer(),
+                    GLES20.GL_STATIC_DRAW);
+        }
+
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.COLOR.ordinal()]);
+        if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
+            _vertices.colors().buffer().position(0);
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
+                    _vertices.colors().capacity() * Color4BufferList.PROPERTIES_PER_ELEMENT,
+                    _vertices.colors().buffer(),
+                    GLES20.GL_STATIC_DRAW);
+        } else if (mColors != null) {
+            mColors.buffer().position(0);
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
+                    mColors.capacity() * Color4BufferList.PROPERTIES_PER_ELEMENT,
+                    mColors.buffer(),
+                    GLES20.GL_STATIC_DRAW);
+        }
+
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.NORMAL.ordinal()]);
+        if (hasNormals() && normalsEnabled() && _vertices.normals() != null) {
+            _vertices.normals().buffer().position(0);
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
+                    _vertices.normals().capacity() * Number3dBufferList.PROPERTIES_PER_ELEMENT * Number3dBufferList.BYTES_PER_PROPERTY,
+                    _vertices.normals().buffer(),
+                    GLES20.GL_STATIC_DRAW);
+        }
+
+        GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, mBuffers[VBO_ID.FACE.ordinal()]);
+        if (!ignoreFaces()) {
+            _faces.buffer().position(0);
+            GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER,
+                    _faces.capacity() * FacesBufferedList.PROPERTIES_PER_ELEMENT * 2,
+                    _faces.buffer(),
+                    GLES20.GL_STATIC_DRAW);
+        }
+    }
 
     public void containAABB(FloatBuffer[] points) {
         Number3d compVect = new Number3d();

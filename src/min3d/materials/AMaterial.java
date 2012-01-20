@@ -217,9 +217,19 @@ public abstract class AMaterial {
         GLES20.glEnableVertexAttribArray(maPositionHandle);
     }
 
+    public void setVertices() {
+        GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false, 0, 0);
+        GLES20.glEnableVertexAttribArray(maPositionHandle);
+    }
+
     public void setTextureCoords(FloatBuffer textureCoords) {
         textureCoords.position(0);
         GLES20.glVertexAttribPointer(maTextureHandle, 2, GLES20.GL_FLOAT, false, 0, textureCoords);
+        GLES20.glEnableVertexAttribArray(maTextureHandle);
+    }
+
+    public void setTextureCoords() {
+        GLES20.glVertexAttribPointer(maTextureHandle, 2, GLES20.GL_FLOAT, false, 0, 0);
         GLES20.glEnableVertexAttribArray(maTextureHandle);
     }
 
@@ -233,12 +243,20 @@ public abstract class AMaterial {
         GLES20.glVertexAttrib4f(maColorHandle, color.r, color.g, color.b, color.a);
     }
 
+    public void setColors() {
+        GLES20.glVertexAttribPointer(maColorHandle, 4, GLES20.GL_UNSIGNED_BYTE, false, 0, 0);
+        GLES20.glEnableVertexAttribArray(maColorHandle);
+    }
+
     public void setNormals(FloatBuffer normals) {
-        if (maNormalHandle > -1) {
-            normals.position(0);
-            GLES20.glVertexAttribPointer(maNormalHandle, 3, GLES20.GL_FLOAT, false, 0, normals);
-            GLES20.glEnableVertexAttribArray(maNormalHandle);
-        }
+        normals.position(0);
+        GLES20.glVertexAttribPointer(maNormalHandle, 3, GLES20.GL_FLOAT, false, 0, normals);
+        GLES20.glEnableVertexAttribArray(maNormalHandle);
+    }
+
+    public void setNormals() {
+        GLES20.glVertexAttribPointer(maNormalHandle, 3, GLES20.GL_FLOAT, false, 0, 0);
+        GLES20.glEnableVertexAttribArray(maNormalHandle);
     }
 
     public void setMVPMatrix(float[] mvpMatrix) {
