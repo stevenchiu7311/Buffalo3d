@@ -129,6 +129,25 @@ public class Number3d
 	}
 	
 	//
+    public static void add(Number3d r, Number3d a, Number3d b)
+    {
+        r.setAll(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
+
+    public static void subtract(Number3d r, Number3d a, Number3d b)
+    {
+        r.setAll(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
+    public static void multiply(Number3d r, Number3d a, Number3d b)
+    {
+        r.setAll(a.x * b.x, a.y * b.y, a.z * b.z);
+    }
+
+    public static void cross(Number3d r, Number3d v, Number3d w)
+    {
+        r.setAll((w.y * v.z) - (w.z * v.y), (w.z * v.x) - (w.x * v.z), (w.x * v.y) - (w.y * v.x));
+    }
 
 	public static Number3d add(Number3d a, Number3d b)
 	{

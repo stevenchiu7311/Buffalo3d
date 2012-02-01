@@ -850,9 +850,11 @@ public class Renderer implements GLSurfaceView.Renderer
 
         if (node instanceof Object3dContainer) {
             Object3dContainer container = (Object3dContainer) node;
-            for (int i = 0; i < container.children().size(); i++) {
-                Object3d child = container.children().get(i);
-                detectIntersectedObject(ray, child, list);
+            synchronized (container) {
+                for (int i = 0; i < container.children().size(); i++) {
+                    Object3d child = container.children().get(i);
+                    detectIntersectedObject(ray, child, list);
+                }
             }
         }
         return list;
@@ -867,15 +869,15 @@ public class Renderer implements GLSurfaceView.Renderer
             return;
         }
 
-        FloatBuffer[] buffer = new FloatBuffer[1];
-        buffer[0] = node.vertices().points().buffer();
-        node.containAABB(buffer);
+        node.containAABB();
 
         if (node instanceof Object3dContainer) {
             Object3dContainer container = (Object3dContainer) node;
-            for (int i = 0; i < container.children().size(); i++) {
-                Object3d child = container.children().get(i);
-                updateAABBCoordWithRay(child);
+            synchronized (container) {
+                for (int i = 0; i < container.children().size(); i++) {
+                    Object3d child = container.children().get(i);
+                    updateAABBCoordWithRay(child);
+                }
             }
         }
     }

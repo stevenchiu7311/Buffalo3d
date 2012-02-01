@@ -60,16 +60,18 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		$o.scene(Shared.renderer().getScene());
 	}
 
-	public boolean removeChild(Object3d $o)
-	{
-		boolean b = _children.remove($o);
-		
-		if (b) {
-			$o.parent(null);
-			$o.scene(null);
-		}
-		return b;
-	}
+    public boolean removeChild(Object3d $o) {
+        boolean b;
+        synchronized (this) {
+            b = _children.remove($o);
+
+            if (b) {
+                $o.parent(null);
+                $o.scene(null);
+            }
+        }
+        return b;
+    }
 	
 	public Object3d removeChildAt(int $index) 
 	{

@@ -154,24 +154,9 @@ public class Object3d
 	private Scene _scene;
 	private IObject3dContainer _parent;
 
-    private Number3d mCenter = new Number3d();
-    private Number3d mExtent = new Number3d();
-
-    private float[] mRotMC = new float[16];
-    private float[] mTransMC = new float[16];
-    private float[] mScaleMC = new float[16];
-
-    private float[] mRotMExt = new float[16];
-    private float[] mScaleMExt = new float[16];
-
-    private OnTouchListener mOnTouchListener;
-    private OnClickListener mOnClickListener;
-    private OnLongClickListener mOnLongClickListener;
-
-    private List<Object3d> mDownList = null;
-    private List<Object3d> mUpList = null;
-
     /* Variable for Touch handler */
+    List<Object3d> mDownList = null;
+    List<Object3d> mUpList = null;
     UnsetPressedState mUnsetPressedState;
     Handler mHandler = null;
     CheckForLongPress mPendingCheckForLongPress;
@@ -181,6 +166,44 @@ public class Object3d
     int mPrivateFlags;
     int mWindowAttachCount;
     boolean mHasPerformedLongPress;
+    OnTouchListener mOnTouchListener;
+    OnClickListener mOnClickListener;
+    OnLongClickListener mOnLongClickListener;
+
+    /* For vertex buffer object */
+    boolean mVertexBufferObject = true;
+    boolean mBuffered = !mVertexBufferObject;
+    int mBuffers[] = {0,0,0,0,0};
+
+    /* For Bounding box */
+    Number3d mCenter = new Number3d();
+    Number3d mExtent = new Number3d();
+
+    float[] mRotMC = new float[16];
+    float[] mTransMC = new float[16];
+    float[] mScaleMC = new float[16];
+
+    float[] mRotMExt = new float[16];
+    float[] mScaleMExt = new float[16];
+
+    float[] mResult = new float[4];
+    Number3d mAccmlR = new Number3d();
+    Number3d mAccmlS = new Number3d();
+    float[] mAbsRotMExt = new float[16];
+
+    final float[] mWdU = new float[3];
+    final float[] mAWdU = new float[3];
+    final float[] mDdU = new float[3];
+    final float[] mADdU = new float[3];
+    final float[] mAWxDdU = new float[3];
+    Number3d mDirect = new Number3d();
+    Number3d mCrossD = new Number3d();
+
+    float mMinX,mMinY,mMinZ;
+    float mMaxX,mMaxY,mMaxZ;
+    Number3d mCompVect = new Number3d();
+    FloatBuffer[] mAabbBuffer = new FloatBuffer[1];
+    boolean mObtainAABB = false;
 
     /* Variable for ES 2.0 */
     float[] mMVPMatrix = new float[16];
@@ -194,10 +217,6 @@ public class Object3d
     float[] mTmpMatrix = new float[16];
 
     AMaterial mMaterial;
-
-    boolean mVertexBufferObject = true;
-    boolean mBuffered = !mVertexBufferObject;
-    int mBuffers[] = {0,0,0,0,0};
 
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
@@ -901,54 +920,55 @@ public class Object3d
         }
     }
 
-    public void containAABB(FloatBuffer[] points) {
-        Number3d compVect = new Number3d();
+    public void containAABB() {
+        FloatBuffer[] points = mAabbBuffer;
+        points[0] = vertices().points().buffer();
+
         if (points == null || points.length == 0) {
             Log.i(TAG, "contain nothing, return!!!");
             return;
         }
 
-        float minX = Float.MAX_VALUE;
-        float minY = Float.MAX_VALUE;
-        float minZ = Float.MAX_VALUE;
-        float maxX = Float.MIN_VALUE;
-        float maxY = Float.MIN_VALUE;
-        float maxZ = Float.MIN_VALUE;
-        for (int idx = 0; idx < points.length; idx++) {
-            points[idx].rewind();
-            if (points[idx] == null || points[idx].remaining() <= 2) {
-                continue;
-            }
-            for (int i = 0, len = points[idx].remaining() / 3; i < len; i++) {
-                populateFromBuffer(compVect, points[idx], i);
-
-                if (compVect.x < minX)
-                    minX = compVect.x;
-                else if (compVect.x > maxX) {
-                    maxX = compVect.x;
+        if (!mObtainAABB) {
+            mMinX = mMinY = mMinZ = Float.MAX_VALUE;
+            mMaxX = mMaxY = mMaxZ = Float.MIN_VALUE;
+            for (int idx = 0; idx < points.length; idx++) {
+                points[idx].rewind();
+                if (points[idx] == null || points[idx].remaining() <= 2) {
+                    continue;
                 }
+                for (int i = 0, len = points[idx].remaining() / 3; i < len; i++) {
+                    populateFromBuffer(mCompVect, points[idx], i);
 
-                if (compVect.y < minY)
-                    minY = compVect.y;
-                else if (compVect.y > maxY) {
-                    maxY = compVect.y;
-                }
+                    if (mCompVect.x < mMinX)
+                        mMinX = mCompVect.x;
+                    else if (mCompVect.x > mMaxX) {
+                        mMaxX = mCompVect.x;
+                    }
 
-                if (compVect.z < minZ)
-                    minZ = compVect.z;
-                else if (compVect.z > maxZ) {
-                    maxZ = compVect.z;
+                    if (mCompVect.y < mMinY)
+                        mMinY = mCompVect.y;
+                    else if (mCompVect.y > mMaxY) {
+                        mMaxY = mCompVect.y;
+                    }
+
+                    if (mCompVect.z < mMinZ)
+                        mMinZ = mCompVect.z;
+                    else if (mCompVect.z > mMaxZ) {
+                        mMaxZ = mCompVect.z;
+                    }
                 }
             }
+            mObtainAABB = true;
         }
 
-        mCenter.x = (minX + maxX) / 2;
-        mCenter.y = (minY + maxY) / 2;
-        mCenter.z = (minZ + maxZ) / 2;
+        mCenter.x = (mMinX + mMaxX) / 2;
+        mCenter.y = (mMinY + mMaxY) / 2;
+        mCenter.z = (mMinZ + mMaxZ) / 2;
 
-        mExtent.x = maxX - mCenter.x;
-        mExtent.y = maxY - mCenter.y;
-        mExtent.z = maxZ - mCenter.z;
+        mExtent.x = mMaxX - mCenter.x;
+        mExtent.y = mMaxY - mCenter.y;
+        mExtent.z = mMaxZ - mCenter.z;
 
         calcAABBPos();
     }
@@ -973,55 +993,54 @@ public class Object3d
         Matrix.setIdentityM(mScaleMC, 0);
         Matrix.scaleM(mScaleMC, 0, mScale.x, mScale.y, mScale.z);
 
-        float[] result = new float[4];
-        result[0] = mCenter.x;
-        result[1] = mCenter.y;
-        result[2] = mCenter.z;
-        result[3] = 1;
+        mResult[0] = mCenter.x;
+        mResult[1] = mCenter.y;
+        mResult[2] = mCenter.z;
+        mResult[3] = 1;
 
-        Matrix.multiplyMV(result, 0, mTransMC, 0, result, 0);
+        Matrix.multiplyMV(mResult, 0, mTransMC, 0, mResult, 0);
 
-        if (_parent != null && _parent instanceof Object3d) {
-            calcAABBPos((Object3d) parent(), TRANSLATE | ROTATE | SCALE, result);
+        synchronized (this) {
+            if (_parent != null && _parent instanceof Object3d) {
+                calcAABBPos((Object3d) parent(), TRANSLATE | ROTATE | SCALE, mResult);
+            }
         }
+        mCenter.x = mResult[0];
+        mCenter.y = mResult[1];
+        mCenter.z = mResult[2];
 
-        mCenter.x = result[0];
-        mCenter.y = result[1];
-        mCenter.z = result[2];
+        mResult[0] = mExtent.x;
+        mResult[1] = mExtent.y;
+        mResult[2] = mExtent.z;
+        mResult[3] = 1;
 
-        result[0] = mExtent.x;
-        result[1] = mExtent.y;
-        result[2] = mExtent.z;
-        result[3] = 1;
-
-        Number3d accmlR = new Number3d(mRotation.x, mRotation.y, mRotation.z);
-        Number3d accmlS = new Number3d(mScale.x, mScale.y, mScale.z);
-
-        if (_parent != null && _parent instanceof Object3d) {
-            accmlAABBTrans((Object3d) parent(), ROTATE, accmlR);
-            accmlAABBTrans((Object3d) parent(), SCALE, accmlS);
+        mAccmlR.setAll(mRotation.x, mRotation.y, mRotation.z);
+        mAccmlS.setAll(mScale.x, mScale.y, mScale.z);
+        synchronized (this) {
+            if (_parent != null && _parent instanceof Object3d) {
+                accmlAABBTrans((Object3d) parent(), ROTATE, mAccmlR);
+                accmlAABBTrans((Object3d) parent(), SCALE, mAccmlS);
+            }
         }
-
         Matrix.setIdentityM(mRotMExt, 0);
 
-        Matrix.rotateM(mRotMExt, 0, accmlR.x, 1, 0, 0);
-        Matrix.rotateM(mRotMExt, 0, accmlR.y, 0, 1, 0);
-        Matrix.rotateM(mRotMExt, 0, accmlR.z, 0, 0, 1);
+        Matrix.rotateM(mRotMExt, 0, mAccmlR.x, 1, 0, 0);
+        Matrix.rotateM(mRotMExt, 0, mAccmlR.y, 0, 1, 0);
+        Matrix.rotateM(mRotMExt, 0, mAccmlR.z, 0, 0, 1);
 
-        float[] absRotMExt = new float[16];
         for (int i = 0; i < mRotMExt.length; i++) {
-            absRotMExt[i] = Math.abs(mRotMExt[i]);
+            mAbsRotMExt[i] = Math.abs(mRotMExt[i]);
         }
 
         Matrix.setIdentityM(mScaleMExt, 0);
-        Matrix.scaleM(mScaleMExt, 0, accmlS.x, accmlS.y, accmlS.z);
+        Matrix.scaleM(mScaleMExt, 0, mAccmlS.x, mAccmlS.y, mAccmlS.z);
 
-        Matrix.multiplyMV(result, 0, absRotMExt, 0, result, 0);
-        Matrix.multiplyMV(result, 0, mScaleMExt, 0, result, 0);
+        Matrix.multiplyMV(mResult, 0, mAbsRotMExt, 0, mResult, 0);
+        Matrix.multiplyMV(mResult, 0, mScaleMExt, 0, mResult, 0);
 
-        mExtent.x = result[0];
-        mExtent.y = result[1];
-        mExtent.z = result[2];
+        mExtent.x = mResult[0];
+        mExtent.y = mResult[1];
+        mExtent.z = mResult[2];
 
         if (DEBUG) Log.i(TAG, "Name:" + _name + " Center:" + mCenter + " Extent:"
                 + mExtent);
@@ -1044,8 +1063,7 @@ public class Object3d
 
     private void accmlAABBTrans(Object3d parent, int mode, Number3d result) {
         if (mode == SCALE) {
-            Number3d multiply = Number3d.multiply(result,parent.scale());
-            result.setAllFrom(multiply);
+            Number3d.multiply(result,result,parent.scale());
         }
         if (mode == ROTATE) {
             result.add(parent.rotation());
@@ -1065,56 +1083,50 @@ public class Object3d
 
         float rhs;
 
-        Number3d diff = new Number3d(ray.getPoint().x - mCenter.x,
+        mDirect.setAll(ray.getPoint().x - mCenter.x,
                 ray.getPoint().y - mCenter.y, ray.getPoint().z - mCenter.z);
 
-        final float[] fWdU = new float[3];
-        final float[] fAWdU = new float[3];
-        final float[] fDdU = new float[3];
-        final float[] fADdU = new float[3];
-        final float[] fAWxDdU = new float[3];
-
-        fWdU[0] = Number3d.dot(ray.getVector(), UNIT_X);
-        fAWdU[0] = Math.abs(fWdU[0]);
-        fDdU[0] = Number3d.dot(diff, UNIT_X);
-        fADdU[0] = Math.abs(fDdU[0]);
-        if (fADdU[0] > mExtent.x && fDdU[0] * fWdU[0] >= 0.0) {
+        mWdU[0] = Number3d.dot(ray.getVector(), UNIT_X);
+        mAWdU[0] = Math.abs(mWdU[0]);
+        mDdU[0] = Number3d.dot(mDirect, UNIT_X);
+        mADdU[0] = Math.abs(mDdU[0]);
+        if (mADdU[0] > mExtent.x && mDdU[0] * mWdU[0] >= 0.0) {
             return false;
         }
 
-        fWdU[1] = Number3d.dot(ray.getVector(), UNIT_Y);
-        fAWdU[1] = Math.abs(fWdU[1]);
-        fDdU[1] = Number3d.dot(diff, UNIT_Y);
-        fADdU[1] = Math.abs(fDdU[1]);
-        if (fADdU[1] > mExtent.y && fDdU[1] * fWdU[1] >= 0.0) {
+        mWdU[1] = Number3d.dot(ray.getVector(), UNIT_Y);
+        mAWdU[1] = Math.abs(mWdU[1]);
+        mDdU[1] = Number3d.dot(mDirect, UNIT_Y);
+        mADdU[1] = Math.abs(mDdU[1]);
+        if (mADdU[1] > mExtent.y && mDdU[1] * mWdU[1] >= 0.0) {
             return false;
         }
 
-        fWdU[2] = Number3d.dot(ray.getVector(), UNIT_Z);
-        fAWdU[2] = Math.abs(fWdU[2]);
-        fDdU[2] = Number3d.dot(diff, UNIT_Z);
-        fADdU[2] = Math.abs(fDdU[2]);
-        if (fADdU[2] > mExtent.z && fDdU[2] * fWdU[2] >= 0.0) {
+        mWdU[2] = Number3d.dot(ray.getVector(), UNIT_Z);
+        mAWdU[2] = Math.abs(mWdU[2]);
+        mDdU[2] = Number3d.dot(mDirect, UNIT_Z);
+        mADdU[2] = Math.abs(mDdU[2]);
+        if (mADdU[2] > mExtent.z && mDdU[2] * mWdU[2] >= 0.0) {
             return false;
         }
 
-        Number3d wCrossD = Number3d.cross(ray.getVector(), diff);
+        Number3d.cross(mCrossD, ray.getVector(), mDirect);
 
-        fAWxDdU[0] = Math.abs(Number3d.dot(wCrossD, UNIT_X));
-        rhs = mExtent.y * fAWdU[2] + mExtent.z * fAWdU[1];
-        if (fAWxDdU[0] > rhs) {
+        mAWxDdU[0] = Math.abs(Number3d.dot(mCrossD, UNIT_X));
+        rhs = mExtent.y * mAWdU[2] + mExtent.z * mAWdU[1];
+        if (mAWxDdU[0] > rhs) {
             return false;
         }
 
-        fAWxDdU[1] = Math.abs(Number3d.dot(wCrossD, UNIT_Y));
-        rhs = mExtent.x * fAWdU[2] + mExtent.z * fAWdU[0];
-        if (fAWxDdU[1] > rhs) {
+        mAWxDdU[1] = Math.abs(Number3d.dot(mCrossD, UNIT_Y));
+        rhs = mExtent.x * mAWdU[2] + mExtent.z * mAWdU[0];
+        if (mAWxDdU[1] > rhs) {
             return false;
         }
 
-        fAWxDdU[2] = Math.abs(Number3d.dot(wCrossD, UNIT_Z));
-        rhs = mExtent.x * fAWdU[1] + mExtent.y * fAWdU[0];
-        if (fAWxDdU[2] > rhs) {
+        mAWxDdU[2] = Math.abs(Number3d.dot(mCrossD, UNIT_Z));
+        rhs = mExtent.x * mAWdU[1] + mExtent.y * mAWdU[0];
+        if (mAWxDdU[2] > rhs) {
             return false;
         }
 

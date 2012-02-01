@@ -21,23 +21,30 @@ public class Utils
 	/**
 	 * Convenience method to create a Bitmap given a Context's drawable resource ID. 
 	 */
-	public static Bitmap makeBitmapFromResourceId(Context $context, int $id)
-	{
-		InputStream is = $context.getResources().openRawResource($id);
-		
-		Bitmap bitmap;
-		try {
-		   bitmap = BitmapFactory.decodeStream(is);
-		} finally {
-		   try {
-		      is.close();
-		   } catch(IOException e) {
-		      // Ignore.
-		   }
-		}
-	      
-		return bitmap;
-	}
+    public static Bitmap makeBitmapFromResourceId(Context $context, int $id, boolean transparency) {
+        Bitmap bitmap;
+        if (transparency) {
+            bitmap = BitmapFactory.decodeResource($context.getResources(), $id);
+        } else {
+            InputStream is = $context.getResources().openRawResource($id);
+
+            try {
+                bitmap = BitmapFactory.decodeStream(is);
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    // Ignore.
+                }
+            }
+        }
+
+        return bitmap;
+    }
+
+    public static Bitmap makeBitmapFromResourceId(Context $context, int $id) {
+        return makeBitmapFromResourceId($context, $id, false);
+    }
 	
 	/**
 	 * Convenience method to create a Bitmap given a drawable resource ID from the application Context. 
