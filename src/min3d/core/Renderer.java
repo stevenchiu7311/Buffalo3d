@@ -81,7 +81,7 @@ public class Renderer implements GLSurfaceView.Renderer
 
 	public void onSurfaceCreated(GL10 $gl, EGLConfig eglConfig) 
 	{
-		Log.i(Min3d.TAG, "Renderer.onSurfaceCreated()");
+	    	Log.i(Min3d.TAG, "Renderer.onSurfaceCreated()");
 		
 		RenderCaps.setRenderCaps($gl);
 		
@@ -772,7 +772,10 @@ public class Renderer implements GLSurfaceView.Renderer
 		// Reset TextureManager
 		Shared.textureManager().reset();
 
-        if (RenderCaps.openGlVersion() == 2.0) return;
+        if (RenderCaps.openGlVersion() == 2.0) {
+            Scene.resetMaterial();
+            return;
+        }
 
 		// Do OpenGL settings which we are using as defaults, or which we will not be changing on-draw
 

@@ -6,6 +6,8 @@ import min3d.Min3d;
 import min3d.interfaces.IDirtyParent;
 import min3d.interfaces.IObject3dContainer;
 import min3d.interfaces.ISceneController;
+import min3d.materials.AMaterial;
+import min3d.materials.SimpleMaterial;
 import min3d.vos.CameraVo;
 import min3d.vos.Color4;
 import min3d.vos.Color4Managed;
@@ -30,6 +32,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	private ISceneController _sceneController;
 	
 	private Object3dContainer mObject3dContainer;
+	static AMaterial mMaterial;
 
 	public Scene(ISceneController $sceneController) 
 	{
@@ -278,4 +281,15 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	{
 		//
 	}
+
+    static AMaterial getDefaultMaterial() {
+        if (mMaterial == null) {
+            mMaterial = new SimpleMaterial();
+        }
+        return mMaterial;
+    }
+
+    static void resetMaterial() {
+        mMaterial = null;
+    }
 }

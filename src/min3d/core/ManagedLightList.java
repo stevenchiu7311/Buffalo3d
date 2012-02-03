@@ -120,7 +120,7 @@ public class ManagedLightList
 	/**
 	 * Used by Renderer
 	 */
-	Light getLightByGlIndex(int $glIndex) /* package-private */
+	public Light getLightByGlIndex(int $glIndex)
 	{
 		for (int i = 0; i < _lights.size(); i++) 
 		{
@@ -134,7 +134,7 @@ public class ManagedLightList
 	/**
 	 * Used by Renderer
 	 */
-	boolean[] glIndexEnabledDirty() /* package-private */
+	public boolean[] glIndexEnabledDirty()
 	{
 		return _glIndexEnabledDirty;
 	}
@@ -142,7 +142,7 @@ public class ManagedLightList
 	/**
 	 * Used by Renderer
 	 */
-	boolean[] glIndexEnabled() /* package-private */
+	public boolean[] glIndexEnabled()
 	{
 		return _glIndexEnabled;
 	}

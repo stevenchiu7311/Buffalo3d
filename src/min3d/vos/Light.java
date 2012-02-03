@@ -225,4 +225,8 @@ public class Light extends AbstractDirtyManaged implements IDirtyParent
 	 * Used by Renderer. Normal clients of this class should use attenuation getter/setters.
 	 */
 	public Number3dManaged _attenuation; // (the 3 properties of N3D used for the 3 attenuation properties)
+
+    public float[] getLightPosition() {
+        return (new float[] {position.getX(), position.getY(), position.getZ(), 0 });
+    }
 }

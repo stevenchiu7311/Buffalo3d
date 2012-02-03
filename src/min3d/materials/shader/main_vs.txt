@@ -1,0 +1,117 @@
+
+//Define
+#define NUM_TEXTURES 2
+
+// Attributes
+attribute vec4 aPosition;
+attribute vec4 aColor;
+attribute vec3 aNormal;
+
+// Uniforms
+uniform bool u_positionEnabled;
+uniform bool u_normalEnabled;
+uniform bool u_colorEnabled;
+uniform bool u_material_color_enable;
+uniform mat4 uMMatrix;
+uniform mat4 uMVPMatrix;
+uniform mat3 u_transposeAdjointModelViewMatrix;
+uniform bool u_lightingEnabled;
+uniform bool u_normalizeEnabled;
+uniform bool u_rescaleNormalEnabled;
+uniform float u_rescaleNormalFactor;
+uniform bool u_fogEnabled;
+uniform int u_fogHint;
+uniform int u_lightingHint;
+
+// Varyings
+varying vec4 v_frontColor;
+varying vec4 v_backColor;
+varying float v_fogFactor;
+varying float v_eyeDistance;
+
+// Shader constants
+const int c_zero = 0;
+const int c_one = 1;
+const float c_zerof = 0.0;
+const float c_onef = 1.0;
+
+// Shader variables
+vec3 normal;
+vec4 vertexPositionInEye;
+
+// Functions
+void calcLighting();
+float calcFogFactor(float distanceToEye);
+void calcClipPlanes();
+void calcTextureCoordinates();
+void processLight();
+
+attribute vec2 aTextureCoord;
+varying vec2 v_texCoord0;
+varying vec2 v_texCoord1;
+varying vec2 v_texCoord[NUM_TEXTURES];
+
+void main()
+{
+    gl_Position = uMVPMatrix * aPosition;
+    calcTextureCoordinates();
+    normal = u_transposeAdjointModelViewMatrix * aNormal;
+    normal = normalize(normal);
+    processLight();
+
+    if (u_fogEnabled) {
+        v_fogFactor = calcFogFactor(-vertexPositionInEye.z);
+    }
+}
+
+
+#define GL_LINEAR 0x2601
+#define GL_EXP 0x0800
+#define GL_EXP2 0x0801
+
+// Uniforms
+uniform int u_fogMode;
+uniform float u_fogDensity;
+uniform float u_fogStart;
+uniform float u_fogEnd;
+
+// Functions
+float calcFogLinear(float distanceToEye);
+float calcFogExp(float distanceToEye);
+float calcFogExp2(float distanceToEye);
+
+float calcFogFactor(float distanceToEye)
+{
+    float fogFactor;
+
+    if (u_fogMode == GL_LINEAR) {
+        fogFactor = calcFogLinear(distanceToEye);
+    } else if (u_fogMode == GL_EXP) {
+        fogFactor = calcFogExp(distanceToEye);
+    } else {
+        fogFactor = calcFogExp2(distanceToEye);
+    }
+
+    return fogFactor;
+}
+
+float calcFogLinear(float distanceToEye)
+{
+    float f = (u_fogEnd - distanceToEye) / (u_fogEnd - u_fogStart);
+    return clamp(f, c_zerof, c_onef);
+}
+
+float calcFogExp(float distanceToEye)
+{
+    float f = exp(-(distanceToEye * u_fogDensity));
+    return clamp(f, c_zerof, c_onef);
+}
+
+float calcFogExp2(float distanceToEye)
+{
+    float f = distanceToEye * u_fogDensity;
+    f = exp(-(f*f));
+    return clamp(f, c_zerof, c_onef);
+}
+
+

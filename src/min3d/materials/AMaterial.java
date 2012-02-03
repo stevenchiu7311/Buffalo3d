@@ -1,7 +1,11 @@
 package min3d.materials;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.HashMap;
 
 import javax.microedition.khronos.opengles.GL10;
 
@@ -9,15 +13,19 @@ import android.opengl.GLES20;
 import android.util.Log;
 
 import min3d.Shared;
+import min3d.core.ManagedLightList;
 import min3d.core.Object3d;
 import min3d.core.RenderCaps;
-import min3d.vos.ALight;
+import min3d.materials.Uniforms.UNIFORM_LIST_ID;
 import min3d.vos.CameraVo;
 import min3d.vos.Color4;
+import min3d.vos.FogType;
 import min3d.vos.TextureVo;
 
 public abstract class AMaterial {
     static final private String TAG = "AMaterial";
+    static final private String MAIN_VERTEX_SHADER__FILE = "shader/main_vs.txt";
+    static final private String MAIN_FRAGMENT_SHADER_FILE = "shader/main_fs.txt";
 
     protected String mVertexShader;
     protected String mFragmentShader;
@@ -32,17 +40,19 @@ public abstract class AMaterial {
     protected int muUseTextureHandle;
     protected int muMMatrixHandle;
     protected int muVMatrixHandle;
-    protected ALight mLight;
 
     protected int numTextures = 0;
     protected float[] mModelViewMatrix;
     protected float[] mViewMatrix;
     protected boolean usesCubeMap = false;
 
+    HashMap<UNIFORM_LIST_ID, Object> mLocationId = new HashMap<UNIFORM_LIST_ID, Object>();
+    boolean init = true;
+
     public AMaterial(String vertexShader, String fragmentShader) {
-        mVertexShader = vertexShader;
-        mFragmentShader = fragmentShader;
-        setShaders(vertexShader, fragmentShader);
+        mVertexShader = readShader(MAIN_VERTEX_SHADER__FILE) + readShader(vertexShader);
+        mFragmentShader = readShader(MAIN_FRAGMENT_SHADER_FILE) + readShader(fragmentShader);
+        setShaders(mVertexShader, mFragmentShader);
     }
 
     public void setShaders(String vertexShader, String fragmentShader) {
@@ -100,6 +110,39 @@ public abstract class AMaterial {
         }
     }
 
+    private void initUniform() {
+        for (UNIFORM_LIST_ID uniform : UNIFORM_LIST_ID.values()) {
+            int handleID = GLES20.glGetUniformLocation(mProgram,
+                    uniform.getName());
+            if (handleID == -1) {
+                continue;
+            }
+            mLocationId.put(uniform, handleID);
+            float data[] = uniform.getDefaultFloatData();
+            if (data == null) {
+                continue;
+            }
+            switch (uniform.getDefaultFloatData().length) {
+            case 1:
+                GLES20.glUniform1fv(handleID, 1, new float[] { data[0] }, 0);
+                break;
+            case 2:
+                GLES20.glUniform2fv(handleID, 1,
+                        new float[] { data[0], data[1] }, 0);
+                break;
+            case 3:
+                GLES20.glUniform3fv(handleID, 1, new float[] { data[0],
+                        data[1], data[2] }, 0);
+                break;
+            case 4:
+                GLES20.glUniform4fv(handleID, 1, new float[] { data[0],
+                        data[1], data[2], data[3] }, 0);
+                break;
+            }
+        }
+
+    }
+
     protected int loadShader(int shaderType, String source) {
         int shader = GLES20.glCreateShader(shaderType);
         if (shader != 0) {
@@ -150,6 +193,10 @@ public abstract class AMaterial {
 
     public void useProgram() {
         GLES20.glUseProgram(mProgram);
+        if (init) {
+            initUniform();
+            init = false;
+        }
     }
 
     public void bindTextures(Object3d obj) {
@@ -158,7 +205,7 @@ public abstract class AMaterial {
         GLES20.glUniform1i(muUseTextureHandle, num == 0 ? 0 : 1);
     }
 
-    private void drawObject_textures(Object3d $o) {
+    protected void drawObject_textures(Object3d $o) {
         // iterate thru object's textures
         for (int i = 0; i < RenderCaps.maxTextureUnits(); i++) {
             GLES20.glActiveTexture(GL10.GL_TEXTURE0 + i);
@@ -275,8 +322,45 @@ public abstract class AMaterial {
             GLES20.glUniformMatrix4fv(muVMatrixHandle, 1, false, viewMatrix, 0);
     }
 
-    public void setLight(ALight light) {
-        mLight = light;
+    public void setLightEnabled(boolean enable) {}
+
+    public void setLightList(ManagedLightList lightList) {}
+
+    public UNIFORM_LIST_ID getUniformId(String name) {
+        for (UNIFORM_LIST_ID uniform : UNIFORM_LIST_ID.values()) {
+            if (uniform.getName().equals(name)) {
+                return uniform;
+            }
+        }
+        return null;
+    }
+
+    public void setUniformData(UNIFORM_LIST_ID id, float[] value) {
+        if (value == null || mLocationId.get(id) == null) {
+            return;
+        }
+        int locationId = (Integer) mLocationId.get(id);
+        switch (value.length) {
+        case 1: GLES20.glUniform1f(locationId, value[0]);
+                break;
+        case 2: GLES20.glUniform2fv(locationId, 1, new float[] { value[0],value[1] }, 0);
+                break;
+        case 3: GLES20.glUniform3fv(locationId, 1, new float[] { value[0],value[1], value[2] }, 0);
+                break;
+        case 4: GLES20.glUniform4fv(locationId, 1, new float[] { value[0],value[1], value[2], value[3] }, 0);
+                break;
+        }
+    }
+
+    public void setUniformData(UNIFORM_LIST_ID id, int value) {
+        if (mLocationId.get(id) == null) {
+            return;
+        }
+        int locationId = (Integer) mLocationId.get(id);
+        if (locationId == -1) {
+            return;
+        }
+        GLES20.glUniform1i(locationId, value);
     }
 
     public void setCamera(CameraVo camera) {
@@ -298,5 +382,41 @@ public abstract class AMaterial {
 
     public float[] getModelViewMatrix() {
         return mModelViewMatrix;
+    }
+
+    public void setFog(boolean fogEnabled, Color4 fogColor, float fogNear,
+            float fogFar, FogType fogType) {
+        setUniformData(UNIFORM_LIST_ID.FOG_ENABLED, fogEnabled? 1:0);
+        if (fogEnabled) {
+            setUniformData(UNIFORM_LIST_ID.FOG_COLOR, new float[]{fogColor.r, fogColor.g, fogColor.b});
+            setUniformData(UNIFORM_LIST_ID.FOG_START, new float[]{fogNear});
+            setUniformData(UNIFORM_LIST_ID.FOG_END, new float[]{fogFar});
+            setUniformData(UNIFORM_LIST_ID.FOG_MODE, fogType.glValue());
+        }
+    }
+
+    public void setMaterialColorEnable(boolean colorMaterialEnabled) {
+        // TODO Auto-generated method stub
+        setUniformData(UNIFORM_LIST_ID.MATERIAL_COLOR_ENABLE, colorMaterialEnabled? 1:0);
+    }
+
+    private String readShader(String path) {
+        StringBuffer vs = new StringBuffer();
+        try {
+            InputStream inputStream = getClass().getResourceAsStream(
+                    path);
+            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+
+            String read = in.readLine();
+            while (read != null) {
+                vs.append(read + "\n");
+                read = in.readLine();
+            }
+            vs.deleteCharAt(vs.length() - 1);
+            return vs.toString();
+        } catch (Exception e) {
+            Log.d("ERROR-readingShader", "Could not read shader: " + e.getLocalizedMessage());
+        }
+        return null;
     }
 }

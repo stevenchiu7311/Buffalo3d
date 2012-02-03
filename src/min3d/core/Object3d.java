@@ -20,7 +20,6 @@ import min3d.listeners.OnClickListener;
 import min3d.listeners.OnLongClickListener;
 import min3d.listeners.OnTouchListener;
 import min3d.materials.AMaterial;
-import min3d.materials.SimpleMaterial;
 import min3d.vos.CameraVo;
 import min3d.vos.Color4;
 import min3d.vos.FrustumManaged;
@@ -702,10 +701,9 @@ public class Object3d
 
     public void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
         if (!isVisible()) return;
+        mMaterial = Scene.getDefaultMaterial();
+        mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
 
-        if (mMaterial == null) {
-            mMaterial = new SimpleMaterial();
-        }
         mProjMatrix = projMatrix;
         if (doubleSidedEnabled()) {
             GLES20.glDisable(GL10.GL_CULL_FACE);
@@ -863,7 +861,9 @@ public class Object3d
     }
 
     protected void setShaderParams() {
-        //mMaterial.setLight(mLight);
+        mMaterial.setLightList(scene().lights());
+        mMaterial.setFog(scene().fogEnabled(), scene().fogColor(), scene().fogNear(), scene().fogFar(), scene().fogType() );
+        mMaterial.setMaterialColorEnable(colorMaterialEnabled());
     };
 
     public void makeVertextBufferObject() {

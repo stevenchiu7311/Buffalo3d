@@ -32,6 +32,6 @@ public class SimpleMaterial extends AMaterial {
 		"}\n";
 
 	public SimpleMaterial() {
-		super(mVShader, mFShader);
+	    super("shader/SimpleMaterial_vs.txt", "shader/SimpleMaterial_fs.txt");
 	}
 }

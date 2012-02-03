@@ -136,4 +136,8 @@ public class Number3dManaged extends AbstractDirtyManaged
 	{
 		toFloatBuffer(_fb);
 	}
+
+    public float[] toFloat() {
+        return ( new float[] {_x, _y, _z});
+    }
 }

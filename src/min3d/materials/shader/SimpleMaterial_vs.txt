@@ -1,0 +1,8 @@
+void processLight(){
+    v_frontColor = (aColor / 255.0);
+}
+
+void calcTextureCoordinates()
+{
+    v_texCoord0 = aTextureCoord;
+}

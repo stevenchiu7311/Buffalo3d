@@ -198,5 +198,7 @@ public class Color4Managed extends AbstractDirtyManaged
 		return "r:" + _r + ", g:" + _g + ", b:" + _b + ", a:" + _a;
 	}
 
-	
+	public float[] toFloat() {
+	    return (new float[] {(float)r() / 255f, (float)g() / 255f, (float)b() / 255f, (float)a() / 255f});
+	}
 }

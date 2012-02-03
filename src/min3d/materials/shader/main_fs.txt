@@ -1,0 +1,57 @@
+precision mediump float;
+
+//Define
+#define NUM_TEXTURES 2
+
+// Uniforms
+uniform bool u_fogEnabled;
+uniform vec3 u_fogColor;
+uniform int u_fogHint;
+uniform bool u_alphaTestEnabled;
+uniform bool u_lightingEnabled;
+
+// Varyings
+varying vec4 v_frontColor;
+varying float v_fogFactor;
+varying float v_eyeDistance;
+uniform bool uUseTexture;
+
+// Shader constants
+const int c_zero = 0;
+const int c_one = 1;
+const float c_zerof = 0.0;
+const float c_onef = 1.0;
+
+// Funtions
+float calcFogFactor(float distanceToEye);
+void calcLighting(out vec4 color);
+void clipPlanesTest();
+void alphaTest(float alpha);
+void calcTextureColorContribution(inout vec4 color);
+
+// Uniforms
+uniform sampler2D uTexture0;
+uniform sampler2D uTexture1;
+uniform sampler2D uTexture[NUM_TEXTURES];
+
+// Varyings
+varying vec2 v_texCoord0;
+varying vec2 v_texCoord1;
+varying vec2 v_texCoord[NUM_TEXTURES];
+
+void main()
+{
+    vec4 color;
+    color = v_frontColor;
+    if (uUseTexture) {
+        calcTextureColorContribution(color);
+    }
+    if (u_fogEnabled) {
+        float fogFactor;
+        fogFactor = v_fogFactor;
+        color.rgb = mix(u_fogColor, color.rgb, fogFactor);
+    }
+    gl_FragColor = color;
+}
+
+
