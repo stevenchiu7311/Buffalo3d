@@ -38,6 +38,9 @@ public class TextObject extends Object3dContainer {
     private Color4 mBackgroundColor = new Color4(0, 0, 0, 0);
     private int mTextBitmapWidth;
     private int mTextBitmapHeight;
+    private Shadow mShadow = new Shadow();
+    private Alignment mAlignment = Alignment.ALIGN_CENTER;
+    private boolean mEllipsize = true;
 
     public TextObject(float width, float height, float depth,
             Color4[] sixColor4s, Boolean useUvs, Boolean useNormals,
@@ -66,10 +69,20 @@ public class TextObject extends Object3dContainer {
         Paint textPaint = new Paint();
         textPaint.setTextSize(mFontSize);
         textPaint.setAntiAlias(true);
+        textPaint.setShadowLayer(mShadow.getRadius(), mShadow.getHorizontalOffset(), mShadow.getVerticalOffset(), mShadow.getShadowColor());
         textPaint.setARGB(mFontColor.a, mFontColor.r, mFontColor.g,
                 mFontColor.b);
         mStringHeight = textPaint.descent() - textPaint.ascent();
         mStringWidth = textPaint.measureText(text);
+        if (mEllipsize && !mWrapContent) {
+            if (mStringWidth > MAPPING_PIXEL*this.mWidth) {
+                while (textPaint.measureText(text.substring(0,text.length()-2) + "..") > (MAPPING_PIXEL*this.mWidth)) {
+                    text = text.substring(0,text.length()-2);
+                 }
+                text = text.substring(0, text.length()-2) + "..";
+                mStringWidth =  textPaint.measureText(text);
+            }
+        }
         if (mWrapContent) {
             this.mHeight = mStringHeight / MAPPING_PIXEL;
             this.mWidth = mStringWidth / MAPPING_PIXEL;
@@ -92,7 +105,13 @@ public class TextObject extends Object3dContainer {
         Canvas canvas = new Canvas(bitmap);
         bitmap.eraseColor(Color.argb(mBackgroundColor.a, mBackgroundColor.r,
                 mBackgroundColor.g, mBackgroundColor.b));
-        canvas.drawText(text, 0, mStringHeight, textPaint);
+        float shift = 0;
+        if (!mWrapContent) {
+            if ((mAlignment == Alignment.ALIGN_CENTER) && (mTextBitmapWidth > mStringWidth)) {
+                shift = ((mTextBitmapWidth - mStringWidth)/2.0f);
+            }
+        }
+        canvas.drawText(text,shift, mStringHeight, textPaint);
         if (Shared.textureManager().contains(this.toString())) {
             Shared.textureManager().deleteTexture(this.toString());
         }
@@ -219,6 +238,62 @@ public class TextObject extends Object3dContainer {
             this.vertices().setUv(1, uvX, 0f);
             this.vertices().setUv(2, uvX, uvY);
             this.vertices().setUv(3, 0f, uvY);
+        }
+    }
+
+    public enum Alignment {
+        ALIGN_LEFT,
+        ALIGN_CENTER,
+    }
+
+    public void setAlignment(Alignment alignment) {
+        mAlignment = alignment;
+    }
+
+    public void setEllipsize(boolean ellipsize) {
+        this.mEllipsize = ellipsize;
+    }
+
+    public void setShadow(float radius, float dx, float dy, int color) {
+        mShadow.setShadow(radius, dx, dy, color);
+    }
+
+    class Shadow {
+        float mRadius = 0.5f;
+        float mHorizontalOffset = 1.0f;
+        float mVerticalOffset = 1.0f;
+        int mColor = Color.WHITE;
+        public void shadow(float radius, float dx, float dy, int color) {
+            mRadius = radius;
+            mHorizontalOffset = dx;
+            mVerticalOffset = dy;
+            mColor = color;
+        }
+
+        public void shadow() {
+        }
+
+        public void setShadow(float radius, float dx, float dy, int color) {
+            mRadius = radius;
+            mHorizontalOffset = dx;
+            mVerticalOffset = dy;
+            mColor = color;
+        }
+
+        public float getRadius() {
+            return mRadius;
+        }
+
+        public float getHorizontalOffset() {
+            return mHorizontalOffset;
+        }
+
+        public float getVerticalOffset() {
+            return mVerticalOffset;
+        }
+
+        public int getShadowColor() {
+            return mColor;
         }
     }
 }
