@@ -14,7 +14,11 @@ import min3d.vos.Color4Managed;
 import min3d.vos.FogType;
 import android.util.Log;
 
-
+/**
+ * The top of a object3d hierarchy, storing all the needed configurations of GL
+ * scene. For rendering objects, all top-level objects must be added into scene
+ * instance. It also provides several get/set method for GL effect setting.
+ */
 public class Scene implements IObject3dContainer, IDirtyParent
 {
 	private ManagedLightList _lights;
@@ -49,15 +53,19 @@ public class Scene implements IObject3dContainer, IDirtyParent
         mObject3dContainer.scene(this);
 	}
 
-	/**
-	 * Allows you to use any Class implementing ISceneController
-	 * to drive the Scene...
-	 * @return
-	 */
+    /**
+     * Allows you to use any Class implementing ISceneController to drive the
+     * Scene...
+     */
 	public ISceneController sceneController()
 	{
 		return _sceneController;
 	}
+
+    /**
+     * Allows you to use any Class implementing ISceneController to drive the
+     * Scene...
+     */
 	public void sceneController(ISceneController $sceneController)
 	{
 		_sceneController = $sceneController;
@@ -87,151 +95,243 @@ public class Scene implements IObject3dContainer, IDirtyParent
 		lightingEnabled(true);
 	}
 	
-	/**
-	 * Adds Object3d to Scene. Object3d's must be added to Scene in order to be rendered
-	 * Returns always true. 
-	 */
+    /**
+     * Adds object to scene's root object container. Objects must be added to
+     * root object container in order to be rendered Returns always true.
+     *
+     * {@inheritDoc}
+     */
 	public void addChild(Object3d $o)
 	{
         mObject3dContainer.addChild($o);
 	}
-	
+
+    /**
+     * Adds object to specified position of scene's root object container.
+     * Objects must be added to root object container in order to be rendered
+     * Returns always true.
+     *
+     * {@inheritDoc}
+     */
 	public void addChildAt(Object3d $o, int $index)
 	{
         mObject3dContainer.addChildAt($o, $index);
 	}
-	
-	/**
-	 * Removes Object3d from Scene.
-	 * Returns false if unsuccessful
-	 */
+
+    /**
+     * Removes object from scene's root object container. Returns false if it's
+     * unsuccessful.
+     *
+     * {@inheritDoc}
+     */
 	public boolean removeChild(Object3d $o)
 	{
         return mObject3dContainer.removeChild($o);
 	}
-	
+
+    /**
+     * Removes object from specified position of scene's root object container.
+     *
+     * {@inheritDoc}
+     */
 	public Object3d removeChildAt(int $index)
 	{
         return mObject3dContainer.removeChildAt($index);
 	}
-	
+
+    /**
+     * Get object from specified position of scene's root object container.
+     *
+     * {@inheritDoc}
+     */
 	public Object3d getChildAt(int $index)
 	{
         return mObject3dContainer.getChildAt($index);
 	}
 	
-	/**
-	 * TODO: Use better lookup 
-	 */
+    /**
+     * {@inheritDoc}
+     */
 	public Object3d getChildByName(String $name)
 	{
         return mObject3dContainer.getChildByName($name);
 	}
-	
+
+    /**
+     * {@inheritDoc}
+     */
 	public int getChildIndexOf(Object3d $o)
 	{
         return mObject3dContainer.getChildIndexOf($o);
 	}
-	
+
+    /**
+     * {@inheritDoc}
+     */
 	public int numChildren()
 	{
         return mObject3dContainer.numChildren();
 	}
 
+    /**
+     * Return scene's root object container.
+     *
+     * @return root object container
+     */
     public Object3dContainer root()
     {
         return mObject3dContainer;
     }
 
-	/**
-	 * Scene's camera
-	 */
+    /**
+     * Get scene's camera. Manipulating this returned instance will change camera
+     * configuration.
+     *
+     * @return camera configuration instance
+     */
 	public CameraVo camera()
 	{
 		return _camera;
 	}
+
+    /**
+     * Assign new scene's camera.
+     *
+     * @param $camera camera configuration instance
+     */
 	public void camera(CameraVo $camera)
 	{
 		_camera = $camera;
 	}
 	
-	/**
-	 * Scene instance's background color
-	 */
+    /**
+     * Get scene instance's background color. Manipulating this returned instance
+     * will change background color.
+     *
+     * @return background configuration instance
+     */
 	public Color4Managed backgroundColor()
 	{
 		return _backgroundColor;
 	}
 
-	/**
-	 * Lights used by the Scene 
-	 */
+    /**
+     * Get lights used by the scene
+     *
+     * @return light configuration instance list
+     */
 	public ManagedLightList lights()
 	{
 		return _lights;
 	}
 
-	/**
-	 * Determines if lighting is enabled for Scene. 
-	 */
+    /**
+     * Return if lighting is enabled for scene.
+     *
+     * @return lighting enabled
+     */
 	public boolean lightingEnabled()
 	{
 		return _lightingEnabled;
 	}
-	
+
+    /**
+     * Determines if lighting is enabled for scene.
+     *
+     * @param $b lighting enabled
+     */
 	public void lightingEnabled(boolean $b)
 	{
 		_lightingEnabled = $b;
 	}
-	
-	//
 
-	/*
-	public boolean backgroundTransparent() {
-		return _backgroundTransparent;
-	}
-
-	public void backgroundTransparent(boolean backgroundTransparent) {
-		this._backgroundTransparent = backgroundTransparent;
-	}
-	*/
-
+    /**
+     * Get fog color configuration instance. Manipulating this returned instance
+     * will change fog color.
+     *
+     * @return fog color configuration instance
+     */
 	public Color4 fogColor() {
 		return _fogColor;
 	}
 
+    /**
+     * Assign fog color configuration instance.
+     *
+     * @param _fogColor color configuration instance
+     */
 	public void fogColor(Color4 _fogColor) {
 		this._fogColor = _fogColor;
 	}
 
+    /**
+     * Get farthest effect position of fog.
+     *
+     * @return farthest effect position of fog
+     */
 	public float fogFar() {
 		return _fogFar;
 	}
 
+    /**
+     * Set farthest effect position of fog.
+     *
+     * @param _fogFar farthest effect position of fog
+     */
 	public void fogFar(float _fogFar) {
 		this._fogFar = _fogFar;
 	}
 
+    /**
+     * Get nearest effect position of fog.
+     *
+     * @return nearest effect position of fog
+     */
 	public float fogNear() {
 		return _fogNear;
 	}
 
+    /**
+     * Set nearest effect position of fog.
+     *
+     * @param _fogNear nearest effect position of fog
+     */
 	public void fogNear(float _fogNear) {
 		this._fogNear = _fogNear;
 	}
 
+    /**
+     * Get current fog type.
+     *
+     * @return current fog type
+     */
 	public FogType fogType() {
 		return _fogType;
 	}
 
+    /**
+     * Set current fog type.
+     *
+     * @param _fogType current fog type
+     */
 	public void fogType(FogType _fogType) {
 		this._fogType = _fogType;
 	}
 
+    /**
+     * Return fog enabled state.
+     *
+     * @return fog enabled state.
+     */
 	public boolean fogEnabled() {
 		return _fogEnabled;
 	}
 
+    /**
+     * Set fog enabled state.
+     *
+     * @param _fogEnabled fog enabled state.
+     */
 	public void fogEnabled(boolean _fogEnabled) {
 		this._fogEnabled = _fogEnabled;
 	}
@@ -277,11 +377,15 @@ public class Scene implements IObject3dContainer, IDirtyParent
 		}
 	}	
 	
-	public void onDirty()
-	{
-		//
-	}
+    public void onDirty() {
+    }
 
+    /**
+     * Get scene's material instance. Material is a interface which control ES 2
+     * shader.
+     *
+     * @hide
+     */
     static AMaterial getDefaultMaterial() {
         if (mMaterial == null) {
             mMaterial = new SimpleMaterial();
@@ -289,6 +393,11 @@ public class Scene implements IObject3dContainer, IDirtyParent
         return mMaterial;
     }
 
+    /**
+     * Reset scene's material instance.
+     *
+     * @hide
+     */
     static void resetMaterial() {
         mMaterial = null;
     }

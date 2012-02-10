@@ -10,7 +10,7 @@ import java.util.List;
 public interface OnClickListener {
 
     /**
-     * Get the clicked objects inside the {@link BeyondarGLSurfaceView}
+     * Interface definition for a callback to be invoked when a object is clicked.
      *
      * @param obj
      *            The 3d object selected

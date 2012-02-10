@@ -32,7 +32,10 @@ import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 
-
+/**
+ * The engine rendering proxy which parse all object collection and reference GL
+ * effect settings to draw specified scene.
+ */
 public class Renderer implements GLSurfaceView.Renderer
 {
 	public static final int NUM_GLLIGHTS = 8;
@@ -811,7 +814,7 @@ public class Renderer implements GLSurfaceView.Renderer
 		//
 	}
 
-    public Ray getViewRay(float x, float y) {
+    Ray getViewRay(float x, float y) {
         float[] eyeFar = new float[4];
         float[] eyeNear = new float[4];
         // view port
@@ -841,12 +844,12 @@ public class Renderer implements GLSurfaceView.Renderer
         return new Ray(source,direction);
     }
 
-    public ArrayList<Object3d> getPickedObject(Ray ray, Object3d root) {
+    ArrayList<Object3d> getPickedObject(Ray ray, Object3d root) {
         ArrayList<Object3d> objPickedList = new ArrayList<Object3d>();
         return detectIntersectedObject(ray, root, objPickedList);
     }
 
-    public ArrayList<Object3d> detectIntersectedObject(Ray ray, Object3d node, ArrayList<Object3d> list) {
+    ArrayList<Object3d> detectIntersectedObject(Ray ray, Object3d node, ArrayList<Object3d> list) {
         if (node.intersects(ray)) {
             list.add(node);
         }
@@ -863,7 +866,7 @@ public class Renderer implements GLSurfaceView.Renderer
         return list;
     }
 
-    public void updateAABBCoord() {
+    void updateAABBCoord() {
         updateAABBCoordWithRay(_scene.root());
     }
 
@@ -885,6 +888,11 @@ public class Renderer implements GLSurfaceView.Renderer
         }
     }
 
+    /**
+     * Return plane boundary size with given depth value in scene.
+     *
+     * @return plane boundary vector
+     */
     public Number3d getWorldPlaneSize(float depth) {
         float[] eye = new float[4];
         float[] size = new float[4];
@@ -919,5 +927,4 @@ public class Renderer implements GLSurfaceView.Renderer
     public int getHeight() {
         return mHeight;
     }
-
 }

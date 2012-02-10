@@ -73,16 +73,16 @@ public abstract class AParser implements IParser {
 		normals.clear();
 	}
 	
-	/**
-	 * Override this in the concrete parser
-	 */
+    /**
+     * {@inheritDoc}
+     */
 	public Object3dContainer getParsedObject() {
 		return null;
 	}
 	
-	/**
-	 * Override this in the concrete parser if applicable 
-	 */
+    /**
+     * {@inheritDoc}
+     */
 	public AnimationObject3d getParsedAnimationObject() {
 		return null;
 	}
@@ -108,9 +108,9 @@ public abstract class AParser implements IParser {
 		return Float.intBitsToFloat(readInt(stream));
 	}
 
-	/**
-	 * Override this in the concrete parser
-	 */
+    /**
+     * {@inheritDoc}
+     */
 	public void parse() {
 	}
 	

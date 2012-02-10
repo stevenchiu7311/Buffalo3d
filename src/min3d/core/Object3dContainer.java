@@ -10,6 +10,11 @@ import min3d.Shared;
 import min3d.interfaces.IObject3dContainer;
 import min3d.vos.Ray;
 
+/**
+ * A Object3dContainer is a special object3d that can contain other object3d
+ * (called children.) The object3d container is the base class for layouts and objects
+ * containers.
+ */
 public class Object3dContainer extends Object3d implements IObject3dContainer
 {
 	protected ArrayList<Object3d> _children = new ArrayList<Object3d>();
@@ -20,6 +25,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 	{
 		super(0, 0, false, false, false);
 	}
+
 	/**
 	 * Adds container functionality to Object3d.
 	 * 
@@ -43,7 +49,10 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 	{
 		super($vertices, $faces, $textures);
 	}
-	
+
+    /**
+     * {@inheritDoc}
+     */
 	public void addChild(Object3d $o)
 	{
 		_children.add($o);
@@ -51,7 +60,10 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		$o.parent(this);
 		$o.scene(Shared.renderer().getScene());
 	}
-	
+
+    /**
+     * {@inheritDoc}
+     */
 	public void addChildAt(Object3d $o, int $index) 
 	{
 		_children.add($index, $o);
@@ -60,6 +72,9 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		$o.scene(Shared.renderer().getScene());
 	}
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean removeChild(Object3d $o) {
         boolean b;
         synchronized (this) {
@@ -72,7 +87,10 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
         }
         return b;
     }
-	
+
+    /**
+     * {@inheritDoc}
+     */
 	public Object3d removeChildAt(int $index) 
 	{
 		Object3d o = _children.remove($index);
@@ -82,15 +100,18 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		}
 		return o;
 	}
-	
+
+    /**
+     * {@inheritDoc}
+     */
 	public Object3d getChildAt(int $index) 
 	{
 		return _children.get($index);
 	}
 
-	/**
-	 * TODO: Use better lookup 
-	 */
+    /**
+     * {@inheritDoc}
+     */
 	public Object3d getChildByName(String $name)
 	{
 		for (int i = 0; i < _children.size(); i++)
@@ -100,12 +121,17 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		return null;
 	}
 
+    /**
+     * {@inheritDoc}
+     */
 	public int getChildIndexOf(Object3d $o) 
 	{
 		return _children.indexOf($o);		
 	}
 
-
+    /**
+     * {@inheritDoc}
+     */
 	public int numChildren() 
 	{
 		return _children.size();
@@ -144,6 +170,9 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		return clone;
 	}
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean dispatchTouchEvent(Ray ray, MotionEvent ev, ArrayList<Object3d> list) {
         final int action = ev.getAction();
         if (action == MotionEvent.ACTION_DOWN) {
@@ -194,15 +223,22 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
         return target.dispatchTouchEvent(ray, ev, list);
     }
 
-    public boolean contain(Object3d src, Object3d node) {
-        if (node.equals(src)) {
+    /**
+     * Check whether there is group-contained relationship between specified two objects.
+     *
+     * @param ancestors object to be the ancestors container
+     * @param descendants object to be the descendants containee of ancestors object
+     * @return true if there is group-contained relationship
+     */
+    public boolean contain(Object3d ancestors, Object3d descendants) {
+        if (descendants.equals(ancestors)) {
             return true;
         }
-        if (src instanceof Object3dContainer) {
-            Object3dContainer container = (Object3dContainer) src;
+        if (ancestors instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer) ancestors;
             for (int i = 0; i < container.children().size(); i++) {
                 Object3d child = container.children().get(i);
-                boolean find = contain(child,node);
+                boolean find = contain(child,descendants);
                 if (find) {
                     return true;
                 }
@@ -211,7 +247,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
         return false;
     }
 
-    public class DepthSort implements Comparator<Object3d> {
+    private class DepthSort implements Comparator<Object3d> {
         private final static int UP = 1;
         private final static int DOWM = -1;
 

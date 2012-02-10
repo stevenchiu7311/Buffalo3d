@@ -18,9 +18,15 @@ public class Utils
 		
 	private static final int BYTES_PER_FLOAT = 4;  
 	
-	/**
-	 * Convenience method to create a Bitmap given a Context's drawable resource ID. 
-	 */
+    /**
+     * Convenience method to create a Bitmap given a Context's drawable resource
+     * ID.
+     *
+     * @param $context
+     * @param $id resource id
+     * @param transparency determine if resource bitmap support alpha channel
+     * @return bitmap of decoded resource
+     */
     public static Bitmap makeBitmapFromResourceId(Context $context, int $id, boolean transparency) {
         Bitmap bitmap;
         if (transparency) {
@@ -42,13 +48,25 @@ public class Utils
         return bitmap;
     }
 
+    /**
+     * Convenience method to create a Bitmap given a Context's drawable resource
+     * ID.
+     *
+     * @param $context
+     * @param $id resource id
+     * @return bitmap of decoded resource
+     */
     public static Bitmap makeBitmapFromResourceId(Context $context, int $id) {
         return makeBitmapFromResourceId($context, $id, false);
     }
 	
-	/**
-	 * Convenience method to create a Bitmap given a drawable resource ID from the application Context. 
-	 */
+    /**
+     * Convenience method to create a Bitmap given a drawable resource ID from
+     * the application Context.
+     *
+     * @param $id resource id
+     * @return bitmap of decoded resource
+     */
 	public static Bitmap makeBitmapFromResourceId(int $id)
 	{
 		return makeBitmapFromResourceId(Shared.context(), $id);

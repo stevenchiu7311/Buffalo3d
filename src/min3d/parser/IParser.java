@@ -10,18 +10,25 @@ import min3d.core.Object3dContainer;
  *
  */
 public interface IParser {
-	/**
-	 * Start parsing the 3D object
-	 */
+    /**
+     * Parse specified model and store into memory temporarily.
+     * Override this in the concrete parser
+     */
 	public void parse();
-	/**
-	 * Returns the parsed object
-	 * @return
-	 */
+
+    /**
+     * Return a container which contain parsed model object.
+     * Override this in the concrete parser
+     *
+     * @return container which contain parsed model object
+     */
 	public Object3dContainer getParsedObject();
-	/**
-	 * Returns the parsed animation object
-	 * @return
-	 */
+
+    /**
+     * Return a parsed animation object from animation model.
+     * Override this in the concrete parser if applicable
+     *
+     * @return animation object which contain parsed model object
+     */
 	public AnimationObject3d getParsedAnimationObject();
 }

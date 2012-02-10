@@ -150,8 +150,10 @@ public class RendererActivity extends Activity implements ISceneController
     }
     
     /**
-     * Setting this to false stops the render loop, and initScene() and onInitScene() will no longer fire.
-     * Setting this to true resumes it. 
+     * Setting this to false stops the render loop, and initScene() and
+     * onInitScene() will no longer fire. Setting this to true resumes it.
+     *
+     * @param $b true to resumes the render loop
      */
     public void renderContinuously(boolean $b)
     {

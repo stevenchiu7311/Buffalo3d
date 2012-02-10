@@ -1,9 +1,7 @@
 package min3d.vos;
 
 /**
- * Represents a geometric ray, compound of a {@link Point3} and a {@link Vector3}
- *
- *
+ * Represents a geometric ray, compound of a {@link Number3d}.
  */
 public class Ray {
 
@@ -37,8 +35,9 @@ public class Ray {
     /**
      * Constructs a ray from a point and a vector. The point is defined as (0,0,0)
      *
-     * @param v
-     *            the vector
+     * @param vec_x x in the vector
+     * @param vec_y y in the vector
+     * @param vec_z z in the vector
      */
     public Ray(float vec_x, float vec_y, float vec_z) {
         this.point = new Number3d(0, 0, 0);

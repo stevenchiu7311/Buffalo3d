@@ -21,7 +21,7 @@ public class Parser {
 	 * @param type
 	 * @param resources
 	 * @param resourceID
-	 * @return
+	 * @return parser interface
 	 */
 	public static IParser createParser(Type type, Resources resources, String resourceID, boolean generateMipMap)
 	{

@@ -10,9 +10,9 @@ import java.util.List;
 public interface OnLongClickListener {
 
     /**
-     * Called when a view has been clicked and held.
+     * Interface definition for a callback to be invoked when a object has been clicked and held.
      *
-     * @param v The view that was clicked and held.
+     * @param obj The view that was clicked and held.
      *
      * @return true if the callback consumed the long click, false otherwise.
      */

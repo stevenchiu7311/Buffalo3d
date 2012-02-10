@@ -31,6 +31,12 @@ import min3d.vos.ShadeModel;
 /**
  * @author Lee
  */
+
+/**
+ * This class represents the basic building block for user interface components. A Object3d
+ * occupies a polygon area on the screen and is responsible for drawing and
+ * event handling.
+ */
 public class Object3d
 {
     private final static String TAG = "Object3d";
@@ -39,14 +45,14 @@ public class Object3d
 	
 	private RenderType _renderType = RenderType.TRIANGLES;
 	
-    public final static Number3d UNIT_X = new Number3d(1, 0, 0);
-    public final static Number3d UNIT_Y = new Number3d(0, 1, 0);
-    public final static Number3d UNIT_Z = new Number3d(0, 0, 1);
-    public final static Number3d UNIT_XYZ = new Number3d(1, 1, 1);
+    private final static Number3d UNIT_X = new Number3d(1, 0, 0);
+    private final static Number3d UNIT_Y = new Number3d(0, 1, 0);
+    private final static Number3d UNIT_Z = new Number3d(0, 0, 1);
+    private final static Number3d UNIT_XYZ = new Number3d(1, 1, 1);
 
-    public final static int TRANSLATE = 0x1;
-    public final static int ROTATE = 0x2;
-    public final static int SCALE = 0x4;
+    private final static int TRANSLATE = 0x1;
+    private final static int ROTATE = 0x2;
+    private final static int SCALE = 0x4;
 
     private static final int PRESSED_STATE_DURATION = 125;
     private static final int DEFAULT_LONG_PRESS_TIMEOUT = 500;
@@ -268,146 +274,254 @@ public class Object3d
 		return _textures;
 	}
 	
-	/**
-	 * Determines if object will be rendered.
-	 * Default is true. 
-	 */
+    /**
+     * Indicates if object will be rendered.
+     * Default is true.
+     *
+     * @return true if object will be rendered
+     */
 	public boolean isVisible()
 	{
 		return _isVisible;
 	}
+
+    /**
+     * Determines if object will be rendered.
+     * Default is true.
+     *
+     * @param $b true if object will be rendered
+     */
 	public void isVisible(Boolean $b)
 	{
 		_isVisible = $b;
 	}
 	
-	/**
-	 * Determines if backfaces will be rendered (ie, doublesided = true).
-	 * Default is false.
-	 */
+    /**
+     * Indicates if backfaces will be rendered (ie, doublesided = true).
+     * Default is false.
+     *
+     * @return true if backfaces will be rendered
+     */
 	public boolean doubleSidedEnabled()
 	{
 		return _doubleSidedEnabled;
 	}
+
+    /**
+     * Determines if backfaces will be rendered (ie, doublesided = true).
+     * Default is false.
+     *
+     * @param $b true to apply lighting on object
+     */
 	public void doubleSidedEnabled(boolean $b)
 	{
 		_doubleSidedEnabled = $b;
 	}
-	
-	/**
-	 * Determines if object uses GL_COLOR_MATERIAL or not.
-	 * Default is false.
-	 */
+
+    /**
+     * Indicates if object uses GL_COLOR_MATERIAL or not.
+     * Default is false.
+     *
+     * @return true if object uses GL_COLOR_MATERIAL
+     */
 	public boolean colorMaterialEnabled()
 	{
 		return _colorMaterialEnabled;
 	}
 	
+    /**
+     * Determines if object uses GL_COLOR_MATERIAL or not.
+     * Default is false.
+     *
+     * @param $b true to uses GL_COLOR_MATERIAL on object
+     */
+    public void colorMaterialEnabled(boolean $b)
+    {
+        _colorMaterialEnabled = $b;
+    }
+
+    /**
+     * Indicates if object apply lighting.
+     * Default is true.
+     *
+     * @return true if object apply lighting
+     */
 	public boolean lightingEnabled() {
 		return _lightingEnabled;
 	}
 
+    /**
+     * Determines if object apply lighting or not.
+     * Default is true.
+     *
+     * @param $b true to apply lighting on object
+     */
 	public void lightingEnabled(boolean $b) {
 		this._lightingEnabled = $b;
 	}
 
-	public void colorMaterialEnabled(boolean $b)
-	{
-		_colorMaterialEnabled = $b;
-	}
-
-	/**
-	 * Determines whether animation is enabled or not. If it is enabled
-	 * then this should be an AnimationObject3d instance.
-	 * This is part of the Object3d class so there's no need to cast
-	 * anything during the render loop when it's not necessary.
-	 */
+    /**
+     * Indicates whether animation is enabled or not. If it is enabled then this
+     * should be an AnimationObject3d instance. This is part of the Object3d
+     * class so there's no need to cast anything during the render loop when
+     * it's not necessary.
+     *
+     * @return true if object animation is enabled
+     */
 	public boolean animationEnabled()
 	{
 		return _animationEnabled;
 	}
+
+    /**
+     * Determines if animation will be enabled. If it is enabled then this
+     * should be an AnimationObject3d instance. This is part of the Object3d
+     * class so there's no need to cast anything during the render loop when
+     * it's not necessary.
+     *
+     * @param $b true to make object animation enabled
+     */
 	public void animationEnabled(boolean $b)
 	{
 		_animationEnabled = $b;
 	}
-	/**
-	 * Determines if per-vertex colors will be using for rendering object.
-	 * If false, defaultColor property will dictate object color.
-	 * If object has no per-vertex color information, setting is ignored.
-	 * Default is true. 
-	 */
+
+    /**
+     * Indicates if per-vertex colors will be using for rendering object. If false,
+     * defaultColor property will dictate object color. If object has no
+     * per-vertex color information, setting is ignored. Default is true.
+     *
+     * @return true if per-vertex colors will be using for rendering object
+     */
 	public boolean vertexColorsEnabled()
 	{
 		return _vertexColorsEnabled;
 	}
+
+    /**
+     * Determines if per-vertex colors will be using for rendering object. If
+     * false, defaultColor property will dictate object color. If object has no
+     * per-vertex color information, setting is ignored. Default is true.
+     *
+     * @param $b true to make per-vertex colors be used for rendering object
+     */
 	public void vertexColorsEnabled(Boolean $b)
 	{
 		_vertexColorsEnabled = $b;
 	}
 
-	/**
-	 * Determines if textures (if any) will used for rendering object.
-	 * Default is true.  
-	 */
+    /**
+     * Indicates if textures (if any) will used for rendering object.
+     * Default is true.
+     *
+     * @return true if textures (if any) will used for rendering object
+     */
 	public boolean texturesEnabled()
 	{
 		return _texturesEnabled;
 	}
+
+    /**
+     * Determines if textures (if any) will used for rendering object.
+     * Default is true.
+     *
+     * @param $b true to make textures (if any) be used for rendering object
+     */
 	public void texturesEnabled(Boolean $b)
 	{
 		_texturesEnabled = $b;
 	}
 	
-	/**
-	 * Determines if object will be rendered using vertex light normals.
-	 * If false, no lighting is used on object for rendering.
-	 * Default is true.
-	 */
+    /**
+     * Indicates if object will be rendered using vertex light normals. If false,
+     * no lighting is used on object for rendering.
+     * Default is true.
+     *
+     * @return true to make object be rendered using vertex light normals
+     */
 	public boolean normalsEnabled()
 	{
 		return _normalsEnabled;
 	}
+
+    /**
+     * Determines if object will be rendered using vertex light normals. If
+     * false, no lighting is used on object for rendering.
+     * Default is true.
+     *
+     * @param $b true to make textures (if any) be used for rendering object
+     */
 	public void normalsEnabled(boolean $b)
 	{
 		_normalsEnabled = $b;
 	}
 
-	/**
-	 * When true, Renderer draws using vertex points list, rather than faces list.
-	 * (ie, using glDrawArrays instead of glDrawElements) 
-	 * Default is false.
-	 */
+    /**
+     * When true, Renderer draws using vertex points list, rather than faces
+     * list. (ie, using glDrawArrays instead of glDrawElements)
+     * Default is false.
+     *
+     * @return renderer draws using vertex points list, rather than faces list
+     */
 	public boolean ignoreFaces()
 	{
 		return _ignoreFaces;
 	}
+
+    /**
+     * When true, Renderer draws using vertex points list, rather than faces
+     * list. (ie, using glDrawArrays instead of glDrawElements)
+     * Default is false.
+     *
+     * @param $b true to make that Renderer draws using vertex points list,
+     *           rather than faces list
+     */
 	public void ignoreFaces(boolean $b)
 	{
 		_ignoreFaces = $b;
 	}	
 	
-	/**
-	 * Options are: TRIANGLES, LINES, and POINTS
-	 * Default is TRIANGLES.
-	 */
+    /**
+     * Options are: TRIANGLES, LINES, and POINTS.
+     * Default is TRIANGLES.
+     *
+     * @return render shape type
+     */
 	public RenderType renderType()
 	{
 		return _renderType;
 	}
+
+    /**
+     * Options are: TRIANGLES, LINES, and POINTS.
+     * Default is TRIANGLES.
+     *
+     * @param $type render shape type
+     */
 	public void renderType(RenderType $type)
 	{
 		_renderType = $type;
 	}
 	
-	/**
-	 * Possible values are ShadeModel.SMOOTH and ShadeModel.FLAT.
-	 * Default is ShadeModel.SMOOTH.
-	 * @return
-	 */
+    /**
+     * Returns current used shading model type.
+     * Possible values are ShadeModel.SMOOTH and ShadeModel.FLAT.
+     * Default is ShadeModel.SMOOTH.
+     *
+     * @return the current value of the shading model
+     */
 	public ShadeModel shadeModel()
 	{
 		return _shadeModel;
 	}
+
+    /**
+     * Specifies current used shading model type.
+     * Possible values are ShadeModel.SMOOTH and ShadeModel.FLAT.
+     * Default is ShadeModel.SMOOTH.
+     *
+     * @param $shadeModel specified value of the shading model
+     */
 	public void shadeModel(ShadeModel $shadeModel)
 	{
 		_shadeModel = $shadeModel;
@@ -484,16 +598,23 @@ public class Object3d
 		if (this.parent() != null) 				this.parent().removeChild(this);
 	}
 
-	//
-
-	/**
-	 * Color used to render object, but only when colorsEnabled is false.
-	 */
+    /**
+     * Returns color used to render object.
+     * Note: Color's rgb attributes only work when vertex colors is enabled.
+     *
+     * @return the color used to render object
+     */
 	public Color4 defaultColor()
 	{
 		return _defaultColor;
 	}
-	
+
+    /**
+     * Sets color used to render object.
+     * Note: Color's rgb attributes only work when vertex colors is enabled.
+     *
+     * @param color the color used to render object
+     */
     public void defaultColor(Color4 color) {
         _defaultColor = color;
         if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
@@ -508,107 +629,165 @@ public class Object3d
         }
     }
 
-	/**
-	 * X/Y/Z position of object. 
-	 */
+    /**
+     * Returns X/Y/Z position of object.
+     *
+     * @return position vector of object
+     */
 	public Number3d position()
 	{
 		return mPosition;
 	}
 	
-	/**
-	 * X/Y/Z euler rotation of object, using Euler angles.
-	 * Units should be in degrees, to match OpenGL usage. 
-	 */
+    /**
+     * Returns X/Y/Z euler rotation of object, using Euler angles. Units should
+     * be in degrees, to match OpenGL usage.
+     *
+     * @return rotation vector of object
+     */
 	public Number3d rotation()
 	{
 		return mRotation;
 	}
 
-	/**
-	 * X/Y/Z scale of object.
-	 */
+    /**
+     * Returns X/Y/Z scale of object.
+     *
+     * @return scale vector of object
+     */
 	public Number3d scale()
 	{
 		return mScale;
 	}
 	
-	/**
-	 * Point size (applicable when renderType is POINT)
-	 * Default is 3. 
-	 */
+    /**
+     * Returns point size. (applicable when renderType is POINT)
+     * Default is 3.
+     *
+     * @return point size
+     */
 	public float pointSize()
 	{
 		return _pointSize; 
 	}
+
+    /**
+     * Sets point size. (applicable when renderType is POINT)
+     * Default is 3.
+     *
+     * @param $n point size
+     */
 	public void pointSize(float $n)
 	{
 		_pointSize = $n;
 	}
 
-	/**
-	 * Point smoothing (anti-aliasing), applicable when renderType is POINT.
-	 * When true, points look like circles rather than squares.
-	 * Default is true.
-	 */
+    /**
+     * Indicates if point smoothing enabled (anti-aliasing), applicable when
+     * renderType is POINT. When true, points look like circles rather than
+     * squares.
+     * Default is true.
+     *
+     * @return true if point will be applied smoothing
+     */
 	public boolean pointSmoothing()
 	{
 		return _pointSmoothing;
 	}
+
+    /**
+     * Enabled point smoothing (anti-aliasing), applicable when renderType is
+     * POINT. When true, points look like circles rather than squares.
+     * Default is true.
+     *
+     * @param $b true to make that point will be applied smoothing
+     */
 	public void pointSmoothing(boolean $b)
 	{
 		_pointSmoothing = $b;
 	}
 
-	/**
-	 * Line width (applicable when renderType is LINE)
-	 * Default is 1. 
-	 * 
-	 * Remember that maximum line width is OpenGL-implementation specific, and varies depending 
-	 * on whether lineSmoothing is enabled or not. Eg, on Nexus One,  lineWidth can range from
-	 * 1 to 8 without smoothing, and can only be 1f with smoothing. 
-	 */
+    /**
+     * Return line width. (applicable when renderType is LINE)
+     * Default is 1.
+     *
+     * Remember that maximum line width is OpenGL-implementation specific, and
+     * varies depending on whether lineSmoothing is enabled or not. Eg, on Nexus
+     * One, lineWidth can range from 1 to 8 without smoothing, and can only be
+     * 1f with smoothing.
+     *
+     * @return return line width
+     */
 	public float lineWidth()
 	{
 		return _lineWidth;
 	}
+
+    /**
+     * Set line width. (applicable when renderType is LINE)
+     * Default is 1.
+     *
+     * Remember that maximum line width is OpenGL-implementation specific, and
+     * varies depending on whether lineSmoothing is enabled or not. Eg, on Nexus
+     * One, lineWidth can range from 1 to 8 without smoothing, and can only be
+     * 1f with smoothing.
+     *
+     * @param $n line width
+     */
 	public void lineWidth(float $n)
 	{
 		_lineWidth = $n;
 	}
 	
-	/**
-	 * Line smoothing (anti-aliasing), applicable when renderType is LINE
-	 * Default is false.
-	 */
+    /**
+     * True if line smoothing enabled (anti-aliasing), applicable when
+     * renderType is LINE.
+     * Default is false.
+     *
+     * @return true if line will be applied smoothing
+     */
 	public boolean lineSmoothing()
 	{
 		return _lineSmoothing;
 	}
+
+    /**
+     * Enabled line smoothing (anti-aliasing), applicable when renderType is
+     * LINE.
+     * Default is false.
+     *
+     * @param $b true if line will be applied smoothing
+     */
 	public void lineSmoothing(boolean $b)
 	{
 		_lineSmoothing = $b;
 	}
 	
-	/**
-	 * Convenience property 
-	 */
+    /**
+     * Returns object name.
+     *
+     * @return object name
+     */
 	public String name()
 	{
 		return _name;
 	}
-	public void name(String $s)
+
+    /**
+     * Sets object name.
+     *
+     * @param $name object name
+     */
+	public void name(String $name)
 	{
-		_name = $s;
+		_name = $name;
 	}
 	
 	public IObject3dContainer parent()
 	{
 		return _parent;
 	}
-	
-	//
-	
+
 	void parent(IObject3dContainer $container) /*package-private*/
 	{
 		_parent = $container;
@@ -629,12 +808,12 @@ public class Object3d
 		return _scene;
 	}
 	
-	/**
-	 * Can be overridden to create custom draw routines on a per-object basis, 
-	 * rather than using Renderer's built-in draw routine. 
-	 * 
-	 * If overridden, return true instead of false.
-	 */
+    /**
+     * Can be overridden to create custom draw routines on a per-object basis,
+     * rather than using Renderer's built-in draw routine.
+     *
+     * If overridden, return true instead of false.
+     */
 	public Boolean customRenderer(GL10 gl)
 	{
 		return false;
@@ -662,32 +841,55 @@ public class Object3d
 		return clone;
 	}
 
-    public Number3d center() {
+    Number3d center() {
         return mCenter;
     }
 
+    /**
+     * Indicates if object support transparency.
+     * Default is true. (Keep transparent enabled in ES 1.1 whatever parameter is.)
+     *
+     * @return true if object support transparency
+     */
     public boolean transparentEnabled() {
         return mTransparent;
     }
 
+    /**
+     * Enables object transparency support.
+     * Default is true. (Keep transparent enabled in ES 1.1 whatever parameter is.)
+     *
+     * @param transparent true to enable object transparency support
+     */
     public void transparentEnabled(Boolean transparent) {
         mTransparent = transparent;
     }
 
+    /**
+     * Indicates if object depth test support enabled.
+     * Default is true. (Keep depth test enabled in ES 1.1 whatever parameter is.)
+     *
+     * @return transparent true to enable object transparency support
+     */
     public boolean forcedDepthEnabled() {
         return mForcedDepth;
     }
 
+    /**
+     * Enables object depth test support.
+     * Default is true. (Keep depth test enabled in ES 1.1 whatever parameter is.)
+     *
+     * @param forcedDepth true to enable object transparency support
+     */
     public void forcedDepthEnabled(Boolean forcedDepth) {
         mForcedDepth = forcedDepth;
     }
 
-    public boolean vertexBufferObjectEnabled() {
+    boolean vertexBufferObjectEnabled() {
         return mVertexBufferObject;
     }
 
-    // hide
-    private void vertexBufferObjectEnabled(Boolean vertexBufferObject) {
+    void vertexBufferObjectEnabled(Boolean vertexBufferObject) {
         mVertexBufferObject = vertexBufferObject;
         mBuffered = !mVertexBufferObject;
         if (!vertexBufferObject) {
@@ -695,11 +897,11 @@ public class Object3d
         }
     }
 
-    public void render(CameraVo camera, float[] projMatrix, float[] vMatrix) {
+    protected void render(CameraVo camera, float[] projMatrix, float[] vMatrix) {
         render(camera, projMatrix, vMatrix, null);
     }
 
-    public void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
+    protected void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
         if (!isVisible()) return;
         mMaterial = Scene.getDefaultMaterial();
         mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
@@ -776,8 +978,6 @@ public class Object3d
             }
         }
         setShaderParams();
-
-        //doTransformations();
 
         Matrix.setIdentityM(mMMatrix, 0);
 
@@ -866,7 +1066,7 @@ public class Object3d
         mMaterial.setMaterialColorEnable(colorMaterialEnabled());
     };
 
-    public void makeVertextBufferObject() {
+    void makeVertextBufferObject() {
         GLES20.glDeleteBuffers(VBO_ID.TOTAL.ordinal(), mBuffers, 0);
         GLES20.glGenBuffers(VBO_ID.TOTAL.ordinal(), mBuffers, 0);
 
@@ -920,7 +1120,7 @@ public class Object3d
         }
     }
 
-    public void containAABB() {
+    void containAABB() {
         FloatBuffer[] points = mAabbBuffer;
         points[0] = vertices().points().buffer();
 
@@ -1133,6 +1333,15 @@ public class Object3d
         return true;
     }
 
+    /**
+     * Pass the touch screen motion event down to the target object, or this
+     * object if it is the target.
+     *
+     * @param ray a geometric ray from the touch
+     * @param event The motion event to be dispatched
+     * @param list the touched object(ray intersected ones)
+     * @return True if the event was handled by the object, false otherwise.
+     */
     public boolean dispatchTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
         if (!onFilterTouchEventForSecurity(event)) {
             return false;
@@ -1146,6 +1355,14 @@ public class Object3d
         return onTouchEvent(ray, event, list);
     }
 
+    /**
+     * Implement this method to handle touch screen motion events.
+     *
+     * @param ray a geometric ray from the touch
+     * @param event The motion event to be dispatched
+     * @param list the touched object(ray intersected ones)
+     * @return True if the event was handled by the object, false otherwise.
+     */
     public boolean onTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
         Number3d coordinates = getIntersectPoint(event.getX(),event.getY(),mCenter.z);
         list = (ArrayList<Object3d>)Shared.renderer().getPickedObject(ray, this);
@@ -1302,7 +1519,7 @@ public class Object3d
         return false;
     }
 
-    public Number3d getIntersectPoint(float x, float y, float z) {
+    private Number3d getIntersectPoint(float x, float y, float z) {
         int w = Shared.renderer().getWidth();
         int h = Shared.renderer().getHeight();
         float[] eye = new float[4];
@@ -1321,10 +1538,23 @@ public class Object3d
         return new Number3d(eye[0], eye[1], -eye[2]);
     }
 
+    /**
+     * Register a callback to be invoked when a touch event is sent to this object.
+     *
+     * @param listener the touch listener to attach to this object
+     */
     public void setOnTouchListener(OnTouchListener listener) {
         mOnTouchListener = listener;
     }
 
+    /**
+     * Register a callback to be invoked when this object is clicked. If this object is not
+     * clickable, it becomes clickable.
+     *
+     * @param listener The callback that will run
+     *
+     * @see #setClickable(boolean)
+     */
     public void setOnClickListener(OnClickListener listener) {
         if (!isClickable()) {
             setClickable(true);
@@ -1332,6 +1562,14 @@ public class Object3d
         mOnClickListener = listener;
     }
 
+    /**
+     * Register a callback to be invoked when this object is clicked and held. If this object is not
+     * long clickable, it becomes long clickable.
+     *
+     * @param listener The callback that will run
+     *
+     * @see #setLongClickable(boolean)
+     */
     public void setOnLongClickListener(OnLongClickListener listener) {
         if (!isLongClickable()) {
             setLongClickable(true);
@@ -1339,45 +1577,78 @@ public class Object3d
         mOnLongClickListener = listener;
     }
 
+    /**
+     * Indicates whether this object reacts to click events or not.
+     *
+     * @return true if the object is clickable, false otherwise
+     *
+     * @see #setClickable(boolean)
+     */
     public boolean isClickable() {
         return (mViewFlags & CLICKABLE) == CLICKABLE;
     }
 
+    /**
+     * Enables or disables click events for this object. When a object
+     * is clickable it will change its state to "pressed" on every click.
+     * Subclasses should set the object clickable to visually react to
+     * user's clicks.
+     *
+     * @param clickable true to make the object clickable, false otherwise
+     *
+     * @see #isClickable()
+     */
     public void setClickable(boolean clickable) {
         setFlags(clickable ? CLICKABLE : 0, CLICKABLE);
     }
 
+    /**
+     * Indicates whether this object reacts to long click events or not.
+     *
+     * @return true if the object is long clickable, false otherwise
+     *
+     * @see #setLongClickable(boolean)
+     */
     public boolean isLongClickable() {
         return (mViewFlags & LONG_CLICKABLE) == LONG_CLICKABLE;
     }
 
+    /**
+     * Enables or disables long click events for this object. When a object is long
+     * clickable it reacts to the user holding down the button for a longer
+     * duration than a tap. This event can either launch the listener or a
+     * context menu.
+     *
+     * @param longClickable true to make the object long clickable, false otherwise
+     * @see #isLongClickable()
+     */
     public void setLongClickable(boolean longClickable) {
         setFlags(longClickable ? LONG_CLICKABLE : 0, LONG_CLICKABLE);
     }
 
     /**
-     * Indicates whether the view is currently in pressed state. Unless
-     * {@link #setPressed(boolean)} is explicitly called, only clickable views can enter
+     * Indicates whether the object is currently in pressed state. Unless
+     * {@link #setPressed(boolean)} is explicitly called, only clickable objects can enter
      * the pressed state.
      *
      * @see #setPressed(boolean)
      * @see #isClickable()
      * @see #setClickable(boolean)
      *
-     * @return true if the view is currently pressed, false otherwise
+     * @return true if the object is currently pressed, false otherwise
      */
     public boolean isPressed() {
         return (mPrivateFlags & PRESSED) == PRESSED;
     }
 
     /**
-     * Sets the pressed state for this view.
+     * Sets the pressed state for this object.
      *
      * @see #isClickable()
      * @see #setClickable(boolean)
      *
-     * @param pressed Pass true to set the View's internal state to "pressed", or false to reverts
-     *        the View's internal state from a previously set "pressed" state.
+     * @param pressed Pass true to set the object's internal state to "pressed", or false to reverts
+     *        the object's internal state from a previously set "pressed" state.
      */
     public void setPressed(boolean pressed) {
         if (pressed) {
@@ -1390,7 +1661,7 @@ public class Object3d
     }
 
     /**
-     * Dispatch setPressed to all of this View's children.
+     * Dispatch setPressed to all of this object's children.
      *
      * @see #setPressed(boolean)
      *
@@ -1416,7 +1687,7 @@ public class Object3d
     }
 
     /**
-     * Call this view's OnClickListener, if it is defined.
+     * Call this object's OnClickListener, if it is defined.
      *
      * @return True there was an assigned OnClickListener that was called, false
      *         otherwise is returned.
@@ -1435,7 +1706,7 @@ public class Object3d
     }
 
     /**
-     * @return A handler associated with the thread running the View. This
+     * @return A handler associated with the thread running the object. This
      * handler can be used to pump events in the UI events queue.
      */
     public Handler getHandler() {
@@ -1452,7 +1723,7 @@ public class Object3d
      * The runnable will be run on the user interface thread.</p>
      *
      * <p>This method can be invoked from outside of the UI thread
-     * only when this View is attached to a window.</p>
+     * only when this object is attached to a window.</p>
      *
      * @param action The Runnable that will be executed.
      *
@@ -1471,7 +1742,7 @@ public class Object3d
      * The runnable will be run on the user interface thread.</p>
      *
      * <p>This method can be invoked from outside of the UI thread
-     * only when this View is attached to a window.</p>
+     * only when this object is attached to a window.</p>
      *
      * @param action The Runnable that will be executed.
      * @param delayMillis The delay (in milliseconds) until the Runnable
@@ -1493,11 +1764,11 @@ public class Object3d
      * <p>Removes the specified Runnable from the message queue.</p>
      *
      * <p>This method can be invoked from outside of the UI thread
-     * only when this View is attached to a window.</p>
+     * only when this object is attached to a window.</p>
      *
      * @param action The Runnable to remove from the message handling queue
      *
-     * @return true if this view could ask the Handler to remove the Runnable,
+     * @return true if this object could ask the Handler to remove the Runnable,
      *         false otherwise. When the returned value is true, the Runnable
      *         may or may not have been actually removed from the message queue
      *         (for instance, if the Runnable was not in the queue already.)
@@ -1551,7 +1822,7 @@ public class Object3d
     }
 
     /**
-     * Call this view's OnLongClickListener, if it is defined. Invokes the context menu if the
+     * Call this object's OnLongClickListener, if it is defined. Invokes the context menu if the
      * OnLongClickListener did not consume the event.
      *
      * @return True if one of the above receivers consumed the event, false otherwise.
@@ -1618,8 +1889,6 @@ public class Object3d
      *
      * @param event The motion event to be filtered.
      * @return True if the event should be dispatched, false if the event should be dropped.
-     *
-     * @see #getFilterTouchesWhenObscured
      */
     public boolean onFilterTouchEventForSecurity(MotionEvent event) {
         if ((mViewFlags & FILTER_TOUCHES_WHEN_OBSCURED) != 0

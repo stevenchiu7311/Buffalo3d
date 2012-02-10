@@ -11,7 +11,9 @@ import java.util.List;
 public interface OnTouchListener {
 
     /**
-     * Get the clicked objects inside the {@link BeyondarGLSurfaceView}
+     * Interface definition for a callback to be invoked when a touch event is
+     * dispatched to this object. The callback will be invoked before the touch
+     * event is given to the object.
      *
      * @param obj
      *            The 3d object selected
@@ -21,6 +23,7 @@ public interface OnTouchListener {
      *            The list of intersected objects
      * @param coordinate
      *            The coordinate of 3d world
+     * @return true if the callback consumed the touch, false otherwise.
     */
     public boolean onTouch(Object3d obj, MotionEvent event, List<Object3d> list, Number3d coordinate);
 

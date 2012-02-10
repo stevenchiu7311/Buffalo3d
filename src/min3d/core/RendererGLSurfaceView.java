@@ -10,6 +10,16 @@ import android.util.AttributeSet;
 import min3d.Shared;
 import min3d.interfaces.ISceneController;
 
+/**
+ * Extend this class when creating your min3d-based GLSurfaceView.
+ * Then, override initScene() and updateScene() for your main
+ * 3D logic.
+ *
+ * Override onCreateSetContentView() to change layout, if desired.
+ *
+ * To update 3d scene-related variables from within the the main UI thread,
+ * override onUpdateScene() and onUpdateScene() as needed.
+ */
 public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements ISceneController {
 
     protected Handler _initSceneHander;
@@ -91,6 +101,8 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
     /**
      * Setting this to false stops the render loop, and initScene() and
      * onInitScene() will no longer fire. Setting this to true resumes it.
+     *
+     * @param $b true to resumes the render loop
      */
     public void renderContinuously(boolean $b) {
         _renderContinuously = $b;
