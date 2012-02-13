@@ -22,22 +22,19 @@ public class OpenGLESV1Material extends AMaterial {
     protected static String mVShader;
     protected static String mFShader;
     protected int muNormalMatrixHandle;
-    protected int muUseObjectTransformHandle;
-    protected int muSpecularColorHandle;
-    protected int muAmbientColorHandle;
-    protected int muShininessHandle;
     protected int mLightEnableHandle;
-    protected float[] mNormalMatrix;
+    protected float[] mNormalUniformMatrix;
     protected boolean mLightEnable;
+
+    android.graphics.Matrix mNormalMatrix = new android.graphics.Matrix();
+    android.graphics.Matrix mvMatrix = new android.graphics.Matrix();
+    float[] mValues = new float[9];
+    float[] mNormalValue = new float[9];
+    float[] mMMatrix = new float[16];
 
     public OpenGLESV1Material() {
         super(VERTEX_SHADER__FILE, FRAGMENT_SHADER_FILE);
-        mNormalMatrix = new float[9];
-    }
-
-    public OpenGLESV1Material(float[] specularColor, float[] ambientColor,
-            float shininess) {
-        this();
+        mNormalUniformMatrix = new float[9];
     }
 
     @Override
@@ -71,25 +68,37 @@ public class OpenGLESV1Material extends AMaterial {
     @Override
     public void setModelMatrix(float[] modelMatrix) {
         super.setModelMatrix(modelMatrix);
-        android.graphics.Matrix normalMatrix = new android.graphics.Matrix();
-        android.graphics.Matrix mvMatrix = new android.graphics.Matrix();
 
-        mvMatrix.setValues(new float[] { modelMatrix[0], modelMatrix[1],
-                modelMatrix[2], modelMatrix[4], modelMatrix[5], modelMatrix[6],
-                modelMatrix[8], modelMatrix[9], modelMatrix[10] });
+        mValues[0] = modelMatrix[0];
+        mValues[1] = modelMatrix[1];
+        mValues[2] = modelMatrix[2];
+        mValues[3] = modelMatrix[4];
+        mValues[4] = modelMatrix[5];
+        mValues[5] = modelMatrix[6];
+        mValues[6] = modelMatrix[8];
+        mValues[7] = modelMatrix[9];
+        mValues[8] = modelMatrix[10];
+        mvMatrix.setValues(mValues);
 
-        normalMatrix.reset();
-        mvMatrix.invert(normalMatrix);
-        float[] values = new float[9];
-        normalMatrix.getValues(values);
+        mNormalMatrix.reset();
+        mvMatrix.invert(mNormalMatrix);
 
-        normalMatrix.setValues(new float[] { values[0], values[3], values[6],
-                values[1], values[4], values[7], values[2], values[5],
-                values[8] });
-        normalMatrix.getValues(mNormalMatrix);
+        mNormalMatrix.getValues(mNormalValue);
+        mValues[0] = mNormalValue[0];
+        mValues[1] = mNormalValue[3];
+        mValues[2] = mNormalValue[6];
+        mValues[3] = mNormalValue[1];
+        mValues[4] = mNormalValue[4];
+        mValues[5] = mNormalValue[7];
+        mValues[6] = mNormalValue[2];
+        mValues[7] = mNormalValue[5];
+        mValues[8] = mNormalValue[8];
+
+        mNormalMatrix.setValues(mValues);
+        mNormalMatrix.getValues(mNormalUniformMatrix);
 
         GLES20.glUniformMatrix3fv(muNormalMatrixHandle, 1, false,
-                mNormalMatrix, 0);
+                mNormalUniformMatrix, 0);
     }
 
     protected void drawObject_textures(Object3d $o) {
@@ -99,7 +108,6 @@ public class OpenGLESV1Material extends AMaterial {
            int type = usesCubeMap ? GLES20.GL_TEXTURE_CUBE_MAP
                    : GLES20.GL_TEXTURE_2D;
 
-           int textureEnableHandle = GLES20.glGetUniformLocation(mProgram, "textureEnabled[" + Integer.toString(i) + "]");
            if ($o.hasUvs() && $o.texturesEnabled()) {
                TextureVo textureVo = ((i < $o.textures().size())) ? textureVo = $o
                        .textures().get(i) : null;
@@ -131,35 +139,27 @@ public class OpenGLESV1Material extends AMaterial {
                        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
                    }
 
-                   int textureHandle = GLES20.glGetUniformLocation(mProgram,
-                           "uTexture[" + Integer.toString(i) + "]");
-                   if (textureHandle == -1) {
-                       Log.d(TAG, "Could not get uniform location for uTexture");
-                   }
-
-                   GLES20.glUniform1i(textureHandle, i);
-
-
-                   float[] mMMatrix = new float[16];
                    Matrix.setIdentityM(mMMatrix, 0);
                    Matrix.translateM(mMMatrix, 0, textureVo.offsetU, textureVo.offsetV,0);
-                   int textrureMatrix = GLES20.glGetUniformLocation(mProgram, "u_textureMatrix[" + Integer.toString(i) + "]");
-                   if (textrureMatrix > -1) {
-                       GLES20.glUniformMatrix4fv(textrureMatrix, 1, false, mMMatrix, 0);
-                   }
-                   if (textureEnableHandle > -1) {
-                       GLES20.glUniform1i(textureEnableHandle, 1);
-                   }
-
-                   int textureMode = GLES20.glGetUniformLocation(mProgram, "textureEnvMode[" + Integer.toString(i) + "]");
-
-                   if (textureMode > -1) {
-                       GLES20.glUniform1i(textureMode, textureVo.textureEnvs.get(0).param);
+                   switch (i) {
+                   case 0: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0,i);
+                           setUniformMatrix(Uniforms.UNIFORM_LIST_ID.TEXTURE0_MATRIX, mMMatrix);
+                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENV_MODE, textureVo.textureEnvs.get(0).param);
+                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 1);
+                           break;
+                   case 1: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1,i);
+                           setUniformMatrix(Uniforms.UNIFORM_LIST_ID.TEXTURE1_MATRIX, mMMatrix);
+                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENV_MODE, textureVo.textureEnvs.get(0).param);
+                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 1);
+                           break;
                    }
                }
            } else {
-               if (textureEnableHandle > -1) {
-                   GLES20.glUniform1i(textureEnableHandle, 0);
+               switch (i) {
+               case 0: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 0);
+                       break;
+               case 1: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 0);
+                       break;
                }
                GLES20.glBindTexture(type, 0);
                GLES20.glDisable(type);

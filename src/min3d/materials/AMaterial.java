@@ -29,6 +29,8 @@ public abstract class AMaterial {
 
     protected String mVertexShader;
     protected String mFragmentShader;
+    protected String mVertexShaderDefine = "";
+    protected String mFragmeShaderDefine = "";
 
     protected int mProgram;
     protected int muMVPMatrixHandle;
@@ -52,11 +54,22 @@ public abstract class AMaterial {
     public AMaterial(String vertexShader, String fragmentShader) {
         mVertexShader = readShader(MAIN_VERTEX_SHADER__FILE) + readShader(vertexShader);
         mFragmentShader = readShader(MAIN_FRAGMENT_SHADER_FILE) + readShader(fragmentShader);
-        setShaders(mVertexShader, mFragmentShader);
+    }
+
+    public void compilerShaders() {
+        setShaders(mVertexShaderDefine + mVertexShader, mFragmeShaderDefine + mFragmentShader);
+    }
+
+    public void setVertexShaderDefine(String vertexShaderDefine) {
+        mVertexShaderDefine = vertexShaderDefine;
+    }
+
+    public void setFragmeShaderDefine(String fragmeShaderDefine) {
+        mFragmeShaderDefine = fragmeShaderDefine;
     }
 
     public void setShaders(String vertexShader, String fragmentShader) {
-        mProgram = createProgram(mVertexShader, fragmentShader);
+        mProgram = createProgram(vertexShader, fragmentShader);
         if (mProgram == 0)
             return;
 
@@ -361,6 +374,17 @@ public abstract class AMaterial {
             return;
         }
         GLES20.glUniform1i(locationId, value);
+    }
+
+    void setUniformMatrix(UNIFORM_LIST_ID id, float[] matrix) {
+        if (mLocationId.get(id) == null) {
+            return;
+        }
+        int locationId = (Integer) mLocationId.get(id);
+        if (locationId == -1) {
+            return;
+        }
+        GLES20.glUniformMatrix4fv(locationId, 1, false, matrix, 0);
     }
 
     public void setCamera(CameraVo camera) {

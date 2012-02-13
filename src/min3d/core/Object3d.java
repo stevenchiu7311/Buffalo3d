@@ -905,7 +905,7 @@ public class Object3d
 
     protected void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
         if (!isVisible()) return;
-        mMaterial = Scene.getDefaultMaterial();
+        mMaterial = _scene.getDefaultMaterial();
         mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
 
         mProjMatrix = projMatrix;

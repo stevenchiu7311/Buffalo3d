@@ -7,11 +7,13 @@ import min3d.interfaces.IDirtyParent;
 import min3d.interfaces.IObject3dContainer;
 import min3d.interfaces.ISceneController;
 import min3d.materials.AMaterial;
+import min3d.materials.OpenGLESV1Material;
 import min3d.materials.SimpleMaterial;
 import min3d.vos.CameraVo;
 import min3d.vos.Color4;
 import min3d.vos.Color4Managed;
 import min3d.vos.FogType;
+import min3d.vos.LightType;
 import android.util.Log;
 
 /**
@@ -21,6 +23,8 @@ import android.util.Log;
  */
 public class Scene implements IObject3dContainer, IDirtyParent
 {
+    private final static String TAG = "Scene";
+
 	private ManagedLightList _lights;
 	private CameraVo _camera;
 	
@@ -36,7 +40,15 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	private ISceneController _sceneController;
 	
 	private Object3dContainer mObject3dContainer;
-	static AMaterial mMaterial;
+
+    // For opengl v2
+    public final static int SIMPLE_MATERIAL = 0;
+    public final static int OPENGLESV1_MATERIAL = 1;
+    static AMaterial mMaterial;
+    private boolean mSupportFullFeature = false;
+    int mMaterialType = OPENGLESV1_MATERIAL;
+    private boolean mFogDirty = true;
+    private boolean mMaterialDirty = true;
 
 	public Scene(ISceneController $sceneController) 
 	{
@@ -315,6 +327,9 @@ public class Scene implements IObject3dContainer, IDirtyParent
      * @param _fogType current fog type
      */
 	public void fogType(FogType _fogType) {
+        if (this._fogType.glValue() != _fogType.glValue()) {
+            mFogDirty = true;
+        }
 		this._fogType = _fogType;
 	}
 
@@ -333,6 +348,9 @@ public class Scene implements IObject3dContainer, IDirtyParent
      * @param _fogEnabled fog enabled state.
      */
 	public void fogEnabled(boolean _fogEnabled) {
+        if (this._fogEnabled != _fogEnabled) {
+            mFogDirty = true;
+        }
 		this._fogEnabled = _fogEnabled;
 	}
 
@@ -386,11 +404,70 @@ public class Scene implements IObject3dContainer, IDirtyParent
      *
      * @hide
      */
-    static AMaterial getDefaultMaterial() {
-        if (mMaterial == null) {
-            mMaterial = new SimpleMaterial();
+    AMaterial getDefaultMaterial() {
+        if (mMaterial == null || mMaterialDirty || checkReCompilerShader()) {
+            mMaterial = CreateMaterial();
+            mMaterialDirty = false;
+            String fragmeShaderDefine = "";
+            String vertexShaderDefine = "";
+            if (_fogEnabled) {
+                fragmeShaderDefine += "#define ENABLE_FOG\n";
+                vertexShaderDefine += "#define ENABLE_FOG\n";
+                vertexShaderDefine += "#define FOG_TYPE 0x" + Integer.toString(_fogType.glValue(), 16)+"\n";
+            }
+            mFogDirty = false;
+
+            if (mMaterialType == OPENGLESV1_MATERIAL) {
+                String lightDefineString = getLightDefine();
+                fragmeShaderDefine += lightDefineString;
+                vertexShaderDefine += lightDefineString;
+                fragmeShaderDefine += "#define COMMON_USED\n";
+                vertexShaderDefine += "#define COMMON_USED\n";
+            }
+
+            mMaterial.setFragmeShaderDefine(fragmeShaderDefine);
+            mMaterial.setVertexShaderDefine(vertexShaderDefine);
+            mMaterial.compilerShaders();
         }
         return mMaterial;
+    }
+
+    private AMaterial CreateMaterial() {
+        if (mMaterialType == OPENGLESV1_MATERIAL) {
+            return new OpenGLESV1Material();
+        } else if (mMaterialType == SIMPLE_MATERIAL) {
+            return new SimpleMaterial();
+        } else {
+            return new SimpleMaterial();
+        }
+    }
+
+    private String getLightDefine() {
+        String returnString = "";
+        for (int glIndex = 0; glIndex < Renderer.NUM_GLLIGHTS; glIndex++) {
+            if (lights().glIndexEnabled()[glIndex]) {
+                returnString = returnString + "#define LIGHT" + Integer.toString(glIndex) + "\n";
+                if (_lights.get(glIndex).type() != LightType.DIRECTIONAL) {
+                    returnString = returnString + "#define LIGHT" + Integer.toString(glIndex) + "_W\n";
+                }
+            }
+        }
+        return returnString;
+    }
+
+    private boolean checkReCompilerShader() {
+        if (mFogDirty) {
+            return true;
+        }
+
+        if (mMaterialType == OPENGLESV1_MATERIAL) {
+            for (int glIndex = 0; glIndex < Renderer.NUM_GLLIGHTS; glIndex++) {
+                if (_lights.glIndexEnabledDirty()[glIndex]) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -400,5 +477,60 @@ public class Scene implements IObject3dContainer, IDirtyParent
      */
     static void resetMaterial() {
         mMaterial = null;
+    }
+
+    /**
+     * Determines if support full feature or common used feature.
+     * The function is available if developer use openglES2.0 and OpenGLV1Material material.
+     * If developer set ture, the OpenGLV1Material material support multi-texture, fog, teture mode, multi-lights ..
+     * If developer set false, the OpenGLV1Material material support single-texture, fog, multi-lights
+     *
+     * @param supportFullFeature true to support Full Feature.
+     */
+    public void supportFullFeature(boolean supportFullFeature) {
+        mSupportFullFeature = supportFullFeature;
+    }
+
+    /**
+     * Indicates if support full feature.
+     *
+     * @return true if support Full Feature.
+     */
+    public boolean supportFullFeature() {
+        return mSupportFullFeature;
+    }
+
+    /**
+     * Determines which material will used for rendering object.
+     * In current stage, only support Simple and OpenglESV1 Material.
+     * Simple Material only support texture.
+     * OpenglESV1 Material support multi-texture, fog, teture mode, multi-lights.
+     *
+     * @param type SIMPLE_MATERIAL or OPENGLESV1_MATERIAL
+     *
+     * @return true if type is a available type.
+     */
+    public boolean setMaterialType (int type) {
+        if ((type != SIMPLE_MATERIAL) || (type != OPENGLESV1_MATERIAL)) {
+            Log.d(TAG, "Material type:" + Integer.toString(type) + "is not available");
+            return false;
+        }
+        if (mMaterialType != type) {
+            mMaterialType = type;
+            mMaterialDirty = true;
+        }
+        return true;
+    }
+
+    /**
+     * Indicates which material is used.
+     * In current stage, only support Simple and OpenglESV1 Material.
+     * Simple Material only support single-texture.
+     * OpenglESV1 Material support multi-texture, fog, teture mode, multi-lights.
+     *
+     * @return SIMPLE_MATERIAL or OPENGLESV1_MATERIAL
+     */
+    public int getMaterialType() {
+        return mMaterialType;
     }
 }

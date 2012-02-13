@@ -58,10 +58,12 @@ void main()
     normal = u_transposeAdjointModelViewMatrix * aNormal;
     normal = normalize(normal);
     processLight();
-
+#if defined(ENABLE_FOG)
     if (u_fogEnabled) {
+        vertexPositionInEye = uMMatrix * aPosition;
         v_fogFactor = calcFogFactor(-vertexPositionInEye.z);
     }
+#endif
 }
 
 
@@ -83,14 +85,13 @@ float calcFogExp2(float distanceToEye);
 float calcFogFactor(float distanceToEye)
 {
     float fogFactor;
-
-    if (u_fogMode == GL_LINEAR) {
-        fogFactor = calcFogLinear(distanceToEye);
-    } else if (u_fogMode == GL_EXP) {
-        fogFactor = calcFogExp(distanceToEye);
-    } else {
-        fogFactor = calcFogExp2(distanceToEye);
-    }
+#if FOG_TYPE == GL_LINEAR
+    fogFactor = calcFogLinear(distanceToEye);
+#elif FOG_TYPE == GL_EXP
+    fogFactor = calcFogExp(distanceToEye);
+#else
+    fogFactor = calcFogExp2(distanceToEye);
+#endif
 
     return fogFactor;
 }

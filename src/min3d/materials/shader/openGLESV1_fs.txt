@@ -13,19 +13,25 @@ void calcTextureEnvironment(inout vec4 color, int i);
 void calcTextureColorContribution(inout vec4 color)
 {
     // Fetch enabled texture colors
+#if defined(COMMON_USED)
+    color *= texture2D(uTexture[0], v_texCoord[0]);
+#else
     for (int i=0;i<NUM_TEXTURES;i++) {
         if (textureEnabled[i]) {
             textureColor[i] = texture2D(uTexture[i], v_texCoord[i]);
             calcTextureEnvironment(color,i);
         }
     }
+#endif
 }
 
 void calcTextureEnvironment(inout vec4 color, int i)
 {
     if (u_lightingEnabled){
+#if defined(COMMON_USED)
         color = color * textureColor[i];
-        /*if (textureEnvMode[i] == GL_MODULATE) {
+#else
+        if (textureEnvMode[i] == GL_MODULATE) {
             color = color*textureColor[i];
         } else if (textureEnvMode[i] == GL_ADD) {
             color.rgb = color.rgb + textureColor[i].rgb;
@@ -34,7 +40,8 @@ void calcTextureEnvironment(inout vec4 color, int i)
             color.rgb = mix(color.rgb, textureColor[i].rgb, textureColor[i].a);
         } else {
             color = color*textureColor[i];
-        }*/
+        }
+#endif
     } else {
         color = textureColor[i];
     }

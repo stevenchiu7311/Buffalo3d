@@ -46,11 +46,14 @@ void main()
     if (uUseTexture) {
         calcTextureColorContribution(color);
     }
+    color.a *= v_frontColor.a;
+#if defined(ENABLE_FOG)
     if (u_fogEnabled) {
         float fogFactor;
         fogFactor = v_fogFactor;
         color.rgb = mix(u_fogColor, color.rgb, fogFactor);
     }
+#endif
     gl_FragColor = color;
 }
 

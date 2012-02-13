@@ -23,11 +23,15 @@ uniform mat4 u_texture1Matrix;
 
 void calcTextureCoordinates()
 {
+#if defined(COMMON_USED)
+    v_texCoord[0] = (u_textureMatrix[0] * vec4(aTextureCoord,c_onef,c_onef)).st;
+#else
     for (int i= c_zero; i <NUM_TEXTURES; i++) {
         if (textureEnabled[i]) {
             v_texCoord[i] = (u_textureMatrix[i] * vec4(aTextureCoord,c_onef,c_onef)).st;
         }
     }
+#endif
 }
 
 // Structs
@@ -71,9 +75,6 @@ vec4 calcPerVertexLighting();
 void calcLighting()
 {
     v_frontColor = calcPerVertexLighting();
-    if (u_material_color_enable && !uUseTexture){
-        v_frontColor *= (aColor/255.0);
-    }
 }
 
 // Functions
@@ -86,6 +87,14 @@ vec4 calcSpotLightWithLocalViewer(Light light);
 float calcBasicAttenuationFactor(Light light, vec3 lightVector);
 float calcSpotFactor(Light light, vec3 lightVector);
 vec4 calcLight(Light light);
+vec4 calcLight0(Light light);
+vec4 calcLight1(Light light);
+vec4 calcLight2(Light light);
+vec4 calcLight3(Light light);
+vec4 calcLight4(Light light);
+vec4 calcLight5(Light light);
+vec4 calcLight6(Light light);
+vec4 calcLight7(Light light);
 
 vec4 mat_ambient_color;
 vec4 mat_diffuse_color;
@@ -98,12 +107,46 @@ vec4 calcPerVertexLighting()
     vec4 color = mat_ambient_color * u_globalAmbientColor;
     color += u_material.emission;
 
+#if !defined(COMMON_USED)
     int i;
-    for(i=c_zero; i<2; i++) {
+    for(i = c_zero; i < 8; i++) {
         if(light_enable[i]) {
             color += calcLight(light[i]);
         }
     }
+#else
+    #if defined(LIGHT0)
+    color += calcLight0(light[0]);
+    #endif
+
+    #if defined(LIGHT1)
+    color += calcLight1(light[1]);
+    #endif
+
+    #if defined(LIGHT2)
+    color += calcLight2(light[2]);
+    #endif
+
+    #if defined(LIGHT3)
+    color += calcLight3(light[3]);
+    #endif
+
+    #if defined(LIGHT4)
+    color += calcLight4(light[4]);
+    #endif
+
+    #if defined(LIGHT5)
+    color += calcLight5(light[5]);
+    #endif
+
+    #if defined(LIGHT6)
+    color += calcLight6(light[6]);
+    #endif
+
+    #if defined(LIGHT7)
+    color += calcLight7(light[7]);
+    #endif
+#endif
     color.a = mat_diffuse_color.a;
     return clamp(color, c_zerof, c_onef);
 }
@@ -113,13 +156,134 @@ vec4 calcLight(Light light)
     vec4 color;
     if (light.position.w != c_zerof) {
         if (light.spotCutoffAngleCos > -c_onef) {
-                color = calcSpotLight(light);
-            } else {
-                color = calcPointLight(light);
-            }
+            color = calcSpotLight(light);
         } else {
-            color = calcDirectionalLight(light);
+            color = calcPointLight(light);
         }
+    } else {
+        color = calcDirectionalLight(light);
+    }
+
+    return color;
+}
+
+vec4 calcLight0(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT0_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight1(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT1_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight2(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT2_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight3(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT3_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight4(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT4_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight5(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT5_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight6(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT6_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight7(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT7_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
     return color;
 }
 
