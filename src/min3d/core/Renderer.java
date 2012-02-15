@@ -1,5 +1,7 @@
 package min3d.core;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.FloatBuffer;
@@ -23,6 +25,7 @@ import min3d.vos.TextureVo;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.opengl.ETC1Util;
 import android.opengl.GLES11;
 import android.opengl.GLES20;
@@ -164,9 +167,12 @@ public class Renderer implements GLSurfaceView.Renderer
             mVMatrix = mMg.mModelView;
         }
         return mVMatrix;
-   }
-	//
-	
+    }
+
+    public float[] getProjectMatrix() {
+        return mProjMatrix;
+    }
+
 	/**
 	 *  Accessor to the GL object, in case anything outside this class wants to do 
 	 *  bad things with it :)
@@ -926,5 +932,70 @@ public class Renderer implements GLSurfaceView.Renderer
 
     public int getHeight() {
         return mHeight;
+    }
+
+    /**
+     * Fetch GL scene snapshot with specified region.
+     *
+     * @param x start x
+     * @param y start y
+     * @param w region width
+     * @param h region height
+     * @return snapshot bitmap
+     */
+    public Bitmap savePixels(int x, int y, int w, int h) {
+        int b[] = new int[w * h];
+        int bt[] = new int[w * h];
+        IntBuffer ib = IntBuffer.wrap(b);
+        ib.position(0);
+        GLES20.glReadPixels(x, y, w, h, GLES20.GL_RGBA, GL10.GL_UNSIGNED_BYTE, ib);
+
+        /* remember, that OpenGL bitmap is incompatible with Android bitmap and
+         * so, some correction need. */
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+                int pix = b[i * w + j];
+                int pb = (pix >> 16) & 0xff;
+                int pr = (pix << 16) & 0x00ff0000;
+                int pix1 = (pix & 0xff00ff00) | pr | pb;
+                bt[(h - i - 1) * w + j] = pix1;
+            }
+        }
+        Bitmap sb = Bitmap.createBitmap(bt, w, h, Bitmap.Config.ARGB_8888);
+        return sb;
+    }
+
+    /**
+     * Save GL scene snapshot with specified region into a file.
+     *
+     * @param x start x
+     * @param y start y
+     * @param w region width
+     * @param h region height
+     * @param filename saved file path
+     */
+    public void savePNG(int x, int y, int w, int h, String filename) {
+        Bitmap bmp = savePixels(x, y, w, h);
+        try {
+            FileOutputStream fos = new FileOutputStream(filename);
+            bmp.compress(CompressFormat.PNG, 100, fos);
+            try {
+                fos.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if (bmp != null) {
+                bmp.recycle();
+                bmp = null;
+            }
+        }
     }
 }

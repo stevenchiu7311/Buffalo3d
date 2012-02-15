@@ -196,7 +196,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 
                 boolean find = false;
                 for (Object3d obj : list) {
-                    find = contain(this,obj);
+                    find = contain(child,obj);
                 }
 
                 if (child != null && child.isVisible() && find) {

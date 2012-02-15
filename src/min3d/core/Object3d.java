@@ -160,8 +160,10 @@ public class Object3d
 	private IObject3dContainer _parent;
 
     /* Variable for Touch handler */
-    List<Object3d> mDownList = null;
-    List<Object3d> mUpList = null;
+    Number3d mCoordinate = null;
+    ArrayList<Object3d> mDownList = null;
+    ArrayList<Object3d> mUpList = null;
+    List<Object3d> mLongClickList = null;
     UnsetPressedState mUnsetPressedState;
     Handler mHandler = null;
     CheckForLongPress mPendingCheckForLongPress;
@@ -1364,8 +1366,8 @@ public class Object3d
      * @return True if the event was handled by the object, false otherwise.
      */
     public boolean onTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
-        Number3d coordinates = getIntersectPoint(event.getX(),event.getY(),mCenter.z);
-        list = (ArrayList<Object3d>)Shared.renderer().getPickedObject(ray, this);
+        mCoordinate = getIntersectPoint(event.getX(),event.getY(),mCenter.z);
+
         final int viewFlags = mViewFlags;
 
         if ((viewFlags & ENABLED_MASK) == DISABLED) {
@@ -1380,7 +1382,7 @@ public class Object3d
         }
 
         if (mOnTouchListener != null) {
-            if (mOnTouchListener.onTouch(this, event, list, coordinates)) {
+            if (mOnTouchListener.onTouch(this, event, list, mCoordinate)) {
                 return true;
             }
         }
@@ -1392,7 +1394,7 @@ public class Object3d
                     boolean prepressed = (mPrivateFlags & PREPRESSED) != 0;
                     if ((mPrivateFlags & PRESSED) != 0 || prepressed) {
                         if (mDownList != null) {
-                            mUpList = (List<Object3d>)list.clone();
+                            mUpList = (ArrayList<Object3d>) list.clone();
                             for (int i = 0; i < mUpList.size(); i++) {
                                 boolean intersected = false;
                                 for (int j = 0; j < mDownList.size(); j++) {
@@ -1434,11 +1436,13 @@ public class Object3d
                                 // performClick directly. This lets other visual state
                                 // of the view update before click actions start.
                                 if (mPerformClick == null) {
-                                    mPerformClick = new PerformClick(event, mUpList, coordinates);
+                                    mPerformClick = new PerformClick(mUpList, mCoordinate);
+                                } else {
+                                    mPerformClick.attachInfo(mUpList, mCoordinate);
                                 }
 
                                 if (!post(mPerformClick)) {
-                                    performClick(event, mUpList, coordinates);
+                                    performClick(mUpList, mCoordinate);
                                 }
                             }
                         }
@@ -1459,7 +1463,10 @@ public class Object3d
                     break;
 
                 case MotionEvent.ACTION_DOWN:
-                    mDownList = (List<Object3d>)list.clone();
+                    // Check whether this object appear in pick list.
+                    if (!isExist(list)) return false;
+
+                    mDownList = (ArrayList<Object3d>)list.clone();
 
                     mHasPerformedLongPress = false;
 
@@ -1499,7 +1506,7 @@ public class Object3d
 
                 case MotionEvent.ACTION_MOVE:
                     // Be lenient about moving outside of buttons
-                    if (list.size() == 0) {
+                    if (!isExist(list)) {
                         // Outside button
                         removeTapCallback();
                         if ((mPrivateFlags & PRESSED) != 0) {
@@ -1519,6 +1526,15 @@ public class Object3d
         return false;
     }
 
+    private boolean isExist(ArrayList<Object3d> list) {
+        for (Object3d obj : list) {
+            if (obj.equals(this)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Number3d getIntersectPoint(float x, float y, float z) {
         int w = Shared.renderer().getWidth();
         int h = Shared.renderer().getHeight();
@@ -1528,8 +1544,8 @@ public class Object3d
         float distance = _scene.camera().position.z + z;
         float winZ = (1.0f / vf.zNear() - 1.0f / distance)
                 / (1.0f / vf.zNear() - 1.0f / vf.zFar());
-        GLU.gluUnProject(x, w - y ,winZ, Shared.renderer().getMatrixGrabber().mModelView, 0,
-                Shared.renderer().getMatrixGrabber().mProjection, 0, viewport, 0, eye, 0);
+        GLU.gluUnProject(x, h - y ,winZ, Shared.renderer().getViewMatrix(), 0,
+                Shared.renderer().getProjectMatrix(), 0, viewport, 0, eye, 0);
         if (eye[3] != 0) {
             eye[0] = eye[0] / eye[3];
             eye[1] = eye[1] / eye[3];
@@ -1671,18 +1687,21 @@ public class Object3d
     }
 
     private final class PerformClick implements Runnable {
-        MotionEvent mEvent;
         List<Object3d> mList;
         Number3d mCoord;
 
-        public PerformClick(MotionEvent event, List<Object3d> list, Number3d coord) {
-            mEvent = event;
+        public PerformClick(List<Object3d> list, Number3d coord) {
+            mList = list;
+            mCoord = coord;
+        }
+
+        public void attachInfo(List<Object3d> list, Number3d coord) {
             mList = list;
             mCoord = coord;
         }
 
         public void run() {
-            performClick(mEvent,mList,mCoord);
+            performClick(mList,mCoord);
         }
     }
 
@@ -1692,9 +1711,9 @@ public class Object3d
      * @return True there was an assigned OnClickListener that was called, false
      *         otherwise is returned.
      */
-    public boolean performClick(MotionEvent event, List<Object3d> list, Number3d coord) {
+    public boolean performClick(List<Object3d> list, Number3d coord) {
         if (mOnClickListener != null) {
-            mOnClickListener.onClick(this,event,list,coord);
+            mOnClickListener.onClick(this,list,coord);
             return true;
         }
 
@@ -1806,11 +1825,23 @@ public class Object3d
 
     class CheckForLongPress implements Runnable {
         private int mOriginalWindowAttachCount;
+        List<Object3d> mList;
+        Number3d mCoord;
+
+        public CheckForLongPress(List<Object3d> list, Number3d coord) {
+            mList = list;
+            mCoord = coord;
+        }
+
+        public void attachInfo(List<Object3d> list, Number3d coord) {
+            mList = list;
+            mCoord = coord;
+        }
 
         public void run() {
             if (isPressed() && (parent() != null)
                     /*&& mOriginalWindowAttachCount == mWindowAttachCount*/) {
-                if (performLongClick()) {
+                if (performLongClick(mList,mCoord)) {
                     mHasPerformedLongPress = true;
                 }
             }
@@ -1827,10 +1858,10 @@ public class Object3d
      *
      * @return True if one of the above receivers consumed the event, false otherwise.
      */
-    public boolean performLongClick() {
+    public boolean performLongClick(List<Object3d> list, Number3d coord) {
         boolean handled = false;
         if (mOnLongClickListener != null) {
-            handled = mOnLongClickListener.onLongClick(this);
+            handled = mOnLongClickListener.onLongClick(this,list,coord);
         }
         return handled;
     }
@@ -1848,8 +1879,12 @@ public class Object3d
         if ((mViewFlags & LONG_CLICKABLE) == LONG_CLICKABLE) {
             mHasPerformedLongPress = false;
 
+            mLongClickList = (ArrayList<Object3d>)mDownList.clone();
+
             if (mPendingCheckForLongPress == null) {
-                mPendingCheckForLongPress = new CheckForLongPress();
+                mPendingCheckForLongPress = new CheckForLongPress(mLongClickList,mCoordinate);
+            } else {
+                mPendingCheckForLongPress.attachInfo(mLongClickList,mCoordinate);
             }
             mPendingCheckForLongPress.rememberWindowAttachCount();
             postDelayed(mPendingCheckForLongPress,
