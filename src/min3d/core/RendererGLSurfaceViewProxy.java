@@ -1,6 +1,7 @@
 package min3d.core;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.util.AttributeSet;
@@ -15,6 +16,7 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
 
     protected min3d.core.Renderer mRenderer;
     protected MultisampleConfigChooser mConfigChooser = null;
+    protected SnapshotCallback mSnapshotCallback = null;
 
     public RendererGLSurfaceViewProxy(Context context) {
         super(context);
@@ -63,5 +65,39 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
 
     public void setRender(min3d.core.Renderer renderer) {
         mRenderer = renderer;
+    }
+
+    /**
+     * Register a SnapshotCall back. Return the callback when snapshot is ready.
+     *
+     * @param callback a callback used to get snapshot.
+     */
+    public void setSnapshotCallback(SnapshotCallback callback) {
+        mSnapshotCallback = callback;
+    }
+
+    /**
+     * Request GLSurfaceView to create snapShot.
+     *
+     * @param width the width of snapshot.
+     * @param height the height of snapshot.
+     * @param object an extra piece of information. Return the information when
+     *            snapshot is ready.
+     */
+    public void requestSceneSnapshot(final int width, final int height, final Object object) {
+        queueEvent(new Runnable() {
+            public void run() {
+                if (mSnapshotCallback != null) {
+                    mSnapshotCallback.onGetSnapShot(mRenderer.savePixels(0, 0, width, height), object);
+                }
+            }
+        });
+    }
+
+    /**
+     * A callback interface used to return glSurfaceView snapshot.
+     */
+    public interface SnapshotCallback {
+        void onGetSnapShot(Bitmap bitmap, Object object);
     }
 }
