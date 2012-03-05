@@ -1,0 +1,9 @@
+min3d
+min3d.animation
+min3d.core
+min3d.interfaces
+min3d.listeners
+min3d.materials
+min3d.objectPrimitives
+min3d.parser
+min3d.vos
