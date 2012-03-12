@@ -71,6 +71,11 @@ public class Renderer implements GLSurfaceView.Renderer
     protected float[] mProjMatrix = new float[16];
     protected float[] mVMatrix = new float[16];
 
+    private int []mRPBuffer;
+    private int []mRPBufferT;
+    private int mRPBufferW;
+    private int mRPBufferH;
+
 	public Renderer(Scene $scene)
 	{
 		_scene = $scene;
@@ -900,19 +905,29 @@ public class Renderer implements GLSurfaceView.Renderer
      * @return plane boundary vector
      */
     public Number3d getWorldPlaneSize(float depth) {
+        Number3d coord = getWorldCoord(mWidth,mHeight,depth);
+        return new Number3d(Math.abs(coord.x * 2),Math.abs(coord.y * 2),coord.z);
+    }
+
+    /**
+     * Return GL world coordinate converted from screen coordinate.
+     *
+     * @return GL world coordinate
+     */
+    public Number3d getWorldCoord(int x, int y, float z) {
         float[] eye = new float[4];
         float[] size = new float[4];
-        int[] viewport = { 0, 0, mWidth, mHeight };
+        int[] viewport = {0, 0, mWidth, mHeight};
         FrustumManaged vf = _scene.camera().frustum;
-        float distance = _scene.camera().position.z + depth;
+        float distance = _scene.camera().position.z + z;
         float winZ = (1.0f / vf.zNear() - 1.0f / distance)
                 / (1.0f / vf.zNear() - 1.0f / vf.zFar());
         mVMatrix = getViewMatrix();
-        GLU.gluUnProject(viewport[2], 0, winZ, mVMatrix, 0,
+        GLU.gluUnProject(x, viewport[3] - y, winZ, mVMatrix, 0,
                 mProjMatrix, 0, viewport, 0, eye, 0);
         if (eye[3] != 0) {
-            size[0] = Math.abs(eye[0] / eye[3] * 2);
-            size[1] = Math.abs(eye[1] / eye[3] * 2);
+            size[0] = eye[0] / eye[3];
+            size[1] = eye[1] / eye[3];
             size[2] = eye[2] / eye[3];
         }
         return new Number3d(size[0], size[1], size[2]);
@@ -944,9 +959,13 @@ public class Renderer implements GLSurfaceView.Renderer
      * @return snapshot bitmap
      */
     public Bitmap savePixels(int x, int y, int w, int h) {
-        int b[] = new int[w * h];
-        int bt[] = new int[w * h];
-        IntBuffer ib = IntBuffer.wrap(b);
+        if ((mRPBuffer == null && mRPBufferT == null) || mRPBufferW != w || mRPBufferH != h) {
+            mRPBuffer = new int[w * h];
+            mRPBufferT = new int[w * h];
+            mRPBufferW = w;
+            mRPBufferH = h;
+        }
+        IntBuffer ib = IntBuffer.wrap(mRPBuffer);
         ib.position(0);
         GLES20.glReadPixels(x, y, w, h, GLES20.GL_RGBA, GL10.GL_UNSIGNED_BYTE, ib);
 
@@ -954,14 +973,14 @@ public class Renderer implements GLSurfaceView.Renderer
          * so, some correction need. */
         for (int i = 0; i < h; i++) {
             for (int j = 0; j < w; j++) {
-                int pix = b[i * w + j];
+                int pix = mRPBuffer[i * w + j];
                 int pb = (pix >> 16) & 0xff;
                 int pr = (pix << 16) & 0x00ff0000;
                 int pix1 = (pix & 0xff00ff00) | pr | pb;
-                bt[(h - i - 1) * w + j] = pix1;
+                mRPBufferT[(h - i - 1) * w + j] = pix1;
             }
         }
-        Bitmap sb = Bitmap.createBitmap(bt, w, h, Bitmap.Config.ARGB_8888);
+        Bitmap sb = Bitmap.createBitmap(mRPBufferT, w, h, Bitmap.Config.ARGB_8888);
         return sb;
     }
 
