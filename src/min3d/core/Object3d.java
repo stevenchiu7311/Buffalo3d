@@ -178,7 +178,7 @@ public class Object3d
     OnLongClickListener mOnLongClickListener;
 
     /* For vertex buffer object */
-    boolean mVertexBufferObject = true;
+    boolean mVertexBufferObject = false;
     boolean mBuffered = !mVertexBufferObject;
     int mBuffers[] = {0,0,0,0,0};
 
