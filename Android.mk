@@ -3,6 +3,6 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := eng debug optional
 LOCAL_MODULE := Engine3D
-LOCAL_SRC_FILES := $(call all-subdir-java-files)
+LOCAL_SRC_FILES := $(call all-java-files-under, src)
 include $(BUILD_JAVA_LIBRARY)
 

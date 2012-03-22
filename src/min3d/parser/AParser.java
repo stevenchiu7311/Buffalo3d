@@ -10,9 +10,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 import min3d.Min3d;
-import min3d.Shared;
 import min3d.Utils;
 import min3d.animation.AnimationObject3d;
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 import min3d.vos.Number3d;
@@ -29,6 +29,7 @@ import android.util.Log;
  *
  */
 public abstract class AParser implements IParser {
+    protected GContext mGContext;
 	protected Resources resources;
 	protected String resourceID;
 	protected String packageID;
@@ -43,8 +44,9 @@ public abstract class AParser implements IParser {
 	protected boolean generateMipMap;
 	protected HashMap<String, Material> materialMap;
 	
-	public AParser()
+	public AParser(GContext context)
 	{
+        mGContext = context;
 		vertices = new ArrayList<Number3d>();
 		texCoords = new ArrayList<Uv>();
 		normals = new ArrayList<Number3d>();
@@ -54,9 +56,9 @@ public abstract class AParser implements IParser {
 		materialMap = new HashMap<String, Material>();
 	}
 	
-	public AParser(Resources resources, String resourceID, Boolean generateMipMap)
+	public AParser(GContext context, Resources resources, String resourceID, Boolean generateMipMap)
 	{
-		this();
+		this(context);
 		this.resources = resources;
 		this.resourceID = resourceID;
 		if (resourceID.indexOf(":") > -1)
@@ -211,7 +213,7 @@ public abstract class AParser implements IParser {
 
 				Log.d(Min3d.TAG, "Adding texture " + ba.resourceID);
 				
-				Bitmap b = Utils.makeBitmapFromResourceId(bmResourceID);
+				Bitmap b = Utils.makeBitmapFromResourceId(mGContext.getContext(),bmResourceID);
 				ba.useForAtlasDimensions = true;
 				ba.bitmap = b;
 			}
@@ -303,7 +305,7 @@ public abstract class AParser implements IParser {
 				e.printStackTrace();
 			}
 			*/
-			setId(Shared.textureManager().getNewAtlasId());
+			setId(mGContext.getTexureManager().getNewAtlasId());
 		}
 
 		/**

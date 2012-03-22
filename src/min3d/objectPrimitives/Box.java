@@ -1,6 +1,7 @@
 package min3d.objectPrimitives;
 
 import min3d.Utils;
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 
@@ -20,9 +21,9 @@ public class Box extends Object3dContainer
 	private float _depth;
 	
 
-	public Box(float $width, float $height, float $depth, Color4[] $sixColor4s, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
+	public Box(GContext context, float $width, float $height, float $depth, Color4[] $sixColor4s, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
 	{
-		super(4*6, 2*6, $useUvs,$useNormals,$useVertexColors);
+		super(context, 4*6, 2*6,$useUvs,$useNormals, $useVertexColors);
 		
 		_width = $width;
 		_height = $height;
@@ -46,19 +47,19 @@ public class Box extends Object3dContainer
 		make();
 	}
 	
-	public Box(float $width, float $height, float $depth, Color4[] $sixColor4s)
+	public Box(GContext context, float $width, float $height, float $depth, Color4[] $sixColor4s)
 	{
-		this($width,$height,$depth, $sixColor4s, true,true,true);
-	}
-	
-	public Box(float $width, float $height, float $depth, Color4 color)
-	{
-		this($width,$height,$depth, new Color4[] { color, color, color, color, color, color }, true,true,true);
+		this(context,$width,$height, $depth, $sixColor4s,true,true, true);
 	}
 
-	public Box(float $width, float $height, float $depth)
+	public Box(GContext context, float $width, float $height, float $depth, Color4 color)
 	{
-		this($width,$height,$depth, null,  true,true,true);
+		this(context,$width,$height, $depth, new Color4[] { color, color, color, color, color, color },true,true, true);
+	}
+
+	public Box(GContext context, float $width, float $height, float $depth)
+	{
+		this(context,$width,$height, $depth,  null,true,true, true);
 	}
 
 	private void make()

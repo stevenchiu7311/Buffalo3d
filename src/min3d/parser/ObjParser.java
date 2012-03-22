@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.StringTokenizer;
 
 import min3d.Min3d;
-import min3d.Shared;
 import min3d.Utils;
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 import min3d.vos.Number3d;
@@ -44,12 +44,13 @@ public class ObjParser extends AParser implements IParser {
 
 	/**
 	 * Creates a new OBJ parser instance
-	 * 
+	 *
+	 * @param context
 	 * @param resources
 	 * @param resourceID
 	 */
-	public ObjParser(Resources resources, String resourceID, boolean generateMipMap) {
-		super(resources, resourceID, generateMipMap);
+	public ObjParser(GContext context, Resources resources, String resourceID, boolean generateMipMap) {
+		super(context, resources, resourceID, generateMipMap);
 	}
 
 	@Override
@@ -134,7 +135,7 @@ public class ObjParser extends AParser implements IParser {
 
 	public Object3dContainer getParsedObject() {
 		Log.d(Min3d.TAG, "Start object creation");
-		Object3dContainer obj = new Object3dContainer(0, 0);
+		Object3dContainer obj = new Object3dContainer(mGContext, 0, 0);
 		int numObjects = parseObjects.size();
 		Bitmap texture = null;
 
@@ -142,13 +143,13 @@ public class ObjParser extends AParser implements IParser {
 		{
 			textureAtlas.generate();
 			texture = textureAtlas.getBitmap();
-			Shared.textureManager().addTextureId(texture, textureAtlas.getId(), generateMipMap);
+			mGContext.getTexureManager().addTextureId(texture, textureAtlas.getId(), generateMipMap);
 		}
 		
 		for (int i = 0; i < numObjects; i++) {
 			ParseObjectData o = parseObjects.get(i);
 			Log.d(Min3d.TAG, "Creating object " + o.name);
-			obj.addChild(o.getParsedObject(materialMap, textureAtlas));
+			obj.addChild(o.getParsedObject(mGContext, materialMap, textureAtlas));
 		}
 		
 		if(textureAtlas.hasBitmaps())
@@ -210,7 +211,7 @@ public class ObjParser extends AParser implements IParser {
 						
 						int bmResourceID = resources.getIdentifier(texture
 								.toString(), null, null);
-						Bitmap b = Utils.makeBitmapFromResourceId(bmResourceID);
+						Bitmap b = Utils.makeBitmapFromResourceId(mGContext.getContext(),bmResourceID);
 						textureAtlas.addBitmapAsset(new BitmapAsset(currentMaterial, texture.toString()));
 					}
 				}

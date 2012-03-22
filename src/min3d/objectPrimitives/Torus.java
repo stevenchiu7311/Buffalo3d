@@ -1,5 +1,6 @@
 package min3d.objectPrimitives;
 
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 import min3d.vos.Number3d;
@@ -28,20 +29,20 @@ public class Torus extends Object3dContainer {
 	private int segmentsW;
 	private int segmentsH;
 	
-	public Torus() {
-		this(2, 1, 12, 8, new Color4());
+	public Torus(GContext context) {
+		this(context, 2, 1, 12, 8, new Color4());
 	}
-	
-	public Torus(Color4 color) {
-		this(2, 1, 12, 8, color);
+
+	public Torus(GContext context, Color4 color) {
+		this(context, 2, 1, 12, 8, color);
 	}
-	
-	public Torus(float largeRadius, float smallRadius, int segmentsW, int segmentsH) {
-		this(largeRadius, smallRadius, segmentsW, segmentsH, new Color4());
+
+	public Torus(GContext context, float largeRadius, float smallRadius, int segmentsW, int segmentsH) {
+		this(context, largeRadius, smallRadius, segmentsW, segmentsH, new Color4());
 	}
-	
-	public Torus(float largeRadius, float smallRadius, int segmentsW, int segmentsH, Color4 color) {
-		super(segmentsW * segmentsH * 2 * 3, segmentsW * segmentsH * 2);
+
+	public Torus(GContext context, float largeRadius, float smallRadius, int segmentsW, int segmentsH, Color4 color) {
+		super(context, segmentsW * segmentsH * 2 * 3, segmentsW * segmentsH * 2);
 		this.largeRadius = largeRadius;
 		this.smallRadius = smallRadius;
 		this.segmentsW = Math.max(MIN_SEGMENTSW, segmentsW);

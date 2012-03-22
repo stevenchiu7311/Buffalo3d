@@ -1,6 +1,7 @@
 package min3d.animation;
 
 import min3d.core.FacesBufferedList;
+import min3d.core.GContext;
 import min3d.core.Object3d;
 import min3d.core.TextureList;
 import min3d.core.Vertices;
@@ -19,8 +20,8 @@ public class AnimationObject3d extends Object3d {
 	private int loopStartIndex;
 	private boolean loop = false;
 
-	public AnimationObject3d(int $maxVertices, int $maxFaces, int $numFrames) {
-		super($maxVertices, $maxFaces);
+	public AnimationObject3d(GContext context, int $maxVertices, int $maxFaces, int $numFrames) {
+		super(context, $maxVertices, $maxFaces);
 		this.numFrames = $numFrames;
 		this.frames = new KeyFrame[numFrames];
 		this.currentFrameIndex = 0;
@@ -29,9 +30,9 @@ public class AnimationObject3d extends Object3d {
 		this._animationEnabled = true;
 	}
 	
-	public AnimationObject3d(Vertices $vertices, FacesBufferedList $faces, TextureList $textures, KeyFrame[] $frames)
+	public AnimationObject3d(GContext context, Vertices $vertices, FacesBufferedList $faces, TextureList $textures, KeyFrame[] $frames)
 	{
-		super($vertices, $faces, $textures);
+		super(context, $vertices, $faces, $textures);
 		numFrames = $frames.length;
 		frames = $frames;
 	}
@@ -149,7 +150,7 @@ public class AnimationObject3d extends Object3d {
 		FacesBufferedList f = cloneData ? _faces.clone() : _faces;
 		//KeyFrame[] fr = cloneData ? getClonedFrames() : frames;
 		
-		AnimationObject3d clone = new AnimationObject3d(v, f, _textures, frames);
+		AnimationObject3d clone = new AnimationObject3d(mGContext, v, f, _textures, frames);
 		clone.position().x = position().x;
 		clone.position().y = position().y;
 		clone.position().z = position().z;

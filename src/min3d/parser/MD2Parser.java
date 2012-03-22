@@ -7,9 +7,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import min3d.Min3d;
-import min3d.Shared;
 import min3d.animation.AnimationObject3d;
 import min3d.animation.KeyFrame;
+import min3d.core.GContext;
 import min3d.vos.Number3d;
 import min3d.vos.Uv;
 import android.content.res.Resources;
@@ -21,8 +21,8 @@ public class MD2Parser extends AParser implements IParser {
 	private String currentTextureName;
 	private KeyFrame[] frames;
 
-	public MD2Parser(Resources resources, String resourceID, boolean generateMipMap) {
-		super(resources, resourceID, generateMipMap);
+	public MD2Parser(GContext context, Resources resources, String resourceID, boolean generateMipMap) {
+		super(context, resources, resourceID, generateMipMap);
 	}
 
 	@Override
@@ -34,11 +34,11 @@ public class MD2Parser extends AParser implements IParser {
 		if (textureAtlas.hasBitmaps()) {
 			textureAtlas.generate();
 			texture = textureAtlas.getBitmap();
-			Shared.textureManager().addTextureId(texture, textureAtlas.getId(), generateMipMap);
+			mGContext.getTexureManager().addTextureId(texture, textureAtlas.getId(), generateMipMap);
 		}
 
 		Log.d(Min3d.TAG, "Creating object " + co.name);
-		animObj = co.getParsedObject(textureAtlas, materialMap, frames);
+		animObj = co.getParsedObject(mGContext, textureAtlas, materialMap, frames);
 
 		if (textureAtlas.hasBitmaps()) {
 			if (texture != null)

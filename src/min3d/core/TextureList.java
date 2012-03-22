@@ -2,7 +2,6 @@ package min3d.core;
 
 import java.util.ArrayList;
 
-import min3d.Shared;
 import min3d.vos.TextureVo;
 
 /**
@@ -17,10 +16,11 @@ import min3d.vos.TextureVo;
 public class TextureList  
 {
 	private ArrayList<TextureVo> _t;
-	
-	
-	public TextureList()
+	private GContext mGContext;
+
+	public TextureList(GContext context)
 	{
+	    mGContext = context;
 		_t = new ArrayList<TextureVo>();
 	}
 	
@@ -29,7 +29,7 @@ public class TextureList
 	 */
 	public boolean add(TextureVo $texture)
 	{
-		if (! Shared.textureManager().contains($texture.textureId)) return false;
+		if (!mGContext.getTexureManager().contains($texture.textureId)) return false;
 		return _t.add($texture);
 	}
 	
@@ -46,7 +46,7 @@ public class TextureList
 	 */
 	public TextureVo addById(String $textureId)
 	{
-		if (! Shared.textureManager().contains($textureId)) {
+		if (!mGContext.getTexureManager().contains($textureId)) {
 			throw new Error("Could not create TextureVo using textureId \"" + $textureId + "\". TextureManager does not contain that id.");
 		}
 		

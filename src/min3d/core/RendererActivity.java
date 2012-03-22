@@ -1,12 +1,10 @@
 package min3d.core;
 
-import min3d.Shared;
 import min3d.interfaces.ISceneController;
 import android.app.Activity;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
-import android.widget.Toast;
 
 import javax.microedition.khronos.opengles.GL;
 
@@ -30,6 +28,8 @@ public class RendererActivity extends Activity implements ISceneController
 	
     private boolean _renderContinuously;
 
+    private GContext mGContext;
+
 	final Runnable _initSceneRunnable = new Runnable() 
 	{
         public void run() {
@@ -52,24 +52,22 @@ public class RendererActivity extends Activity implements ISceneController
 		_initSceneHander = new Handler();
 		_updateSceneHander = new Handler();
 		
-		//
-		// These 4 lines are important.
-		//
-		Shared.context(this);
-		scene = new Scene(this);
-		Renderer r = new Renderer(scene);
-		Shared.renderer(r);
-		
-		_glSurfaceView = new RendererGLSurfaceViewProxy(this);
+        mGContext = new GContext(this);
+        Renderer r = new Renderer(mGContext);
+
+        scene = new Scene(mGContext, this);
+        r.setScene(scene);
+
+        _glSurfaceView = new RendererGLSurfaceViewProxy(this);
+        _glSurfaceView.setGContext(mGContext);
         glSurfaceViewConfig();
-		_glSurfaceView.setRenderer(r);
-		_glSurfaceView.setRender(r);
-		_glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
-		_glSurfaceView.setGLWrapper(
-                new GLSurfaceView.GLWrapper()
-                {
-                    public GL wrap(GL gl) { return new MatrixTrackingGL(gl); }
-                });
+        _glSurfaceView.setRenderer(r);
+        _glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        _glSurfaceView.setGLWrapper(new GLSurfaceView.GLWrapper() {
+            public GL wrap(GL gl) {
+                return new MatrixTrackingGL(gl);
+            }
+        });
         onCreateSetContentView();
 	}
     
@@ -183,5 +181,9 @@ public class RendererActivity extends Activity implements ISceneController
     public Runnable getUpdateSceneRunnable()
     {
     	return _updateSceneRunnable;
+    }
+
+    public GContext getGContext() {
+        return mGContext;
     }
 }

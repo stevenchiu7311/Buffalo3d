@@ -6,9 +6,9 @@ import java.util.HashMap;
 import android.util.Log;
 
 import min3d.Min3d;
-import min3d.Shared;
 import min3d.animation.AnimationObject3d;
 import min3d.animation.KeyFrame;
+import min3d.core.GContext;
 import min3d.core.Object3d;
 import min3d.parser.AParser.BitmapAsset;
 import min3d.parser.AParser.Material;
@@ -45,9 +45,9 @@ public class ParseObjectData {
 		faces = new ArrayList<ParseObjectFace>();
 	}
 	
-	public AnimationObject3d getParsedObject(TextureAtlas textureAtlas, HashMap<String, Material> materialMap, KeyFrame[] frames)
+	public AnimationObject3d getParsedObject(GContext context, TextureAtlas textureAtlas, HashMap<String, Material> materialMap, KeyFrame[] frames)
 	{
-		AnimationObject3d obj = new AnimationObject3d(numFaces * 3, numFaces, frames.length);
+		AnimationObject3d obj = new AnimationObject3d(context, numFaces * 3, numFaces, frames.length);
 		obj.name(name);
 		obj.setFrames(frames);
 		
@@ -56,8 +56,8 @@ public class ParseObjectData {
 		return obj;
 	}
 	
-	public Object3d getParsedObject(HashMap<String, Material> materialMap, TextureAtlas textureAtlas) {
-		Object3d obj = new Object3d(numFaces * 3, numFaces);
+	public Object3d getParsedObject(GContext context, HashMap<String, Material> materialMap, TextureAtlas textureAtlas) {
+		Object3d obj = new Object3d(context, numFaces * 3, numFaces);
 		obj.name(name);
 		
 		parseObject(obj, materialMap, textureAtlas);

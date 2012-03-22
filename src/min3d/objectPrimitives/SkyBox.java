@@ -4,8 +4,8 @@ import android.graphics.Bitmap;
 
 import java.io.InputStream;
 
-import min3d.Shared;
 import min3d.Utils;
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.listeners.OnTouchListener;
 import min3d.vos.Color4;
@@ -27,8 +27,8 @@ public class SkyBox extends Object3dContainer {
 		All
 	}
 	
-	public SkyBox(float size, int quality) {
-		super(0, 0);
+	public SkyBox(GContext context, float size, int quality) {
+		super(context, 0, 0);
 		this.size = size;
 		this.halfSize = size *.5f;
 		this.quality = quality;
@@ -38,12 +38,12 @@ public class SkyBox extends Object3dContainer {
 	private void build() {
 		color = new Color4();
 		faces = new Rectangle[6];
-		Rectangle north = new Rectangle(size, size, quality, quality, color);
-		Rectangle east = new Rectangle(size, size, quality, quality, color);
-		Rectangle south = new Rectangle(size, size, quality, quality, color);
-		Rectangle west = new Rectangle(size, size, quality, quality, color);
-		Rectangle up = new Rectangle(size, size, quality, quality, color);
-		Rectangle down = new Rectangle(size, size, quality, quality, color);
+		Rectangle north = new Rectangle(mGContext, size, size, quality, quality, color);
+		Rectangle east = new Rectangle(mGContext, size, size, quality, quality, color);
+		Rectangle south = new Rectangle(mGContext, size, size, quality, quality, color);
+		Rectangle west = new Rectangle(mGContext, size, size, quality, quality, color);
+		Rectangle up = new Rectangle(mGContext, size, size, quality, quality, color);
+		Rectangle down = new Rectangle(mGContext, size, size, quality, quality, color);
 		
 		north.position().z = halfSize;
 		north.lightingEnabled(false);
@@ -99,18 +99,18 @@ public class SkyBox extends Object3dContainer {
     }
 
 	public void addTexture(Face face, int resourceId, String id) {
-		Bitmap bitmap = Utils.makeBitmapFromResourceId(resourceId);
-		if (Shared.textureManager().contains(id) == false) {
-		    Shared.textureManager().addTextureId(bitmap, id, true);
+		Bitmap bitmap = Utils.makeBitmapFromResourceId(mGContext.getContext(),resourceId);
+		if (mGContext.getTexureManager().contains(id) == false) {
+		    mGContext.getTexureManager().addTextureId(bitmap, id, true);
 		}
 		bitmap.recycle();
 		addTexture(face, bitmap, id);
 	}
 	
     public void addTextureETC1(Face face, int resourceId, String id) {
-        InputStream input = Shared.context().getResources().openRawResource(resourceId);
-        if (Shared.textureManager().contains(id) == false) {
-            Shared.textureManager().addTextureId(input, id, false);
+        InputStream input = mGContext.getContext().getResources().openRawResource(resourceId);
+        if (mGContext.getTexureManager().contains(id) == false) {
+            mGContext.getTexureManager().addTextureId(input, id, false);
         }
         addTexture(face, null, id);
     }

@@ -14,18 +14,13 @@ import min3d.vos.Ray;
 public class RendererGLSurfaceViewProxy extends GLSurfaceView {
     static final public int CURRENT_SDK_INT = Build.VERSION.SDK_INT;
 
-    protected min3d.core.Renderer mRenderer;
     protected MultisampleConfigChooser mConfigChooser = null;
     protected SnapshotCallback mSnapshotCallback = null;
 
+    private GContext mGContext = null;
+
     public RendererGLSurfaceViewProxy(Context context) {
-        super(context);
-        int version = CURRENT_SDK_INT;
-        if (version >= Build.VERSION_CODES.FROYO) {
-            setEGLContextClientVersion(2);
-            // Create an OpenGL ES 2.0 context.
-            setEGLConfigChooser(mConfigChooser = new MultisampleConfigChooser());
-        }
+        this(context,null);
     }
 
     public RendererGLSurfaceViewProxy(Context context, AttributeSet attrs) {
@@ -36,6 +31,10 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
             // Create an OpenGL ES 2.0 context.
             setEGLConfigChooser(mConfigChooser = new MultisampleConfigChooser());
         }
+    }
+
+    public void setGContext(GContext context) {
+        mGContext = context;
     }
 
     @Override
@@ -55,16 +54,13 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
     }
 
     private void dispatchTouchEventToChild(MotionEvent e) {
-        Ray ray = mRenderer.getViewRay(e.getX(), e.getY());
-        Scene scene = mRenderer.getScene();
-        mRenderer.updateAABBCoord();
+        Ray ray = mGContext.getRenderer().getViewRay(e.getX(), e.getY());
+        Scene scene = mGContext.getRenderer().getScene();
+        mGContext.getRenderer().updateAABBCoord();
         Object3dContainer root = (Object3dContainer) scene.root();
-        ArrayList<Object3d> list = (ArrayList<Object3d>)mRenderer.getPickedObject(ray, root);
+        ArrayList<Object3d> list =
+                (ArrayList<Object3d>) mGContext.getRenderer().getPickedObject(ray, root);
         root.dispatchTouchEvent(ray ,e, list);
-    }
-
-    public void setRender(min3d.core.Renderer renderer) {
-        mRenderer = renderer;
     }
 
     /**
@@ -88,7 +84,7 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
         queueEvent(new Runnable() {
             public void run() {
                 if (mSnapshotCallback != null) {
-                    mSnapshotCallback.onGetSnapShot(mRenderer.savePixels(0, 0, width, height), object);
+                    mSnapshotCallback.onGetSnapShot(mGContext.getRenderer().savePixels(0, 0, width, height), object);
                 }
             }
         });

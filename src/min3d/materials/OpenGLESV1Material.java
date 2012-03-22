@@ -2,7 +2,7 @@ package min3d.materials;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import min3d.Shared;
+import min3d.core.GContext;
 import min3d.core.ManagedLightList;
 import min3d.core.Object3d;
 import min3d.core.Renderer;
@@ -32,8 +32,8 @@ public class OpenGLESV1Material extends AMaterial {
     float[] mNormalValue = new float[9];
     float[] mMMatrix = new float[16];
 
-    public OpenGLESV1Material() {
-        super(VERTEX_SHADER__FILE, FRAGMENT_SHADER_FILE);
+    public OpenGLESV1Material(GContext context) {
+        super(context, VERTEX_SHADER__FILE, FRAGMENT_SHADER_FILE);
         mNormalUniformMatrix = new float[9];
     }
 
@@ -114,14 +114,14 @@ public class OpenGLESV1Material extends AMaterial {
 
                if (textureVo != null) {
                    // activate texture
-                   int glId = Shared.textureManager()
+                   int glId = mGContext.getTexureManager()
                            .getGlTextureId(textureVo.textureId);
                    GLES20.glBindTexture(type, glId);
                    GLES20.glEnable(type);
 
-                   int minFilterType = Shared.textureManager().hasMipMap(textureVo.textureId) ?
-                           GLES20.GL_LINEAR_MIPMAP_NEAREST
-                           : GLES20.GL_NEAREST;
+                    int minFilterType = mGContext.getTexureManager()
+                            .hasMipMap(textureVo.textureId) ? GLES20.GL_LINEAR_MIPMAP_NEAREST
+                            : GLES20.GL_NEAREST;
                    GLES20.glTexParameterf(type,
                            GLES20.GL_TEXTURE_MIN_FILTER,
                            minFilterType);

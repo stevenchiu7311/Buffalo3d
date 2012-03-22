@@ -12,7 +12,6 @@ import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
 import min3d.Min3d;
-import min3d.Shared;
 import min3d.animation.AnimationObject3d;
 import min3d.core.Object3d.VBO_ID;
 import min3d.vos.FrustumManaged;
@@ -76,17 +75,17 @@ public class Renderer implements GLSurfaceView.Renderer
     private int mRPBufferW;
     private int mRPBufferH;
 
-	public Renderer(Scene $scene)
+	public Renderer(GContext context)
 	{
-		_scene = $scene;
-
 		_scratchIntBuffer = IntBuffer.allocate(4);
 		_scratchFloatBuffer = FloatBuffer.allocate(4);
 		
-		_textureManager = new TextureManager();
-		Shared.textureManager(_textureManager); 
-		
-		_activityManager = (ActivityManager) Shared.context().getSystemService( Context.ACTIVITY_SERVICE );
+		context.setRenderer(this);
+
+		_textureManager = new TextureManager(this);
+		context.setTexureManager(_textureManager);
+
+		_activityManager = (ActivityManager) context.getContext().getSystemService( Context.ACTIVITY_SERVICE );
 		_memoryInfo = new ActivityManager.MemoryInfo();
 	}
 
@@ -161,6 +160,10 @@ public class Renderer implements GLSurfaceView.Renderer
 
         if (_logFps) doFps();
 	}
+
+    public void setScene(Scene $scene) {
+        _scene = $scene;
+    }
 
     public float[] getViewMatrix() {
         if (RenderCaps.openGlVersion() == 2.0) {
@@ -783,8 +786,7 @@ public class Renderer implements GLSurfaceView.Renderer
 	
 	private void reset()
 	{
-		// Reset TextureManager
-		Shared.textureManager().reset();
+		_textureManager.reset();
 
         if (RenderCaps.openGlVersion() == 2.0) {
             Scene.resetMaterial();

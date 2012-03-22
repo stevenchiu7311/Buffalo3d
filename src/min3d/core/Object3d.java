@@ -14,7 +14,6 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.view.MotionEvent;
 
-import min3d.Shared;
 import min3d.interfaces.IObject3dContainer;
 import min3d.listeners.OnClickListener;
 import min3d.listeners.OnLongClickListener;
@@ -158,6 +157,7 @@ public class Object3d
 	
 	private Scene _scene;
 	private IObject3dContainer _parent;
+    protected GContext mGContext;
 
     /* Variable for Touch handler */
     Number3d mCoordinate = null;
@@ -228,28 +228,31 @@ public class Object3d
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
 	 */
-	public Object3d(int $maxVertices, int $maxFaces)
+	public Object3d(GContext context, int $maxVertices, int $maxFaces)
 	{
+        mGContext = context;
 		_vertices = new Vertices($maxVertices, true,true,true);
 		_faces = new FacesBufferedList($maxFaces);
-		_textures = new TextureList();
+		_textures = new TextureList(context);
 	}
 	
 	/**
 	 * Adds three arguments 
 	 */
-	public Object3d(int $maxVertices, int $maxFaces, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
+	public Object3d(GContext context, int $maxVertices, int $maxFaces, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
 	{
+        mGContext = context;
 		_vertices = new Vertices($maxVertices, $useUvs,$useNormals,$useVertexColors);
 		_faces = new FacesBufferedList($maxFaces);
-		_textures = new TextureList();
+		_textures = new TextureList(context);
 	}
 	
 	/**
 	 * This constructor is convenient for cloning purposes 
 	 */
-	public Object3d(Vertices $vertices, FacesBufferedList $faces, TextureList $textures)
+	public Object3d(GContext context, Vertices $vertices, FacesBufferedList $faces, TextureList $textures)
 	{
+        mGContext = context;
 		_vertices = $vertices;
 		_faces = $faces;
 		_textures = $textures;
@@ -826,7 +829,7 @@ public class Object3d
 		Vertices v = _vertices.clone();
 		FacesBufferedList f = _faces.clone();
 			
-		Object3d clone = new Object3d(v, f, _textures);
+		Object3d clone = new Object3d(mGContext, v, f, _textures);
 		
 		clone.position().x = position().x;
 		clone.position().y = position().y;
@@ -905,7 +908,7 @@ public class Object3d
 
     protected void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
         if (!isVisible()) return;
-        mMaterial = _scene.getDefaultMaterial();
+        mMaterial = _scene.getDefaultMaterial(mGContext);
         mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
 
         mProjMatrix = projMatrix;
@@ -1536,22 +1539,26 @@ public class Object3d
     }
 
     private Number3d getIntersectPoint(float x, float y, float z) {
-        int w = Shared.renderer().getWidth();
-        int h = Shared.renderer().getHeight();
+        int w = mGContext.getRenderer().getWidth();
+        int h = mGContext.getRenderer().getHeight();
         float[] eye = new float[4];
         int[] viewport = { 0, 0, w, h };
         FrustumManaged vf = _scene.camera().frustum;
         float distance = _scene.camera().position.z + z;
         float winZ = (1.0f / vf.zNear() - 1.0f / distance)
                 / (1.0f / vf.zNear() - 1.0f / vf.zFar());
-        GLU.gluUnProject(x, h - y ,winZ, Shared.renderer().getViewMatrix(), 0,
-                Shared.renderer().getProjectMatrix(), 0, viewport, 0, eye, 0);
+        GLU.gluUnProject(x, h - y ,winZ, mGContext.getRenderer().getViewMatrix(), 0,
+                mGContext.getRenderer().getProjectMatrix(), 0, viewport, 0, eye, 0);
         if (eye[3] != 0) {
             eye[0] = eye[0] / eye[3];
             eye[1] = eye[1] / eye[3];
             eye[2] = eye[2] / eye[3];
         }
         return new Number3d(eye[0], eye[1], -eye[2]);
+    }
+
+    public final GContext getGContext() {
+        return mGContext;
     }
 
     /**

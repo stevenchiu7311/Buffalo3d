@@ -50,8 +50,11 @@ public class Scene implements IObject3dContainer, IDirtyParent
     private boolean mFogDirty = true;
     private boolean mMaterialDirty = true;
 
-	public Scene(ISceneController $sceneController) 
+    private GContext mGContext;
+
+	public Scene(GContext context, ISceneController $sceneController)
 	{
+	    mGContext = context;
 		_sceneController = $sceneController;
 		_lights = new ManagedLightList();
 		_fogColor = new Color4(255, 255, 255, 255);
@@ -60,7 +63,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
 		_fogType = FogType.LINEAR;
 		_fogEnabled = false;
 
-        mObject3dContainer = new Object3dContainer();
+        mObject3dContainer = new Object3dContainer(mGContext);
         mObject3dContainer.name("Root");
         mObject3dContainer.scene(this);
 	}
@@ -94,7 +97,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	{
 		clearChildren(this);
 
-        mObject3dContainer = new Object3dContainer();
+        mObject3dContainer = new Object3dContainer(mGContext);
         mObject3dContainer.name("Root");
         mObject3dContainer.scene(this);
 
@@ -404,9 +407,9 @@ public class Scene implements IObject3dContainer, IDirtyParent
      *
      * @hide
      */
-    AMaterial getDefaultMaterial() {
+    AMaterial getDefaultMaterial(GContext context) {
         if (mMaterial == null || mMaterialDirty || checkReCompilerShader()) {
-            mMaterial = CreateMaterial();
+            mMaterial = createMaterial(context);
             mMaterialDirty = false;
             String fragmeShaderDefine = "";
             String vertexShaderDefine = "";
@@ -432,13 +435,13 @@ public class Scene implements IObject3dContainer, IDirtyParent
         return mMaterial;
     }
 
-    private AMaterial CreateMaterial() {
+    private AMaterial createMaterial(GContext context) {
         if (mMaterialType == OPENGLESV1_MATERIAL) {
-            return new OpenGLESV1Material();
+            return new OpenGLESV1Material(context);
         } else if (mMaterialType == SIMPLE_MATERIAL) {
-            return new SimpleMaterial();
+            return new SimpleMaterial(context);
         } else {
-            return new SimpleMaterial();
+            return new SimpleMaterial(context);
         }
     }
 

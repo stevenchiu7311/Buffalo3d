@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Set;
 
 import min3d.Min3d;
-import min3d.Shared;
 import android.graphics.Bitmap;
 import android.util.Log;
 
@@ -26,10 +25,11 @@ public class TextureManager
 	private HashMap<String, Boolean> _idToHasMipMap;
 	private static int _counter = 1000001;
 	private static int _atlasId = 0;
-	
-	
-	public TextureManager()
+	private Renderer mRenderer;
+
+	public TextureManager(Renderer renderer)
 	{
+        mRenderer = renderer;
 		reset();
 	}
 
@@ -46,7 +46,7 @@ public class TextureManager
 			Object[] a = s.toArray(); 
 			for (int i = 0; i < a.length; i++) {
 				int glId = getGlTextureId((String)a[i]);
-				Shared.renderer().deleteTexture(glId);
+				mRenderer.deleteTexture(glId);
 			}
 			// ...pain
 		}
@@ -71,7 +71,7 @@ public class TextureManager
 	{
 		if (_idToTextureName.containsKey($id)) throw new Error("Texture id \"" + $id + "\" already exists."); 
 
-		int glId = Shared.renderer().uploadTextureAndReturnId($b, $generateMipMap);
+		int glId = mRenderer.uploadTextureAndReturnId($b, $generateMipMap);
 
 		String s = $id;
 		_idToTextureName.put(s, glId);
@@ -101,7 +101,7 @@ public class TextureManager
     {
         if (_idToTextureName.containsKey($id)) throw new Error("Texture id \"" + $id + "\" already exists.");
 
-        int glId = Shared.renderer().uploadTextureAndReturnId(input, $generateMipMap);
+        int glId = mRenderer.uploadTextureAndReturnId(input, $generateMipMap);
 
         String s = $id;
         _idToTextureName.put(s, glId);
@@ -152,7 +152,7 @@ public class TextureManager
 	public void deleteTexture(String $id)
 	{
 		int glId = _idToTextureName.get($id);
-		Shared.renderer().deleteTexture(glId);
+		mRenderer.deleteTexture(glId);
 		_idToTextureName.remove($id);
 		_idToHasMipMap.remove($id);
 		

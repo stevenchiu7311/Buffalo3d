@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import min3d.Min3d;
-import min3d.Shared;
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Number3d;
 import min3d.vos.Uv;
@@ -32,8 +32,8 @@ public class Max3DSParser extends AParser implements IParser {
 	private boolean endReached;
 	private String currentObjName;
 
-	public Max3DSParser(Resources resources, String resourceID, boolean generateMipMap) {
-		super(resources, resourceID, generateMipMap);
+	public Max3DSParser(GContext context, Resources resources, String resourceID, boolean generateMipMap) {
+		super(context, resources, resourceID, generateMipMap);
 	}
 
 	@Override
@@ -200,7 +200,7 @@ public class Max3DSParser extends AParser implements IParser {
 	
 	public Object3dContainer getParsedObject() {
 		Log.d(Min3d.TAG, "Start object creation");
-		Object3dContainer obj = new Object3dContainer(0, 0);
+		Object3dContainer obj = new Object3dContainer(mGContext, 0, 0);
 		int numObjects = parseObjects.size();
 		Bitmap texture = null;
 
@@ -208,13 +208,13 @@ public class Max3DSParser extends AParser implements IParser {
 		{
 			textureAtlas.generate();
 			texture = textureAtlas.getBitmap();
-			Shared.textureManager().addTextureId(texture, textureAtlas.getId(), generateMipMap);
+			mGContext.getTexureManager().addTextureId(texture, textureAtlas.getId(), generateMipMap);
 		}
 		
 		for (int i = 0; i < numObjects; i++) {
 			ParseObjectData o = parseObjects.get(i);
 			Log.d(Min3d.TAG, "Creating object " + o.name);
-			obj.addChild(o.getParsedObject(materialMap, textureAtlas));
+			obj.addChild(o.getParsedObject(mGContext, materialMap, textureAtlas));
 		}
 		
 		if(textureAtlas.hasBitmaps())

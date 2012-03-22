@@ -14,8 +14,8 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
-import min3d.Shared;
 import min3d.Utils;
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 import min3d.vos.TextureVo;
@@ -31,38 +31,37 @@ public class TextObject extends Object3dContainer {
     private static final String TAG = "TextObject";
     private static final float MAPPING_PIXEL = 256.0f;
 
-    private Color4[] mColors;
     private float mWidth;
     private float mHeight;
     private float mDepth;
     TextView mTextView;
 
-    public TextObject(float width, float height, float depth,
-            Color4[] sixColor4s, Boolean useUvs, Boolean useNormals,
-            Boolean useVertexColors) {
-        super(4, 2, useUvs, useNormals, useVertexColors);
+    public TextObject(GContext context, float width, float height,
+            float depth, Color4[] sixColor4s, Boolean useUvs,
+            Boolean useNormals, Boolean useVertexColors) {
+        super(context, 4, 2, useUvs, useNormals, useVertexColors);
 
         mWidth = width;
         mHeight = height;
         mDepth = depth;
-        mTextView = new TextView(Shared.context());
+        mTextView = new TextView(context.getContext());
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams((int)(mWidth*MAPPING_PIXEL), (int)(mHeight*MAPPING_PIXEL));
         mTextView.setLayoutParams(layoutParams);
     }
 
-    public TextObject(float width, float height, float depth,
+    public TextObject(GContext context, float width, float height, float depth,
             Color4[] sixColor4s) {
-        this(width, height, depth, sixColor4s, true, true, true);
+        this(context, width, height, depth, sixColor4s, true, true, true);
     }
 
-    public TextObject(float width, float height, float depth,
+    public TextObject(GContext context, float width, float height, float depth,
             Color4 color) {
-        this(width, height, depth, new Color4[] { color, color, color,
+        this(context, width, height, depth, new Color4[] { color, color, color,
                 color, color, color }, true, true, true);
     }
 
-    public TextObject(float width, float height, float depth) {
-        this(width, height, depth, null, true, true, false);
+    public TextObject(GContext context, float width, float height, float depth) {
+        this(context, width, height, depth, null, true, true, false);
     }
 
     public void setText(CharSequence text) {
@@ -75,11 +74,12 @@ public class TextObject extends Object3dContainer {
         if (h % 2 == 1) {
             h--;
         }
+
         Bitmap bitmap = loadBitmapFromView(mTextView, w, h);
-        if (Shared.textureManager().contains(toString())) {
-            Shared.textureManager().deleteTexture(toString());
+        if (mGContext.getTexureManager().contains(toString())) {
+            mGContext.getTexureManager().deleteTexture(toString());
         }
-        Shared.textureManager().addTextureId(bitmap, toString(), false);
+        mGContext.getTexureManager().addTextureId(bitmap, toString(), false);
         TextureVo textureText = new TextureVo(toString());
         textureText.repeatU = false;
         textureText.repeatV = false;

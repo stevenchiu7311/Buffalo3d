@@ -1,19 +1,20 @@
 package min3d.objectPrimitives;
 
 import min3d.Utils;
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 
 public class Rectangle extends Object3dContainer
 {
-	public Rectangle(float $width, float $height, int $segsW, int $segsH)
+	public Rectangle(GContext context, float $width, float $height, int $segsW, int $segsH)
 	{
-		this($width, $height, $segsW, $segsH, new Color4());
+		this(context, $width, $height, $segsW, $segsH, new Color4());
 	}
-	
-	public Rectangle(float $width, float $height, int $segsW, int $segsH, Color4 color)
+
+	public Rectangle(GContext context, float $width, float $height, int $segsW, int $segsH, Color4 color)
 	{
-		super(4 * $segsW * $segsH, 2 * $segsW * $segsH);
+		super(context, 4 * $segsW * $segsH, 2 * $segsW * $segsH);
 
 		int row, col;
 

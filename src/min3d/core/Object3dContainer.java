@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import min3d.Shared;
 import min3d.interfaces.IObject3dContainer;
 import min3d.vos.Ray;
 
@@ -21,9 +20,9 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 
     private Object3d mMotionTarget = null;
 
-	public Object3dContainer()
+	public Object3dContainer(GContext context)
 	{
-		super(0, 0, false, false, false);
+		super(context, 0, 0, false, false, false);
 	}
 
 	/**
@@ -32,22 +31,22 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 	 * Subclass Object3dContainer instead of Object3d if you
 	 * believe you may want to add children to that object. 
 	 */
-	public Object3dContainer(int $maxVerts, int $maxFaces)
+	public Object3dContainer(GContext context, int $maxVerts, int $maxFaces)
 	{
-		super($maxVerts, $maxFaces, true,true,true);
+		super(context, $maxVerts, $maxFaces,true,true, true);
 	}
 
-	public Object3dContainer(int $maxVerts, int $maxFaces,  Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
+	public Object3dContainer(GContext context, int $maxVerts,  int $maxFaces, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
 	{
-		super($maxVerts, $maxFaces, $useUvs,$useNormals,$useVertexColors);
+		super(context, $maxVerts, $maxFaces,$useUvs,$useNormals, $useVertexColors);
 	}
 	
 	/**
 	 * This constructor is convenient for cloning purposes 
 	 */
-	public Object3dContainer(Vertices $vertices, FacesBufferedList $faces, TextureList $textures)
+	public Object3dContainer(GContext context, Vertices $vertices, FacesBufferedList $faces, TextureList $textures)
 	{
-		super($vertices, $faces, $textures);
+		super(context, $vertices, $faces, $textures);
 	}
 
     /**
@@ -58,7 +57,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		_children.add($o);
 		
 		$o.parent(this);
-		$o.scene(Shared.renderer().getScene());
+		$o.scene(mGContext.getRenderer().getScene());
 	}
 
     /**
@@ -69,7 +68,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		_children.add($index, $o);
 		
 		$o.parent(this);
-		$o.scene(Shared.renderer().getScene());
+		$o.scene(mGContext.getRenderer().getScene());
 	}
 
     /**
@@ -148,7 +147,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 		Vertices v = _vertices.clone();
 		FacesBufferedList f = _faces.clone();
 
-		Object3dContainer clone = new Object3dContainer(v, f, _textures);
+		Object3dContainer clone = new Object3dContainer(mGContext, v, f, _textures);
 		
 		clone.position().x = position().x;
 		clone.position().y = position().y;

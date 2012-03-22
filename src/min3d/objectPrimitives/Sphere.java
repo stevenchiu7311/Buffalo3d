@@ -1,6 +1,7 @@
 package min3d.objectPrimitives;
 
 import min3d.Utils;
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 import min3d.vos.Number3d;
@@ -17,9 +18,10 @@ public class Sphere extends Object3dContainer
 	private int _rows;
 	
 	
-	public Sphere(float $radius, int $columns, int $rows, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
+	public Sphere(GContext context, float $radius, int $columns, int $rows, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
 	{
 		super(
+            context,
 			($columns+1) * ($rows+1),
 			$columns * $rows * 2,
 			$useUvs,
@@ -34,9 +36,10 @@ public class Sphere extends Object3dContainer
 		build();
 	}
 
-	public Sphere(float $radius, int $columns, int $rows)
+	public Sphere(GContext context, float $radius, int $columns, int $rows)
 	{
 		super(
+		        context,
 				($columns+1) * ($rows+1),
 				$columns * $rows * 2,
 				true,
@@ -51,9 +54,10 @@ public class Sphere extends Object3dContainer
 			build();
 	} 
 	
-	public Sphere(float $radius, int $columns, int $rows, Color4 color)
+	public Sphere(GContext context, float $radius, int $columns, int $rows, Color4 color)
 	{
 		super(
+		        context,
 				($columns+1) * ($rows+1),
 				$columns * $rows * 2,
 				true,

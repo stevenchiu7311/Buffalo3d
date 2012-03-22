@@ -1,5 +1,6 @@
 package min3d.objectPrimitives;
 
+import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 import min3d.vos.Face;
@@ -25,9 +26,9 @@ public class HollowCylinder extends Object3dContainer
 	private float _height;
 	
 
-	public HollowCylinder(float $radiusOuter, float $radiusInner, float $height, int $segs)
+	public HollowCylinder(GContext context, float $radiusOuter, float $radiusInner, float $height, int $segs)
 	{
-		super($segs * 4, $segs * 8);
+		super(context, $segs * 4, $segs * 8);
 		
 		_segs = $segs;
 		_height = $height;

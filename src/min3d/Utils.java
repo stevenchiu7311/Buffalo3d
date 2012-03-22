@@ -59,19 +59,7 @@ public class Utils
     public static Bitmap makeBitmapFromResourceId(Context $context, int $id) {
         return makeBitmapFromResourceId($context, $id, false);
     }
-	
-    /**
-     * Convenience method to create a Bitmap given a drawable resource ID from
-     * the application Context.
-     *
-     * @param $id resource id
-     * @return bitmap of decoded resource
-     */
-	public static Bitmap makeBitmapFromResourceId(int $id)
-	{
-		return makeBitmapFromResourceId(Shared.context(), $id);
-	}
-	
+
 	/**
 	 * Add two triangles to the Object3d's faces using the supplied indices
 	 */

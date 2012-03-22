@@ -12,7 +12,7 @@ import javax.microedition.khronos.opengles.GL10;
 import android.opengl.GLES20;
 import android.util.Log;
 
-import min3d.Shared;
+import min3d.core.GContext;
 import min3d.core.ManagedLightList;
 import min3d.core.Object3d;
 import min3d.core.RenderCaps;
@@ -48,10 +48,13 @@ public abstract class AMaterial {
     protected float[] mViewMatrix;
     protected boolean usesCubeMap = false;
 
+    protected GContext mGContext = null;
+
     HashMap<UNIFORM_LIST_ID, Object> mLocationId = new HashMap<UNIFORM_LIST_ID, Object>();
     boolean init = true;
 
-    public AMaterial(String vertexShader, String fragmentShader) {
+    public AMaterial(GContext context, String vertexShader, String fragmentShader) {
+        mGContext = context;
         mVertexShader = readShader(MAIN_VERTEX_SHADER__FILE) + readShader(vertexShader);
         mFragmentShader = readShader(MAIN_FRAGMENT_SHADER_FILE) + readShader(fragmentShader);
     }
@@ -230,13 +233,13 @@ public abstract class AMaterial {
 
                 if (textureVo != null) {
                     // activate texture
-                    int glId = Shared.textureManager()
+                    int glId = mGContext.getTexureManager()
                             .getGlTextureId(textureVo.textureId);
                     GLES20.glBindTexture(type, glId);
                     GLES20.glEnable(type);
 
-                    int minFilterType = Shared.textureManager().hasMipMap(textureVo.textureId) ?
-                            GLES20.GL_LINEAR_MIPMAP_NEAREST
+                    int minFilterType = mGContext.getTexureManager()
+                            .hasMipMap(textureVo.textureId) ? GLES20.GL_LINEAR_MIPMAP_NEAREST
                             : GLES20.GL_NEAREST;
                     GLES20.glTexParameterf(type,
                             GLES20.GL_TEXTURE_MIN_FILTER,

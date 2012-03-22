@@ -7,7 +7,6 @@ import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.util.AttributeSet;
 
-import min3d.Shared;
 import min3d.interfaces.ISceneController;
 
 /**
@@ -28,6 +27,8 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
 
     private boolean _renderContinuously;
 
+    private GContext mGContext;
+
     public RendererGLSurfaceView(Context context) {
         this(context, null);
     }
@@ -37,14 +38,15 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
         _initSceneHander = new Handler();
         _updateSceneHander = new Handler();
 
-        // These 4 lines are important.
-        Shared.context(context);
-        scene = new Scene(this);
-        mRenderer = new min3d.core.Renderer(scene);
-        Shared.renderer(mRenderer);
+        mGContext = new GContext(context);
+        min3d.core.Renderer r = new min3d.core.Renderer(mGContext);
+        setGContext(mGContext);
+        scene = new Scene(mGContext, this);
+        r.setScene(scene);
 
         glSurfaceViewConfig();
-        setRenderer(mRenderer);
+        setRenderer(r);
+
         renderContinuously(true);
         setGLWrapper(new GLSurfaceView.GLWrapper() {
             public GL wrap(GL gl) {
@@ -130,5 +132,9 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
     }
 
     protected void glSurfaceViewConfig() {
+    }
+
+    public GContext getGContext() {
+        return mGContext;
     }
 }
