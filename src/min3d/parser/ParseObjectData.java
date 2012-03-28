@@ -16,6 +16,7 @@ import min3d.parser.AParser.TextureAtlas;
 import min3d.vos.Color4;
 import min3d.vos.Face;
 import min3d.vos.Number3d;
+import min3d.vos.TextureVo;
 import min3d.vos.Uv;
 
 public class ParseObjectData {
@@ -97,7 +98,7 @@ public class ParseObjectData {
 				if(hasBitmaps && (ba != null))
 				{
 					newUv.u = ba.uOffset + newUv.u * ba.uScale;
-					newUv.v = ba.vOffset + ((newUv.v + 1) * ba.vScale) - 1;
+					newUv.v = ba.vOffset + newUv.v * ba.vScale;
 				}
 				obj.vertices().addVertex(newVertex, newUv, newNormal, newColor);
 			}
@@ -115,10 +116,15 @@ public class ParseObjectData {
 			faceIndex += face.faceLength;
 		}
 
-		if (hasBitmaps) {
-			obj.textures().addById(textureAtlas.getId());
-		}
+        BitmapAsset ba = (numFaces > 0) ? textureAtlas
+                .getBitmapAssetByName(faces.get(0).materialKey) : null;
 
+        if (hasBitmaps && ba != null) {
+            TextureVo t = new TextureVo(textureAtlas.getId());
+            t.repeatU = false;
+            t.repeatV = false;
+            obj.textures().add(t);
+        }
 		cleanup();
 	}
 	

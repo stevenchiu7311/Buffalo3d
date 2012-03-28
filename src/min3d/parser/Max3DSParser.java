@@ -193,7 +193,7 @@ public class Max3DSParser extends AParser implements IParser {
         for (int i = 0; i < numVertices; i++) {
             Uv uv = new Uv();
             uv.u = readFloat(buffer);
-            uv.v = readFloat(buffer) * -1f;
+            uv.v = 1 - readFloat(buffer);
             co.texCoords.add(uv);
         }
     }

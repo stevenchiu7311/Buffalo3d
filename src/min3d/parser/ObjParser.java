@@ -96,7 +96,7 @@ public class ObjParser extends AParser implements IParser {
 				} else if (type.equals(TEXCOORD)) {
 					Uv texCoord = new Uv();
 					texCoord.u = Float.parseFloat(parts.nextToken());
-					texCoord.v = Float.parseFloat(parts.nextToken()) * -1f;
+					texCoord.v = 1 - Float.parseFloat(parts.nextToken());
 					texCoords.add(texCoord);
 				} else if (type.equals(NORMAL)) {
 					Number3d normal = new Number3d();
