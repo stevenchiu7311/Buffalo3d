@@ -51,13 +51,15 @@ public class OpenGLESV1Material extends AMaterial {
     public void setShaders(String vertexShader, String fragmentShader) {
         super.setShaders(vertexShader, fragmentShader);
 
-        muNormalMatrixHandle = GLES20.glGetUniformLocation(mProgram,
-                "u_transposeAdjointModelViewMatrix");
-        if (muNormalMatrixHandle == -1) {
-            // throw new
-            throw new RuntimeException("Could not get uniform location for uNMatrix");
+        if (mLightNumber > 0) {
+            muNormalMatrixHandle = GLES20.glGetUniformLocation(mProgram,
+                    "u_transposeAdjointModelViewMatrix");
+            if (muNormalMatrixHandle == -1) {
+                // throw new
+                throw new RuntimeException(
+                        "Could not get uniform location for uNMatrix");
+            }
         }
-
         mLightEnableHandle = GLES20.glGetUniformLocation(mProgram,
                 "u_lightingEnabled");
         if (mLightEnableHandle == -1) {
@@ -68,7 +70,9 @@ public class OpenGLESV1Material extends AMaterial {
     @Override
     public void setModelMatrix(float[] modelMatrix) {
         super.setModelMatrix(modelMatrix);
-
+        if (mLightNumber == 0) {
+            return;
+        }
         mValues[0] = modelMatrix[0];
         mValues[1] = modelMatrix[1];
         mValues[2] = modelMatrix[2];

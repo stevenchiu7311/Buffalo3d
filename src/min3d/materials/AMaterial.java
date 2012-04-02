@@ -47,6 +47,7 @@ public abstract class AMaterial {
     protected float[] mModelViewMatrix;
     protected float[] mViewMatrix;
     protected boolean usesCubeMap = false;
+    protected int mLightNumber = 0;
 
     protected GContext mGContext = null;
 
@@ -430,9 +431,15 @@ public abstract class AMaterial {
     private String readShader(String path) {
         StringBuffer vs = new StringBuffer();
         try {
-            InputStream inputStream = getClass().getResourceAsStream(
+
+            InputStream inputStream = null ;
+            inputStream = getClass().getResourceAsStream(
                     path);
-            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+            if (inputStream == null) {
+                inputStream = mGContext.getContext().getResources().getAssets().open(path.substring(path.lastIndexOf("/")+1));
+            }
+            BufferedReader in;
+            in = new BufferedReader(new InputStreamReader(inputStream));
 
             String read = in.readLine();
             while (read != null) {
@@ -445,5 +452,9 @@ public abstract class AMaterial {
             Log.d("ERROR-readingShader", "Could not read shader: " + e.getLocalizedMessage());
         }
         return null;
+    }
+
+    public void setLightNumber(int number) {
+        mLightNumber = number;
     }
 }

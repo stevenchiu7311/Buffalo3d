@@ -55,8 +55,10 @@ void main()
 {
     gl_Position = uMVPMatrix * aPosition;
     calcTextureCoordinates();
+#if !defined(NOLIGHT)
     normal = u_transposeAdjointModelViewMatrix * aNormal;
     normal = normalize(normal);
+#endif
     processLight();
 #if defined(ENABLE_FOG)
     if (u_fogEnabled) {

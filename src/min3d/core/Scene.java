@@ -426,6 +426,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
                 vertexShaderDefine += lightDefineString;
                 fragmeShaderDefine += "#define COMMON_USED\n";
                 vertexShaderDefine += "#define COMMON_USED\n";
+                mMaterial.setLightNumber(_lights.size());
             }
 
             mMaterial.setFragmeShaderDefine(fragmeShaderDefine);
@@ -447,6 +448,9 @@ public class Scene implements IObject3dContainer, IDirtyParent
 
     private String getLightDefine() {
         String returnString = "";
+        if (_lights.size() == 0) {
+            return "#define NOLIGHT\n";
+        }
         for (int glIndex = 0; glIndex < Renderer.NUM_GLLIGHTS; glIndex++) {
             if (lights().glIndexEnabled()[glIndex]) {
                 returnString = returnString + "#define LIGHT" + Integer.toString(glIndex) + "\n";
