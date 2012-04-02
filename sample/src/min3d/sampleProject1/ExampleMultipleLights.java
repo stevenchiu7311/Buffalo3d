@@ -33,26 +33,26 @@ public class ExampleMultipleLights extends RendererActivity
 		// Add three lights
 		
 		_lightRed = new Light();
-		_lightRed.ambient.setAll(0xffffffff);
+		_lightRed.ambient.setAll(0x88110000);
 		_lightRed.diffuse.setAll(0xffff0000);
 		_lightRed.type(LightType.POSITIONAL);
-		//scene.lights().add(_lightRed);
+		scene.lights().add(_lightRed);
 
 		_lightGreen = new Light();
-		_lightGreen.ambient.setAll(0xffffffff);
+		_lightGreen.ambient.setAll(0x88001100);
 		_lightGreen.diffuse.setAll(0xff00ff00);
 		_lightGreen.type(LightType.POSITIONAL);
 		scene.lights().add(_lightGreen);
 
 		_lightBlue = new Light();
-		_lightBlue.ambient.setAll(0xffffffff);
+		_lightBlue.ambient.setAll(0x88000011);
 		_lightBlue.diffuse.setAll(0xff0000ff);
 		_lightBlue.type(LightType.POSITIONAL); 
-		//scene.lights().add(_lightBlue);
+		scene.lights().add(_lightBlue);
 
 		// The objects that we'll light up
 		
-		_sphere = new Sphere(getGContext(), 1.0f, 20, 15);
+		_sphere = new Sphere(getGContext(),1.0f, 20, 15);
 		_sphere.vertexColorsEnabled(false);
 		scene.addChild(_sphere);
 		
@@ -76,7 +76,7 @@ public class ExampleMultipleLights extends RendererActivity
 		_boxBlue.defaultColor().setAll(0xaa0000ff);
 		scene.addChild(_boxBlue);
 
-		//_count = 180;
+		_count = 0;
 	}
 	
 	@Override 
@@ -104,7 +104,7 @@ public class ExampleMultipleLights extends RendererActivity
 
 		// Green light blinks on and off using isVisible() property
 		
-/*		if (_count % 30 == 0) {
+		if (_count % 30 == 0) {
 			_lightGreen.isVisible(true);
 			_boxGreen.isVisible(true);
 		}
@@ -113,7 +113,7 @@ public class ExampleMultipleLights extends RendererActivity
 			_boxGreen.isVisible(false);
 		}
 
-		_sphere.rotation().y += 1;*/
+		_sphere.rotation().y += 1;
 		_count++;
 	}
 }
