@@ -2,10 +2,17 @@ package min3d.core;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.R;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.opengl.GLES20;
 import android.opengl.GLU;
 import android.opengl.Matrix;
@@ -15,7 +22,9 @@ import android.util.Log;
 import android.view.MotionEvent;
 
 import min3d.interfaces.IObject3dContainer;
+import min3d.interfaces.IObject3dParent;
 import min3d.listeners.OnClickListener;
+import min3d.listeners.OnFocusChangeListener;
 import min3d.listeners.OnLongClickListener;
 import min3d.listeners.OnTouchListener;
 import min3d.materials.AMaterial;
@@ -26,6 +35,7 @@ import min3d.vos.Number3d;
 import min3d.vos.Ray;
 import min3d.vos.RenderType;
 import min3d.vos.ShadeModel;
+import min3d.vos.TextureVo;
 
 /**
  * @author Lee
@@ -39,7 +49,7 @@ import min3d.vos.ShadeModel;
 public class Object3d
 {
     private final static String TAG = "Object3d";
-    private final static boolean DEBUG = false;
+    private static final boolean DBG = false;
 	private String _name;
 	
 	private RenderType _renderType = RenderType.TRIANGLES;
@@ -53,6 +63,87 @@ public class Object3d
     private final static int ROTATE = 0x2;
     private final static int SCALE = 0x4;
 
+    /**
+     * This view does not want keystrokes. Use with TAKES_FOCUS_MASK when
+     * calling setFlags.
+     */
+    private static final int NOT_FOCUSABLE = 0x00000000;
+
+    /**
+     * This view wants keystrokes. Use with TAKES_FOCUS_MASK when calling
+     * setFlags.
+     */
+    private static final int FOCUSABLE = 0x00000001;
+
+    /**
+     * Mask for use with setFlags indicating bits used for focus.
+     */
+    private static final int FOCUSABLE_MASK = 0x00000001;
+
+    /**
+     * This view is visible.
+     * Use with {@link #setVisibility} and <a href="#attr_android:visibility">{@code
+     * android:visibility}.
+     */
+    public static final int VISIBLE = 0x00000000;
+
+    /**
+     * This view is invisible, but it still takes up space for layout purposes.
+     * Use with {@link #setVisibility} and <a href="#attr_android:visibility">{@code
+     * android:visibility}.
+     */
+    public static final int INVISIBLE = 0x00000004;
+
+    /**
+     * This view is invisible, and it doesn't take any space for layout
+     * purposes. Use with {@link #setVisibility} and <a href="#attr_android:visibility">{@code
+     * android:visibility}.
+     */
+    public static final int GONE = 0x00000008;
+
+    /**
+     * Mask for use with setFlags indicating bits used for visibility.
+     * {@hide}
+     */
+    static final int VISIBILITY_MASK = 0x0000000C;
+
+    /* Masks for mPrivateFlags2 */
+
+    /**
+     * Indicates that this view has reported that it can accept the current drag's content.
+     * Cleared when the drag operation concludes.
+     * @hide
+     */
+    static final int DRAG_CAN_ACCEPT              = 0x00000001;
+
+    /**
+     * Indicates that this view is currently directly under the drag location in a
+     * drag-and-drop operation involving content that it can accept.  Cleared when
+     * the drag exits the view, or when the drag operation concludes.
+     * @hide
+     */
+    static final int DRAG_HOVERED                 = 0x00000002;
+
+    /**
+     * Indicates whether the view layout direction has been resolved and drawn to the
+     * right-to-left direction.
+     *
+     * @hide
+     */
+    static final int LAYOUT_DIRECTION_RESOLVED_RTL = 0x00000004;
+
+    /**
+     * Indicates whether the view layout direction has been resolved.
+     *
+     * @hide
+     */
+    static final int LAYOUT_DIRECTION_RESOLVED = 0x00000008;
+
+
+    /* End of masks for mPrivateFlags2 */
+
+    static final int DRAG_MASK = DRAG_CAN_ACCEPT | DRAG_HOVERED;
+
     private static final int PRESSED_STATE_DURATION = 125;
     private static final int DEFAULT_LONG_PRESS_TIMEOUT = 500;
 
@@ -62,8 +153,6 @@ public class Object3d
      * considered to be a tap.
      */
     private static final int TAP_TIMEOUT = 180;
-
-    private static final int PRESSED = 0x00004000;
 
     /**
      * This view is enabled. Intrepretation varies by subclass.
@@ -102,6 +191,164 @@ public class Object3d
      * {@hide}
      */
     static final int LONG_CLICKABLE = 0x00200000;
+
+    // for mPrivateFlags:
+    /** {@hide} */
+    static final int WANTS_FOCUS                    = 0x00000001;
+    /** {@hide} */
+    static final int FOCUSED                        = 0x00000002;
+    /** {@hide} */
+    static final int SELECTED                       = 0x00000004;
+    /** {@hide} */
+    static final int IS_ROOT_NAMESPACE              = 0x00000008;
+    /** {@hide} */
+    static final int HAS_BOUNDS                     = 0x00000010;
+    /** {@hide} */
+    static final int DRAWN                          = 0x00000020;
+    /**
+     * When this flag is set, this view is running an animation on behalf of its
+     * children and should therefore not cancel invalidate requests, even if they
+     * lie outside of this view's bounds.
+     *
+     * {@hide}
+     */
+    static final int DRAW_ANIMATION                 = 0x00000040;
+    /** {@hide} */
+    static final int SKIP_DRAW                      = 0x00000080;
+    /** {@hide} */
+    static final int ONLY_DRAWS_BACKGROUND          = 0x00000100;
+    /** {@hide} */
+    static final int REQUEST_TRANSPARENT_REGIONS    = 0x00000200;
+    /** {@hide} */
+    static final int DRAWABLE_STATE_DIRTY           = 0x00000400;
+    /** {@hide} */
+    static final int MEASURED_DIMENSION_SET         = 0x00000800;
+    /** {@hide} */
+    static final int FORCE_LAYOUT                   = 0x00001000;
+    /** {@hide} */
+    static final int LAYOUT_REQUIRED                = 0x00002000;
+
+    private static final int PRESSED                = 0x00004000;
+
+    /**
+     * Indicates that the view has received HOVER_ENTER.  Cleared on HOVER_EXIT.
+     * @hide
+     */
+    private static final int HOVERED              = 0x10000000;
+
+    /** {@hide} */
+    static final int ACTIVATED                    = 0x40000000;
+
+    /**
+     * <p>Indicates that this view gets its drawable states from its direct parent
+     * and ignores its original internal states.</p>
+     *
+     * @hide
+     */
+    static final int DUPLICATE_PARENT_STATE = 0x00400000;
+
+    /**
+     * View flag indicating whether {@link #addFocusables(ArrayList, int, int)}
+     * should add all focusable Views regardless if they are focusable in touch mode.
+     */
+    public static final int FOCUSABLES_ALL = 0x00000000;
+
+    /**
+     * View flag indicating whether {@link #addFocusables(ArrayList, int, int)}
+     * should add only Views focusable in touch mode.
+     */
+    public static final int FOCUSABLES_TOUCH_MODE = 0x00000001;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus to the previous selectable
+     * item.
+     */
+    public static final int FOCUS_BACKWARD = 0x00000001;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus to the next selectable
+     * item.
+     */
+    public static final int FOCUS_FORWARD = 0x00000002;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus to the left.
+     */
+    public static final int FOCUS_LEFT = 0x00000011;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus up.
+     */
+    public static final int FOCUS_UP = 0x00000021;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus to the right.
+     */
+    public static final int FOCUS_RIGHT = 0x00000042;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus down.
+     */
+    public static final int FOCUS_DOWN = 0x00000082;
+
+    /**
+     * <p>Indicates this view can take / keep focus when int touch mode.</p>
+     * {@hide}
+     */
+    static final int FOCUSABLE_IN_TOUCH_MODE = 0x00040000;
+
+    /**
+     * The order here is very important to {@link #getDrawableState()}
+     */
+    private static final int[][] VIEW_STATE_SETS;
+
+    static final int VIEW_STATE_WINDOW_FOCUSED = 1;
+    static final int VIEW_STATE_SELECTED = 1 << 1;
+    static final int VIEW_STATE_FOCUSED = 1 << 2;
+    static final int VIEW_STATE_ENABLED = 1 << 3;
+    static final int VIEW_STATE_PRESSED = 1 << 4;
+    static final int VIEW_STATE_ACTIVATED = 1 << 5;
+    static final int VIEW_STATE_ACCELERATED = 1 << 6;
+    static final int VIEW_STATE_HOVERED = 1 << 7;
+    static final int VIEW_STATE_DRAG_CAN_ACCEPT = 1 << 8;
+    static final int VIEW_STATE_DRAG_HOVERED = 1 << 9;
+
+    static final int[] VIEW_STATE_IDS = new int[] {
+        R.attr.state_window_focused,    VIEW_STATE_WINDOW_FOCUSED,
+        R.attr.state_selected,          VIEW_STATE_SELECTED,
+        R.attr.state_focused,           VIEW_STATE_FOCUSED,
+        R.attr.state_enabled,           VIEW_STATE_ENABLED,
+        R.attr.state_pressed,           VIEW_STATE_PRESSED,
+        R.attr.state_activated,         VIEW_STATE_ACTIVATED,
+        R.attr.state_accelerated,       VIEW_STATE_ACCELERATED,
+/*        R.attr.state_hovered,           VIEW_STATE_HOVERED,
+        R.attr.state_drag_can_accept,   VIEW_STATE_DRAG_CAN_ACCEPT,
+        R.attr.state_drag_hovered,      VIEW_STATE_DRAG_HOVERED,*/
+    };
+
+    static {
+        int[] orderedIds = new int[VIEW_STATE_IDS.length];
+        for (int j = 0; j<VIEW_STATE_IDS.length; j += 2) {
+            int viewState = VIEW_STATE_IDS[j];
+            if (VIEW_STATE_IDS[j] == viewState) {
+                orderedIds[j] = viewState;
+                orderedIds[j + 1] = VIEW_STATE_IDS[j + 1];
+            }
+        }
+        final int NUM_BITS = VIEW_STATE_IDS.length / 2;
+        VIEW_STATE_SETS = new int[1 << NUM_BITS][];
+        for (int i = 0; i < VIEW_STATE_SETS.length; i++) {
+            int numBits = Integer.bitCount(i);
+            int[] set = new int[numBits];
+            int pos = 0;
+            for (int j = 0; j < orderedIds.length; j += 2) {
+                if ((i & orderedIds[j+1]) != 0) {
+                    set[pos++] = orderedIds[j];
+                }
+            }
+            VIEW_STATE_SETS[i] = set;
+        }
+    }
 
     /**
      * Indicates that the view should filter touches when its window is obscured.
@@ -145,9 +392,6 @@ public class Object3d
 	private float _lineWidth = 1f;
 	private boolean _lineSmoothing = false;
 
-	
-	protected ArrayList<Object3d> _children;
-	
 	protected Vertices _vertices; 
     protected Color4BufferList mColors;
 	protected TextureList _textures;
@@ -156,8 +400,14 @@ public class Object3d
 	protected boolean _animationEnabled = false;
 	
 	private Scene _scene;
-	private IObject3dContainer _parent;
+	protected IObject3dContainer mParent;
     protected GContext mGContext;
+
+    /* Background setting */
+    private Drawable mBGDrawable;
+    private int mBackgroundResource;
+    private boolean mBackgroundSizeChanged;
+    private int[] mDrawableState = null;
 
     /* Variable for Touch handler */
     Number3d mCoordinate = null;
@@ -171,11 +421,13 @@ public class Object3d
     PerformClick mPerformClick;
     int mViewFlags = ENABLED;
     int mPrivateFlags;
+    int mPrivateFlags2;
     int mWindowAttachCount;
     boolean mHasPerformedLongPress;
     OnTouchListener mOnTouchListener;
     OnClickListener mOnClickListener;
     OnLongClickListener mOnLongClickListener;
+    OnFocusChangeListener mOnFocusChangeListener;
 
     /* For vertex buffer object */
     boolean mVertexBufferObject = false;
@@ -285,7 +537,7 @@ public class Object3d
      *
      * @return true if object will be rendered
      */
-	public boolean isVisible()
+	boolean isVisible()
 	{
 		return _isVisible;
 	}
@@ -296,7 +548,7 @@ public class Object3d
      *
      * @param $b true if object will be rendered
      */
-	public void isVisible(Boolean $b)
+	void isVisible(Boolean $b)
 	{
 		_isVisible = $b;
 	}
@@ -790,12 +1042,12 @@ public class Object3d
 	
 	public IObject3dContainer parent()
 	{
-		return _parent;
+		return mParent;
 	}
 
 	void parent(IObject3dContainer $container) /*package-private*/
 	{
-		_parent = $container;
+		mParent = $container;
 	}
 	
 	/**
@@ -1206,7 +1458,7 @@ public class Object3d
         Matrix.multiplyMV(mResult, 0, mTransMC, 0, mResult, 0);
 
         synchronized (this) {
-            if (_parent != null && _parent instanceof Object3d) {
+            if (mParent != null && mParent instanceof Object3d) {
                 calcAABBPos((Object3d) parent(), TRANSLATE | ROTATE | SCALE, mResult);
             }
         }
@@ -1222,7 +1474,7 @@ public class Object3d
         mAccmlR.setAll(mRotation.x, mRotation.y, mRotation.z);
         mAccmlS.setAll(mScale.x, mScale.y, mScale.z);
         synchronized (this) {
-            if (_parent != null && _parent instanceof Object3d) {
+            if (mParent != null && mParent instanceof Object3d) {
                 accmlAABBTrans((Object3d) parent(), ROTATE, mAccmlR);
                 accmlAABBTrans((Object3d) parent(), SCALE, mAccmlS);
             }
@@ -1247,7 +1499,7 @@ public class Object3d
         mExtent.y = mResult[1];
         mExtent.z = mResult[2];
 
-        if (DEBUG) Log.i(TAG, "Name:" + _name + " Center:" + mCenter + " Extent:"
+        if (DBG) Log.i(TAG, "Name:" + _name + " Center:" + mCenter + " Extent:"
                 + mExtent);
     }
 
@@ -1907,10 +2159,52 @@ public class Object3d
         if (changed == 0) {
             return;
         }
-    }
 
-    public void refreshDrawableState() {
-        // TODO: Handler for drawable state refresh.
+        int privateFlags = mPrivateFlags;
+
+        /* Check if the FOCUSABLE bit has changed */
+        if (((changed & FOCUSABLE_MASK) != 0) &&
+                ((privateFlags & HAS_BOUNDS) !=0)) {
+            if (((old & FOCUSABLE_MASK) == FOCUSABLE)
+                    && ((privateFlags & FOCUSED) != 0)) {
+                /* Give up focus if we are no longer focusable */
+                clearFocus();
+            } else if (((old & FOCUSABLE_MASK) == NOT_FOCUSABLE)
+                    && ((privateFlags & FOCUSED) == 0)) {
+                /*
+                 * Tell the view system that we are now available to take focus
+                 * if no one else already has it.
+                 */
+                if (mParent != null) mParent.focusableObjectAvailable(this);
+            }
+        }
+
+        if ((flags & VISIBILITY_MASK) == VISIBLE) {
+            if ((changed & VISIBILITY_MASK) != 0) {
+                isVisible(true);
+                // a view becoming visible is worth notifying the parent
+                // about in case nothing has focus.  even if this specific view
+                // isn't focusable, it may contain something that is, so let
+                // the root view try to give this focus if nothing else does.
+                if ((mParent != null)/* && (mBottom > mTop) && (mRight > mLeft)*/) {
+                    mParent.focusableObjectAvailable(this);
+                }
+            }
+        }
+
+        /* Check if the VISIBLE bit has changed */
+        if ((changed & INVISIBLE) != 0) {
+            if (((mViewFlags & VISIBILITY_MASK) == INVISIBLE)) {
+                isVisible(false);
+                if (hasFocus()) {
+                    // root view becoming invisible shouldn't clear focus
+                    Scene scene = mGContext.getRenderer().getScene();
+                    if (scene.getRootObjectContainer() != this) {
+                        clearFocus();
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -1939,5 +2233,897 @@ public class Object3d
             return false;
         }
         return true;
+    }
+
+    /**
+     * Sets the background color for this view.
+     * @param color the color of the background
+     */
+    public void setBackgroundColor(int color) {
+        if (mBGDrawable instanceof ColorDrawable) {
+            ((ColorDrawable) mBGDrawable).setColor(color);
+        } else {
+            setBackgroundDrawable(new ColorDrawable(color));
+        }
+    }
+
+    /**
+     * Set the background to a given resource. The resource should refer to
+     * a Drawable object or 0 to remove the background.
+     * @param resid The identifier of the resource.
+     */
+    public void setBackgroundResource(int resid) {
+        if (resid != 0 && resid == mBackgroundResource) {
+            return;
+        }
+
+        Drawable d= null;
+        if (resid != 0) {
+            d = mGContext.getContext().getResources().getDrawable(resid);
+        }
+        setBackgroundDrawable(d);
+
+        mBackgroundResource = resid;
+    }
+
+    /**
+     * Set the background to a given Drawable, or remove the background. If the
+     * background has padding, this View's padding is set to the background's
+     * padding. However, when a background is removed, this View's padding isn't
+     * touched. If setting the padding is desired, please use
+     * {@link #setPadding(int, int, int, int)}.
+     *
+     * @param d The Drawable to use as the background, or null to remove the
+     *        background
+     */
+    public void setBackgroundDrawable(Drawable d) {
+        if (d == mBGDrawable) {
+            return;
+        }
+
+        boolean requestLayout = false;
+
+        mBackgroundResource = 0;
+
+        /*
+         * Regardless of whether we're setting a new background or not, we want
+         * to clear the previous drawable.
+         */
+        if (mBGDrawable != null) {
+            mBGDrawable.setCallback(null);
+            //unscheduleDrawable(mBGDrawable);
+        }
+
+        String backgroundTexId = "background_" + toString();
+
+        if (d != null) {
+            // Compare the minimum sizes of the old Drawable and the new.  If there isn't an old or
+            // if it has a different minimum size, we should layout again
+            if (mBGDrawable == null || mBGDrawable.getMinimumHeight() != d.getMinimumHeight() ||
+                    mBGDrawable.getMinimumWidth() != d.getMinimumWidth()) {
+                requestLayout = true;
+            }
+
+/*            d.setCallback(this);*/
+            if (d.isStateful()) {
+                d.setState(getDrawableState());
+            }
+            d.setVisible(getVisibility() == VISIBLE, false);
+            mBGDrawable = d;
+
+            if (getGContext().getTexureManager().contains(backgroundTexId)) {
+                getGContext().getTexureManager().deleteTexture(backgroundTexId);
+                textures().removeById(backgroundTexId);
+            }
+            Bitmap bitmap = Bitmap.createBitmap(mBGDrawable.getMinimumWidth(), mBGDrawable.getMinimumHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            final Drawable background = mBGDrawable;
+            background.setBounds(0,0,mBGDrawable.getMinimumWidth(),mBGDrawable.getMinimumHeight());
+            background.draw(canvas);
+
+            getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
+            bitmap.recycle();
+            TextureVo t = new TextureVo(backgroundTexId);
+            t.repeatU = false;
+            t.repeatV = false;
+            textures().add(0, t);
+/*            if ((mPrivateFlags & SKIP_DRAW) != 0) {
+                mPrivateFlags &= ~SKIP_DRAW;
+                mPrivateFlags |= ONLY_DRAWS_BACKGROUND;
+                requestLayout = true;
+            }*/
+        } else {
+            /* Remove the background */
+            mBGDrawable = null;
+            if (getGContext().getTexureManager().contains(backgroundTexId)) {
+                getGContext().getTexureManager().deleteTexture(backgroundTexId);
+                textures().removeById(backgroundTexId);
+            }
+
+            /*
+             * When the background is set, we try to apply its padding to this
+             * View. When the background is removed, we don't touch this View's
+             * padding. This is noted in the Javadocs. Hence, we don't need to
+             * requestLayout(), the invalidate() below is sufficient.
+             */
+
+            // The old background's minimum size could have affected this
+            // View's layout, so let's requestLayout
+            requestLayout = true;
+        }
+
+/*        if (requestLayout) {
+            requestLayout();
+        }*/
+
+        mBackgroundSizeChanged = true;
+/*        invalidate(true);*/
+    }
+
+    /**
+     * Gets the background drawable
+     * @return The drawable used as the background for this view, if any.
+     */
+    public Drawable getBackground() {
+        return mBGDrawable;
+    }
+
+    /**
+     * This function is called whenever the state of the view changes in such
+     * a way that it impacts the state of drawables being shown.
+     *
+     * <p>Be sure to call through to the superclass when overriding this
+     * function.
+     *
+     * @see Drawable#setState(int[])
+     */
+    protected void drawableStateChanged() {
+        Drawable d = mBGDrawable;
+        if (d != null && d.isStateful()) {
+            d.setState(getDrawableState());
+        }
+    }
+
+    /**
+     * Call this to force a view to update its drawable state. This will cause
+     * drawableStateChanged to be called on this view. Views that are interested
+     * in the new state should call getDrawableState.
+     *
+     * @see #drawableStateChanged
+     * @see #getDrawableState
+     */
+    public void refreshDrawableState() {
+        mPrivateFlags |= DRAWABLE_STATE_DIRTY;
+        drawableStateChanged();
+
+        Object3dContainer parent = (Object3dContainer)parent();
+        if (parent != null) {
+            parent.childDrawableStateChanged(this);
+        }
+    }
+
+    /**
+     * Return an array of resource IDs of the drawable states representing the
+     * current state of the view.
+     *
+     * @return The current drawable state
+     *
+     * @see Drawable#setState(int[])
+     * @see #drawableStateChanged()
+     * @see #onCreateDrawableState(int)
+     */
+    public final int[] getDrawableState() {
+        if ((mDrawableState != null) && ((mPrivateFlags & DRAWABLE_STATE_DIRTY) == 0)) {
+            return mDrawableState;
+        } else {
+            mDrawableState = onCreateDrawableState(0);
+            mPrivateFlags &= ~DRAWABLE_STATE_DIRTY;
+            return mDrawableState;
+        }
+    }
+
+    /**
+     * Generate the new {@link android.graphics.drawable.Drawable} state for
+     * this view. This is called by the view
+     * system when the cached Drawable state is determined to be invalid.  To
+     * retrieve the current state, you should use {@link #getDrawableState}.
+     *
+     * @param extraSpace if non-zero, this is the number of extra entries you
+     * would like in the returned array in w\\
+     *  you can place your own
+     * states.
+     *
+     * @return Returns an array holding the current {@link Drawable} state of
+     * the view.
+     *
+     * @see #mergeDrawableStates(int[], int[])
+     */
+    protected int[] onCreateDrawableState(int extraSpace) {
+        if ((mViewFlags & DUPLICATE_PARENT_STATE) == DUPLICATE_PARENT_STATE &&
+                parent() instanceof Object3d) {
+            return ((Object3d) parent()).onCreateDrawableState(extraSpace);
+        }
+
+        int[] drawableState;
+
+        int privateFlags = mPrivateFlags;
+
+        int viewStateIndex = 0;
+        if ((privateFlags & PRESSED) != 0) viewStateIndex |= VIEW_STATE_PRESSED;
+        if ((mViewFlags & ENABLED_MASK) == ENABLED) viewStateIndex |= VIEW_STATE_ENABLED;
+        if (isFocused()) viewStateIndex |= VIEW_STATE_FOCUSED;
+        if ((privateFlags & SELECTED) != 0) viewStateIndex |= VIEW_STATE_SELECTED;
+        if ((privateFlags & ACTIVATED) != 0) viewStateIndex |= VIEW_STATE_ACTIVATED;
+        if ((privateFlags & HOVERED) != 0) viewStateIndex |= VIEW_STATE_HOVERED;
+
+        final int privateFlags2 = mPrivateFlags2;
+        if ((privateFlags2 & DRAG_CAN_ACCEPT) != 0) viewStateIndex |= VIEW_STATE_DRAG_CAN_ACCEPT;
+        if ((privateFlags2 & DRAG_HOVERED) != 0) viewStateIndex |= VIEW_STATE_DRAG_HOVERED;
+
+        drawableState = VIEW_STATE_SETS[viewStateIndex];
+
+        //noinspection ConstantIfStatement
+        if (false) {
+            Log.i("View", "drawableStateIndex=" + viewStateIndex);
+            Log.i("View", toString()
+                    + " pressed=" + ((privateFlags & PRESSED) != 0)
+                    + " en=" + ((mViewFlags & ENABLED_MASK) == ENABLED)
+                    + " fo=" + hasFocus()
+                    + " sl=" + ((privateFlags & SELECTED) != 0)
+                    + ": " + Arrays.toString(drawableState));
+        }
+
+        if (extraSpace == 0) {
+            return drawableState;
+        }
+
+        final int[] fullState;
+        if (drawableState != null) {
+            fullState = new int[drawableState.length + extraSpace];
+            System.arraycopy(drawableState, 0, fullState, 0, drawableState.length);
+        } else {
+            fullState = new int[extraSpace];
+        }
+
+        return fullState;
+    }
+
+    /**
+     * Merge your own state values in <var>additionalState</var> into the base
+     * state values <var>baseState</var> that were returned by
+     * {@link #onCreateDrawableState(int)}.
+     *
+     * @param baseState The base state values returned by
+     * {@link #onCreateDrawableState(int)}, which will be modified to also hold your
+     * own additional state values.
+     *
+     * @param additionalState The additional state values you would like
+     * added to <var>baseState</var>; this array is not modified.
+     *
+     * @return As a convenience, the <var>baseState</var> array you originally
+     * passed into the function is returned.
+     *
+     * @see #onCreateDrawableState(int)
+     */
+    protected static int[] mergeDrawableStates(int[] baseState, int[] additionalState) {
+        final int N = baseState.length;
+        int i = N - 1;
+        while (i >= 0 && baseState[i] == 0) {
+            i--;
+        }
+        System.arraycopy(additionalState, 0, baseState, i + 1, additionalState.length);
+        return baseState;
+    }
+
+    /**
+     * Call {@link Drawable#jumpToCurrentState() Drawable.jumpToCurrentState()}
+     * on all Drawable objects associated with this view.
+     */
+    public void jumpDrawablesToCurrentState() {
+        if (mBGDrawable != null) {
+            mBGDrawable.jumpToCurrentState();
+        }
+    }
+
+    /**
+     * Register a callback to be invoked when focus of this view changed.
+     *
+     * @param l The callback that will run.
+     */
+    public void setOnFocusChangeListener(OnFocusChangeListener l) {
+        mOnFocusChangeListener = l;
+    }
+
+    /**
+     * Invoked whenever this view loses focus, either by losing window focus or by losing
+     * focus within its window. This method can be used to clear any state tied to the
+     * focus. For instance, if a button is held pressed with the trackball and the window
+     * loses focus, this method can be used to cancel the press.
+     *
+     * Subclasses of View overriding this method should always call super.onFocusLost().
+     *
+     * @see #onFocusChanged(boolean, int, android.graphics.Rect)
+     * @see #onWindowFocusChanged(boolean)
+     *
+     * @hide pending API council approval
+     */
+    protected void onFocusLost() {
+        resetPressedState();
+    }
+
+    private void resetPressedState() {
+        if ((mViewFlags & ENABLED_MASK) == DISABLED) {
+            return;
+        }
+
+        if (isPressed()) {
+            setPressed(false);
+
+            if (!mHasPerformedLongPress) {
+                removeLongPressCallback();
+            }
+        }
+    }
+
+    /**
+     * Returns the visibility status for this view.
+     *
+     * @return One of {@link #VISIBLE}, {@link #INVISIBLE}, or {@link #GONE}.
+     */
+    public int getVisibility() {
+        return mViewFlags & VISIBILITY_MASK;
+    }
+
+    /**
+     * Set the enabled state of this view.
+     *
+     * @param visibility One of {@link #VISIBLE}, {@link #INVISIBLE}, or {@link #GONE}.
+     */
+    public void setVisibility(int visibility) {
+        setFlags(visibility, VISIBILITY_MASK);
+        if (mBGDrawable != null) mBGDrawable.setVisible(visibility == VISIBLE, false);
+    }
+
+    /**
+     * Returns true if this view has focus
+     *
+     * @return True if this view has focus, false otherwise.
+     */
+    public boolean isFocused() {
+        return (mPrivateFlags & FOCUSED) != 0;
+    }
+
+    /**
+     * Find the view in the hierarchy rooted at this view that currently has
+     * focus.
+     *
+     * @return The view that currently has focus, or null if no focused view can
+     *         be found.
+     */
+    public Object3d findFocus() {
+        return (mPrivateFlags & FOCUSED) != 0 ? this : null;
+    }
+
+    /**
+     * Set whether this view can receive the focus.
+     *
+     * Setting this to false will also ensure that this view is not focusable
+     * in touch mode.
+     *
+     * @param focusable If true, this view can receive the focus.
+     *
+     * @see #setFocusableInTouchMode(boolean)
+     */
+    public void setFocusable(boolean focusable) {
+        if (!focusable) {
+            setFlags(0, FOCUSABLE_IN_TOUCH_MODE);
+        }
+        setFlags(focusable ? FOCUSABLE : NOT_FOCUSABLE, FOCUSABLE_MASK);
+    }
+
+    /**
+     * Set whether this view can receive focus while in touch mode.
+     *
+     * Setting this to true will also ensure that this view is focusable.
+     *
+     * @param focusableInTouchMode If true, this view can receive the focus while
+     *   in touch mode.
+     *
+     * @see #setFocusable(boolean)
+     */
+    public void setFocusableInTouchMode(boolean focusableInTouchMode) {
+        // Focusable in touch mode should always be set before the focusable flag
+        // otherwise, setting the focusable flag will trigger a focusableViewAvailable()
+        // which, in touch mode, will not successfully request focus on this view
+        // because the focusable in touch mode flag is not set
+        setFlags(focusableInTouchMode ? FOCUSABLE_IN_TOUCH_MODE : 0, FOCUSABLE_IN_TOUCH_MODE);
+        if (focusableInTouchMode) {
+            setFlags(FOCUSABLE, FOCUSABLE_MASK);
+        }
+    }
+
+    /**
+     * Called when this view wants to give up focus. This will cause
+     * {@link #onFocusChanged(boolean, int, android.graphics.Rect)} to be called.
+     */
+    public void clearFocus() {
+        if ((mPrivateFlags & FOCUSED) != 0) {
+            mPrivateFlags &= ~FOCUSED;
+
+            if (parent() != null) {
+                parent().clearChildFocus(this);
+            }
+
+            onFocusChanged(false, 0, null);
+            refreshDrawableState();
+        }
+    }
+
+    /**
+     * Called to clear the focus of a view that is about to be removed.
+     * Doesn't call clearChildFocus, which prevents this view from taking
+     * focus again before it has been removed from the parent
+     */
+    void clearFocusForRemoval() {
+        if ((mPrivateFlags & FOCUSED) != 0) {
+            mPrivateFlags &= ~FOCUSED;
+
+            onFocusChanged(false, 0, null);
+            refreshDrawableState();
+        }
+    }
+
+    /**
+     * Called internally by the view system when a new view is getting focus.
+     * This is what clears the old focus.
+     */
+    void unFocus() {
+        if (DBG) {
+            System.out.println(this + " unFocus()");
+        }
+
+        if ((mPrivateFlags & FOCUSED) != 0) {
+            mPrivateFlags &= ~FOCUSED;
+
+            onFocusChanged(false, 0, null);
+            refreshDrawableState();
+        }
+    }
+
+    /**
+     * Returns true if this view has focus iteself, or is the ancestor of the
+     * view that has focus.
+     *
+     * @return True if this view has or contains focus, false otherwise.
+     */
+    public boolean hasFocus() {
+        return (mPrivateFlags & FOCUSED) != 0;
+    }
+
+    /**
+     * Returns true if this view is focusable or if it contains a reachable View
+     * for which {@link #hasFocusable()} returns true. A "reachable hasFocusable()"
+     * is a View whose parents do not block descendants focus.
+     *
+     * Only {@link #VISIBLE} views are considered focusable.
+     *
+     * @return True if the view is focusable or if the view contains a focusable
+     *         View, false otherwise.
+     *
+     * @see ViewGroup#FOCUS_BLOCK_DESCENDANTS
+     */
+    public boolean hasFocusable() {
+        return (mViewFlags & VISIBILITY_MASK) == VISIBLE && isFocusable();
+    }
+
+    /**
+     * Called by the view system when the focus state of this view changes.
+     * When the focus change event is caused by directional navigation, direction
+     * and previouslyFocusedRect provide insight into where the focus is coming from.
+     * When overriding, be sure to call up through to the super class so that
+     * the standard focus handling will occur.
+     *
+     * @param gainFocus True if the View has focus; false otherwise.
+     * @param direction The direction focus has moved when requestFocus()
+     *                  is called to give this view focus. Values are
+     *                  {@link #FOCUS_UP}, {@link #FOCUS_DOWN}, {@link #FOCUS_LEFT},
+     *                  {@link #FOCUS_RIGHT}, {@link #FOCUS_FORWARD}, or {@link #FOCUS_BACKWARD}.
+     *                  It may not always apply, in which case use the default.
+     * @param previouslyFocusedRect The rectangle, in this view's coordinate
+     *        system, of the previously focused view.  If applicable, this will be
+     *        passed in as finer grained information about where the focus is coming
+     *        from (in addition to direction).  Will be <code>null</code> otherwise.
+     */
+    protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+        if (!gainFocus) {
+            if (isPressed()) {
+                setPressed(false);
+            }
+            onFocusLost();
+        }
+
+/*        invalidate(true);*/
+        if (mOnFocusChangeListener != null) {
+            mOnFocusChangeListener.onFocusChange(this, gainFocus);
+        }
+    }
+
+    /**
+     * Returns whether this View is able to take focus.
+     *
+     * @return True if this view can take focus, or false otherwise.
+     */
+    public final boolean isFocusable() {
+        return FOCUSABLE == (mViewFlags & FOCUSABLE_MASK);
+    }
+
+    /**
+     * When a view is focusable, it may not want to take focus when in touch mode.
+     * For example, a button would like focus when the user is navigating via a D-pad
+     * so that the user can click on it, but once the user starts touching the screen,
+     * the button shouldn't take focus
+     * @return Whether the view is focusable in touch mode.
+     */
+    public final boolean isFocusableInTouchMode() {
+        return FOCUSABLE_IN_TOUCH_MODE == (mViewFlags & FOCUSABLE_IN_TOUCH_MODE);
+    }
+
+    /**
+     * Find the nearest view in the specified direction that can take focus.
+     * This does not actually give focus to that view.
+     *
+     * @param direction One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, and FOCUS_RIGHT
+     *
+     * @return The nearest focusable in the specified direction, or null if none
+     *         can be found.
+     */
+    public Object3d focusSearch(int direction) {
+        if (parent() != null) {
+            return parent().focusSearch(this, direction);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Find and return all touchable views that are descendants of this view,
+     * possibly including this view if it is touchable itself.
+     *
+     * @return A list of touchable views
+     */
+    public ArrayList<Object3d> getTouchables() {
+        ArrayList<Object3d> result = new ArrayList<Object3d>();
+        addTouchables(result);
+        return result;
+    }
+
+    /**
+     * Add any touchable views that are descendants of this view (possibly
+     * including this view if it is touchable itself) to views.
+     *
+     * @param views Touchable views found so far
+     */
+    public void addTouchables(ArrayList<Object3d> views) {
+        final int viewFlags = mViewFlags;
+
+        if (((viewFlags & CLICKABLE) == CLICKABLE || (viewFlags & LONG_CLICKABLE) == LONG_CLICKABLE)
+                && (viewFlags & ENABLED_MASK) == ENABLED) {
+            views.add(this);
+        }
+    }
+
+    /**
+     * Call this to try to give focus to a specific view or to one of its
+     * descendants.
+     *
+     * A view will not actually take focus if it is not focusable ({@link #isFocusable} returns
+     * false), or if it is focusable and it is not focusable in touch mode
+     * ({@link #isFocusableInTouchMode}) while the device is in touch mode.
+     *
+     * See also {@link #focusSearch(int)}, which is what you call to say that you
+     * have focus, and you want your parent to look for the next one.
+     *
+     * This is equivalent to calling {@link #requestFocus(int, Rect)} with arguments
+     * {@link #FOCUS_DOWN} and <code>null</code>.
+     *
+     * @return Whether this view or one of its descendants actually took focus.
+     */
+    public final boolean requestFocus() {
+        return requestFocus(Object3d.FOCUS_DOWN);
+    }
+
+
+    /**
+     * Call this to try to give focus to a specific view or to one of its
+     * descendants and give it a hint about what direction focus is heading.
+     *
+     * A view will not actually take focus if it is not focusable ({@link #isFocusable} returns
+     * false), or if it is focusable and it is not focusable in touch mode
+     * ({@link #isFocusableInTouchMode}) while the device is in touch mode.
+     *
+     * See also {@link #focusSearch(int)}, which is what you call to say that you
+     * have focus, and you want your parent to look for the next one.
+     *
+     * This is equivalent to calling {@link #requestFocus(int, Rect)} with
+     * <code>null</code> set for the previously focused rectangle.
+     *
+     * @param direction One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, and FOCUS_RIGHT
+     * @return Whether this view or one of its descendants actually took focus.
+     */
+    public final boolean requestFocus(int direction) {
+        return requestFocus(direction, null);
+    }
+
+    /**
+     * Call this to try to give focus to a specific view or to one of its descendants
+     * and give it hints about the direction and a specific rectangle that the focus
+     * is coming from.  The rectangle can help give larger views a finer grained hint
+     * about where focus is coming from, and therefore, where to show selection, or
+     * forward focus change internally.
+     *
+     * A view will not actually take focus if it is not focusable ({@link #isFocusable} returns
+     * false), or if it is focusable and it is not focusable in touch mode
+     * ({@link #isFocusableInTouchMode}) while the device is in touch mode.
+     *
+     * A View will not take focus if it is not visible.
+     *
+     * A View will not take focus if one of its parents has
+     * {@link android.view.ViewGroup#getDescendantFocusability()} equal to
+     * {@link ViewGroup#FOCUS_BLOCK_DESCENDANTS}.
+     *
+     * See also {@link #focusSearch(int)}, which is what you call to say that you
+     * have focus, and you want your parent to look for the next one.
+     *
+     * You may wish to override this method if your custom {@link View} has an internal
+     * {@link View} that it wishes to forward the request to.
+     *
+     * @param direction One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, and FOCUS_RIGHT
+     * @param previouslyFocusedRect The rectangle (in this View's coordinate system)
+     *        to give a finer grained hint about where focus is coming from.  May be null
+     *        if there is no hint.
+     * @return Whether this view or one of its descendants actually took focus.
+     */
+    public boolean requestFocus(int direction, Rect previouslyFocusedRect) {
+        if (DBG) {
+            System.out.println(this + " View.requestFocus direction="
+                    + direction + " Name:" + name());
+        }
+        // need to be focusable
+        if ((mViewFlags & FOCUSABLE_MASK) != FOCUSABLE ||
+                (mViewFlags & VISIBILITY_MASK) != VISIBLE) {
+            return false;
+        }
+
+        // need to be focusable in touch mode if in touch mode
+        if (isInTouchMode() &&
+            (FOCUSABLE_IN_TOUCH_MODE != (mViewFlags & FOCUSABLE_IN_TOUCH_MODE))) {
+               return false;
+        }
+
+        // need to not have any parents blocking us
+        if (hasAncestorThatBlocksDescendantFocus()) {
+            return false;
+        }
+
+        handleFocusGainInternal(direction, previouslyFocusedRect);
+        return true;
+    }
+
+    /**
+     * Returns whether the device is currently in touch mode.  Touch mode is entered
+     * once the user begins interacting with the device by touch, and affects various
+     * things like whether focus is always visible to the user.
+     *
+     * @return Whether the device is in touch mode.
+     */
+    public boolean isInTouchMode() {
+        return getGContext().getRenderer().getScene().isInTouchMode();
+    }
+
+    /**
+     * Give this view focus. This will cause
+     * {@link #onFocusChanged(boolean, int, android.graphics.Rect)} to be called.
+     *
+     * Note: this does not check whether this {@link View} should get focus, it just
+     * gives it focus no matter what.  It should only be called internally by framework
+     * code that knows what it is doing, namely {@link #requestFocus(int, Rect)}.
+     *
+     * @param direction values are {@link View#FOCUS_UP}, {@link View#FOCUS_DOWN},
+     *        {@link View#FOCUS_LEFT} or {@link View#FOCUS_RIGHT}. This is the direction which
+     *        focus moved when requestFocus() is called. It may not always
+     *        apply, in which case use the default View.FOCUS_DOWN.
+     * @param previouslyFocusedRect The rectangle of the view that had focus
+     *        prior in this View's coordinate system.
+     */
+    void handleFocusGainInternal(int direction, Rect previouslyFocusedRect) {
+        if (DBG) {
+            System.out.println(this + " requestFocus()");
+        }
+
+        if ((mPrivateFlags & FOCUSED) == 0) {
+            mPrivateFlags |= FOCUSED;
+
+            if (parent() != null) {
+                parent().requestChildFocus(this, this);
+            }
+
+            onFocusChanged(true, direction, previouslyFocusedRect);
+            refreshDrawableState();
+        }
+    }
+
+    /**
+     * Call this to try to give focus to a specific view or to one of its descendants. This is a
+     * special variant of {@link #requestFocus() } that will allow views that are not focuable in
+     * touch mode to request focus when they are touched.
+     *
+     * @return Whether this view or one of its descendants actually took focus.
+     *
+     * @see #isInTouchMode()
+     *
+     */
+    public final boolean requestFocusFromTouch() {
+        // Leave touch mode if we need to
+        if (isInTouchMode()) {
+            Scene viewRoot = mGContext.getRenderer().getScene();
+            if (viewRoot != null) {
+                viewRoot.ensureTouchMode(false);
+            }
+        }
+        return requestFocus(Object3d.FOCUS_DOWN);
+    }
+
+    /**
+     * @return Whether any ancestor of this view blocks descendant focus.
+     */
+    private boolean hasAncestorThatBlocksDescendantFocus() {
+        IObject3dParent ancestor = mParent;
+        while (ancestor instanceof Object3dContainer) {
+            final Object3dContainer vgAncestor = (Object3dContainer) ancestor;
+            if (vgAncestor.getDescendantFocusability() == Object3dContainer.FOCUS_BLOCK_DESCENDANTS) {
+                return true;
+            } else {
+                ancestor = vgAncestor.getParent();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Find and return all focusable views that are descendants of this view,
+     * possibly including this view if it is focusable itself.
+     *
+     * @param direction The direction of the focus
+     * @return A list of focusable views
+     */
+    public ArrayList<Object3d> getFocusables(int direction) {
+        ArrayList<Object3d> result = new ArrayList<Object3d>(24);
+        addFocusables(result, direction);
+        return result;
+    }
+
+    /**
+     * Add any focusable views that are descendants of this view (possibly
+     * including this view if it is focusable itself) to views.  If we are in touch mode,
+     * only add views that are also focusable in touch mode.
+     *
+     * @param views Focusable views found so far
+     * @param direction The direction of the focus
+     */
+    public void addFocusables(ArrayList<Object3d> views, int direction) {
+        addFocusables(views, direction, FOCUSABLES_TOUCH_MODE);
+    }
+
+    /**
+     * Adds any focusable views that are descendants of this view (possibly
+     * including this view if it is focusable itself) to views. This method
+     * adds all focusable views regardless if we are in touch mode or
+     * only views focusable in touch mode if we are in touch mode depending on
+     * the focusable mode paramater.
+     *
+     * @param views Focusable views found so far or null if all we are interested is
+     *        the number of focusables.
+     * @param direction The direction of the focus.
+     * @param focusableMode The type of focusables to be added.
+     *
+     * @see #FOCUSABLES_ALL
+     * @see #FOCUSABLES_TOUCH_MODE
+     */
+    public void addFocusables(ArrayList<Object3d> views, int direction, int focusableMode) {
+        if (!isFocusable()) {
+            return;
+        }
+
+        if ((focusableMode & FOCUSABLES_TOUCH_MODE) == FOCUSABLES_TOUCH_MODE &&
+                isInTouchMode() && !isFocusableInTouchMode()) {
+            return;
+        }
+
+        if (views != null) {
+            views.add(this);
+        }
+    }
+
+    /**
+     * {@hide}
+     *
+     * @return true if the view belongs to the root namespace, false otherwise
+     */
+    public boolean isRootNamespace() {
+        return (mPrivateFlags&IS_ROOT_NAMESPACE) != 0;
+    }
+
+    /**
+     * Changes the selection state of this view. A view can be selected or not.
+     * Note that selection is not the same as focus. Views are typically
+     * selected in the context of an AdapterView like ListView or GridView;
+     * the selected view is the view that is highlighted.
+     *
+     * @param selected true if the view must be selected, false otherwise
+     */
+    public void setSelected(boolean selected) {
+        if (((mPrivateFlags & SELECTED) != 0) != selected) {
+            mPrivateFlags = (mPrivateFlags & ~SELECTED) | (selected ? SELECTED : 0);
+            if (!selected) resetPressedState();
+            refreshDrawableState();
+            dispatchSetSelected(selected);
+        }
+    }
+
+    /**
+     * Indicates the selection state of this view.
+     *
+     * @return true if the view is selected, false otherwise
+     */
+    public boolean isSelected() {
+        return (mPrivateFlags & SELECTED) != 0;
+    }
+
+    /**
+     * Dispatch setSelected to all of this View's children.
+     *
+     * @see #setSelected(boolean)
+     *
+     * @param selected The new selected state
+     */
+    protected void dispatchSetSelected(boolean selected) {
+    }
+
+    /**
+     * <p>Enables or disables the duplication of the parent's state into this view. When
+     * duplication is enabled, this view gets its drawable state from its parent rather
+     * than from its own internal properties.</p>
+     *
+     * <p>Note: in the current implementation, setting this property to true after the
+     * view was added to a ViewGroup might have no effect at all. This property should
+     * always be used from XML or set to true before adding this view to a ViewGroup.</p>
+     *
+     * <p>Note: if this view's parent addStateFromChildren property is enabled and this
+     * property is enabled, an exception will be thrown.</p>
+     *
+     * <p>Note: if the child view uses and updates additionnal states which are unknown to the
+     * parent, these states should not be affected by this method.</p>
+     *
+     * @param enabled True to enable duplication of the parent's drawable state, false
+     *                to disable it.
+     *
+     * @see #getDrawableState()
+     * @see #isDuplicateParentStateEnabled()
+     */
+    public void setDuplicateParentStateEnabled(boolean enabled) {
+        setFlags(enabled ? DUPLICATE_PARENT_STATE : 0, DUPLICATE_PARENT_STATE);
+    }
+
+    /**
+     * <p>Indicates whether this duplicates its drawable state from its parent.</p>
+     *
+     * @return True if this view's drawable state is duplicated from the parent,
+     *         false otherwise
+     *
+     * @see #getDrawableState()
+     * @see #setDuplicateParentStateEnabled(boolean)
+     */
+    public boolean isDuplicateParentStateEnabled() {
+        return (mViewFlags & DUPLICATE_PARENT_STATE) == DUPLICATE_PARENT_STATE;
     }
 }

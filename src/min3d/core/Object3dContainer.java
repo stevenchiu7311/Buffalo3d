@@ -1,5 +1,6 @@
 package min3d.core;
 
+import android.graphics.Rect;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
@@ -7,6 +8,7 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import min3d.interfaces.IObject3dContainer;
+import min3d.interfaces.IObject3dParent;
 import min3d.vos.Ray;
 
 /**
@@ -14,15 +16,59 @@ import min3d.vos.Ray;
  * (called children.) The object3d container is the base class for layouts and objects
  * containers.
  */
-public class Object3dContainer extends Object3d implements IObject3dContainer
+public class Object3dContainer extends Object3d implements IObject3dContainer, IObject3dParent
 {
-	protected ArrayList<Object3d> _children = new ArrayList<Object3d>();
+    private static final boolean DBG = false;
+
+    /**
+     * When set, this group will go through its list of children to notify them of
+     * any drawable state change.
+     */
+    private static final int FLAG_NOTIFY_CHILDREN_ON_DRAWABLE_STATE_CHANGE = 0x10000;
+
+    private static final int FLAG_MASK_FOCUSABILITY = 0x60000;
+
+    /**
+     * This view will get focus before any of its descendants.
+     */
+    public static final int FOCUS_BEFORE_DESCENDANTS = 0x20000;
+
+    /**
+     * This view will get focus only if none of its descendants want it.
+     */
+    public static final int FOCUS_AFTER_DESCENDANTS = 0x40000;
+
+    /**
+     * This view will block any of its descendants from getting focus, even
+     * if they are focusable.
+     */
+    public static final int FOCUS_BLOCK_DESCENDANTS = 0x60000;
+
+    /**
+     * Used to map between enum in attrubutes and flag values.
+     */
+    private static final int[] DESCENDANT_FOCUSABILITY_FLAGS =
+            {FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS,
+                    FOCUS_BLOCK_DESCENDANTS};
+
+    /**
+     * When set, this ViewGroup's drawable states also include those
+     * of its children.
+     */
+    private static final int FLAG_ADD_STATES_FROM_CHILDREN = 0x2000;
+
+    protected int mGroupFlags;
+    // The view contained within this ViewGroup that has or contains focus.
+    private Object3d mFocused;
+
+	protected ArrayList<Object3d> mChildren = new ArrayList<Object3d>();
 
     private Object3d mMotionTarget = null;
 
 	public Object3dContainer(GContext context)
 	{
 		super(context, 0, 0, false, false, false);
+        initObject3dContainer();
 	}
 
 	/**
@@ -34,11 +80,13 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 	public Object3dContainer(GContext context, int $maxVerts, int $maxFaces)
 	{
 		super(context, $maxVerts, $maxFaces,true,true, true);
+        initObject3dContainer();
 	}
 
 	public Object3dContainer(GContext context, int $maxVerts,  int $maxFaces, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
 	{
 		super(context, $maxVerts, $maxFaces,$useUvs,$useNormals, $useVertexColors);
+        initObject3dContainer();
 	}
 	
 	/**
@@ -47,14 +95,19 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
 	public Object3dContainer(GContext context, Vertices $vertices, FacesBufferedList $faces, TextureList $textures)
 	{
 		super(context, $vertices, $faces, $textures);
+        initObject3dContainer();
 	}
+
+    private void initObject3dContainer() {
+        setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
+    }
 
     /**
      * {@inheritDoc}
      */
 	public void addChild(Object3d $o)
 	{
-		_children.add($o);
+		mChildren.add($o);
 		
 		$o.parent(this);
 		$o.scene(mGContext.getRenderer().getScene());
@@ -65,7 +118,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
      */
 	public void addChildAt(Object3d $o, int $index) 
 	{
-		_children.add($index, $o);
+		mChildren.add($index, $o);
 		
 		$o.parent(this);
 		$o.scene(mGContext.getRenderer().getScene());
@@ -77,7 +130,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
     public boolean removeChild(Object3d $o) {
         boolean b;
         synchronized (this) {
-            b = _children.remove($o);
+            b = mChildren.remove($o);
 
             if (b) {
                 $o.parent(null);
@@ -92,7 +145,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
      */
 	public Object3d removeChildAt(int $index) 
 	{
-		Object3d o = _children.remove($index);
+		Object3d o = mChildren.remove($index);
 		if (o != null) {
 			o.parent(null);
 			o.scene(null);
@@ -105,7 +158,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
      */
 	public Object3d getChildAt(int $index) 
 	{
-		return _children.get($index);
+		return mChildren.get($index);
 	}
 
     /**
@@ -113,9 +166,9 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
      */
 	public Object3d getChildByName(String $name)
 	{
-		for (int i = 0; i < _children.size(); i++)
+		for (int i = 0; i < mChildren.size(); i++)
 		{
-			if (_children.get(i).name().equals($name)) return _children.get(i); 
+			if (mChildren.get(i).name().equals($name)) return mChildren.get(i);
 		}
 		return null;
 	}
@@ -125,7 +178,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
      */
 	public int getChildIndexOf(Object3d $o) 
 	{
-		return _children.indexOf($o);		
+		return mChildren.indexOf($o);
 	}
 
     /**
@@ -133,13 +186,13 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
      */
 	public int numChildren() 
 	{
-		return _children.size();
+		return mChildren.size();
 	}
 	
 	/*package-private*/ 
 	ArrayList<Object3d> children()
 	{
-		return _children;
+		return mChildren;
 	}
 	
 	public Object3dContainer clone()
@@ -281,6 +334,463 @@ public class Object3dContainer extends Object3d implements IObject3dContainer
             } else {
                 return 0;
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void clearChildFocus(Object3d child) {
+        if (DBG) {
+            System.out.println(this + " clearChildFocus()");
+        }
+
+        mFocused = null;
+        if (mParent != null) {
+            mParent.clearChildFocus(this);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void clearFocus() {
+        super.clearFocus();
+
+        // clear any child focus if it exists
+        if (mFocused != null) {
+            mFocused.clearFocus();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    void unFocus() {
+        if (DBG) {
+            System.out.println(this + " unFocus()");
+        }
+
+        super.unFocus();
+        if (mFocused != null) {
+            mFocused.unFocus();
+        }
+        mFocused = null;
+    }
+
+    /**
+     * Returns the focused child of this view, if any. The child may have focus
+     * or contain focus.
+     *
+     * @return the focused child or null.
+     */
+    public Object3d getFocusedChild() {
+        return mFocused;
+    }
+
+    /**
+     * Returns true if this view has or contains focus
+     *
+     * @return true if this view has or contains focus
+     */
+    @Override
+    public boolean hasFocus() {
+        return (mPrivateFlags & FOCUSED) != 0 || mFocused != null;
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see android.view.View#findFocus()
+     */
+    @Override
+    public Object3d findFocus() {
+        if (DBG) {
+            System.out.println("Find focus in " + this + ": flags="
+                    + isFocused() + ", child=" + mFocused);
+        }
+
+        if (isFocused()) {
+            return this;
+        }
+
+        if (mFocused != null) {
+            return mFocused.findFocus();
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasFocusable() {
+        if ((mViewFlags & VISIBILITY_MASK) != VISIBLE) {
+            return false;
+        }
+
+        if (isFocusable()) {
+            return true;
+        }
+
+        final int descendantFocusability = getDescendantFocusability();
+        if (descendantFocusability != FOCUS_BLOCK_DESCENDANTS) {
+            final int count = numChildren();
+            final Object3d[] children = (Object3d[]) mChildren.toArray();
+
+            for (int i = 0; i < count; i++) {
+                final Object3d child = children[i];
+                if (child.hasFocusable()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addFocusables(ArrayList<Object3d> views, int direction) {
+        addFocusables(views, direction, FOCUSABLES_TOUCH_MODE);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addFocusables(ArrayList<Object3d> views, int direction, int focusableMode) {
+        final int focusableCount = views.size();
+
+        final int descendantFocusability = getDescendantFocusability();
+
+        if (descendantFocusability != FOCUS_BLOCK_DESCENDANTS) {
+            final int count = numChildren();
+            final Object3d[] children = (Object3d[]) mChildren.toArray();
+
+            for (int i = 0; i < count; i++) {
+                final Object3d child = children[i];
+                if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                    child.addFocusables(views, direction, focusableMode);
+                }
+            }
+        }
+
+        // we add ourselves (if focusable) in all cases except for when we are
+        // FOCUS_AFTER_DESCENDANTS and there are some descendants focusable.  this is
+        // to avoid the focus search finding layouts when a more precise search
+        // among the focusable children would be more interesting.
+        if (
+            descendantFocusability != FOCUS_AFTER_DESCENDANTS ||
+                // No focusable descendants
+                (focusableCount == views.size())) {
+            super.addFocusables(views, direction, focusableMode);
+        }
+    }
+
+    /**
+     * Gets the descendant focusability of this view group.  The descendant
+     * focusability defines the relationship between this view group and its
+     * descendants when looking for a view to take focus in
+     * {@link #requestFocus(int, android.graphics.Rect)}.
+     *
+     * @return one of {@link #FOCUS_BEFORE_DESCENDANTS}, {@link #FOCUS_AFTER_DESCENDANTS},
+     *   {@link #FOCUS_BLOCK_DESCENDANTS}.
+     */
+    public int getDescendantFocusability() {
+        return mGroupFlags & FLAG_MASK_FOCUSABILITY;
+    }
+
+    /**
+     * Set the descendant focusability of this view group. This defines the relationship
+     * between this view group and its descendants when looking for a view to
+     * take focus in {@link #requestFocus(int, android.graphics.Rect)}.
+     *
+     * @param focusability one of {@link #FOCUS_BEFORE_DESCENDANTS}, {@link #FOCUS_AFTER_DESCENDANTS},
+     *   {@link #FOCUS_BLOCK_DESCENDANTS}.
+     */
+    public void setDescendantFocusability(int focusability) {
+        switch (focusability) {
+            case FOCUS_BEFORE_DESCENDANTS:
+            case FOCUS_AFTER_DESCENDANTS:
+            case FOCUS_BLOCK_DESCENDANTS:
+                break;
+            default:
+                throw new IllegalArgumentException("must be one of FOCUS_BEFORE_DESCENDANTS, "
+                        + "FOCUS_AFTER_DESCENDANTS, FOCUS_BLOCK_DESCENDANTS");
+        }
+        mGroupFlags &= ~FLAG_MASK_FOCUSABILITY;
+        mGroupFlags |= (focusability & FLAG_MASK_FOCUSABILITY);
+    }
+
+    @Override
+    protected void drawableStateChanged() {
+        super.drawableStateChanged();
+
+        if ((mGroupFlags & FLAG_NOTIFY_CHILDREN_ON_DRAWABLE_STATE_CHANGE) != 0) {
+            if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) != 0) {
+                throw new IllegalStateException("addStateFromChildren cannot be enabled if a"
+                        + " child has duplicateParentState set to true");
+            }
+
+            final Object3d[] children = mChildren.toArray(new Object3d[1]);
+            final int count = numChildren();
+
+            for (int i = 0; i < count; i++) {
+                final Object3d child = children[i];
+                if ((child.mViewFlags & DUPLICATE_PARENT_STATE) != 0) {
+                    child.refreshDrawableState();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void jumpDrawablesToCurrentState() {
+        super.jumpDrawablesToCurrentState();
+        final Object3d[] children = mChildren.toArray(new Object3d[1]);
+        final int count = numChildren();
+        for (int i = 0; i < count; i++) {
+            children[i].jumpDrawablesToCurrentState();
+        }
+    }
+
+    @Override
+    protected int[] onCreateDrawableState(int extraSpace) {
+        if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) == 0) {
+            return super.onCreateDrawableState(extraSpace);
+        }
+
+        int need = 0;
+        int n = numChildren();
+        for (int i = 0; i < n; i++) {
+            int[] childState = getChildAt(i).getDrawableState();
+
+            if (childState != null) {
+                need += childState.length;
+            }
+        }
+
+        int[] state = super.onCreateDrawableState(extraSpace + need);
+
+        for (int i = 0; i < n; i++) {
+            int[] childState = getChildAt(i).getDrawableState();
+
+            if (childState != null) {
+                state = mergeDrawableStates(state, childState);
+            }
+        }
+
+        return state;
+    }
+
+    /**
+     * Sets whether this ViewGroup's drawable states also include
+     * its children's drawable states.  This is used, for example, to
+     * make a group appear to be focused when its child EditText or button
+     * is focused.
+     */
+    public void setAddStatesFromChildren(boolean addsStates) {
+        if (addsStates) {
+            mGroupFlags |= FLAG_ADD_STATES_FROM_CHILDREN;
+        } else {
+            mGroupFlags &= ~FLAG_ADD_STATES_FROM_CHILDREN;
+        }
+
+        refreshDrawableState();
+    }
+
+    /**
+     * Returns whether this ViewGroup's drawable states also include
+     * its children's drawable states.  This is used, for example, to
+     * make a group appear to be focused when its child EditText or button
+     * is focused.
+     */
+    public boolean addStatesFromChildren() {
+        return (mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) != 0;
+    }
+
+    /**
+     * If {link #addStatesFromChildren} is true, refreshes this group's
+     * drawable state (to include the states from its children).
+     */
+    public void childDrawableStateChanged(Object3d child) {
+        if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) != 0) {
+            refreshDrawableState();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    void handleFocusGainInternal(int direction, Rect previouslyFocusedRect) {
+        if (mFocused != null) {
+            mFocused.unFocus();
+            mFocused = null;
+        }
+        super.handleFocusGainInternal(direction, previouslyFocusedRect);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void requestChildFocus(Object3d child, Object3d focused) {
+        if (DBG) {
+            System.out.println(this + " requestChildFocus()");
+        }
+        if (getDescendantFocusability() == FOCUS_BLOCK_DESCENDANTS) {
+            return;
+        }
+
+        // Unfocus us, if necessary
+        super.unFocus();
+
+        // We had a previous notion of who had focus. Clear it.
+        if (mFocused != child) {
+            if (mFocused != null) {
+                mFocused.unFocus();
+            }
+
+            mFocused = child;
+        }
+        if (mParent != null) {
+            mParent.requestChildFocus(this, focused);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void focusableObjectAvailable(Object3d obj) {
+        if (DBG) {
+            System.out.println(this + " focus root's child available:" + obj);
+        }
+        if (mParent != null
+                // shortcut: don't report a new focusable view if we block our descendants from
+                // getting focus
+                && (getDescendantFocusability() != FOCUS_BLOCK_DESCENDANTS)
+                // shortcut: don't report a new focusable view if we already are focused
+                // (and we don't prefer our descendants)
+                //
+                // note: knowing that mFocused is non-null is not a good enough reason
+                // to break the traversal since in that case we'd actually have to find
+                // the focused view and make sure it wasn't FOCUS_AFTER_DESCENDANTS and
+                // an ancestor of v; this will get checked for at ViewAncestor
+                && !(isFocused() && getDescendantFocusability() != FOCUS_AFTER_DESCENDANTS)) {
+            mParent.focusableObjectAvailable(obj);
+        }
+    }
+
+    @Override
+    public IObject3dParent getParent() {
+        return parent();
+    }
+
+    @Override
+    public Object3d focusSearch(Object3d focused, int direction) {
+        if (isRootNamespace()) {
+            // root namespace means we should consider ourselves the top of the
+            // tree for focus searching; otherwise we could be focus searching
+            // into other tabs.  see LocalActivityManager and TabHost for more info
+            /*return FocusFinder.getInstance().findNextFocus(this, focused, direction);*/
+        } else if (mParent != null) {
+            return mParent.focusSearch(focused, direction);
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Looks for a view to give focus to respecting the setting specified by
+     * {@link #getDescendantFocusability()}.
+     *
+     * Uses {@link #onRequestFocusInDescendants(int, android.graphics.Rect)} to
+     * find focus within the children of this group when appropriate.
+     *
+     * @see #FOCUS_BEFORE_DESCENDANTS
+     * @see #FOCUS_AFTER_DESCENDANTS
+     * @see #FOCUS_BLOCK_DESCENDANTS
+     * @see #onRequestFocusInDescendants(int, android.graphics.Rect)
+     */
+    @Override
+    public boolean requestFocus(int direction, Rect previouslyFocusedRect) {
+        if (DBG) {
+            System.out.println(this + " ViewGroup.requestFocus direction="
+                    + direction + " Name:" + name());
+        }
+        int descendantFocusability = getDescendantFocusability();
+
+        switch (descendantFocusability) {
+            case FOCUS_BLOCK_DESCENDANTS:
+                return super.requestFocus(direction, previouslyFocusedRect);
+            case FOCUS_BEFORE_DESCENDANTS: {
+                final boolean took = super.requestFocus(direction, previouslyFocusedRect);
+                return took ? took : onRequestFocusInDescendants(direction, previouslyFocusedRect);
+            }
+            case FOCUS_AFTER_DESCENDANTS: {
+                final boolean took = onRequestFocusInDescendants(direction, previouslyFocusedRect);
+                return took ? took : super.requestFocus(direction, previouslyFocusedRect);
+            }
+            default:
+                throw new IllegalStateException("descendant focusability must be "
+                        + "one of FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS, FOCUS_BLOCK_DESCENDANTS "
+                        + "but is " + descendantFocusability);
+        }
+    }
+
+    /**
+     * Look for a descendant to call {@link View#requestFocus} on.
+     * Called by {@link ViewGroup#requestFocus(int, android.graphics.Rect)}
+     * when it wants to request focus within its children.  Override this to
+     * customize how your {@link ViewGroup} requests focus within its children.
+     * @param direction One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, and FOCUS_RIGHT
+     * @param previouslyFocusedRect The rectangle (in this View's coordinate system)
+     *        to give a finer grained hint about where focus is coming from.  May be null
+     *        if there is no hint.
+     * @return Whether focus was taken.
+     */
+    protected boolean onRequestFocusInDescendants(int direction,
+            Rect previouslyFocusedRect) {
+        int index;
+        int increment;
+        int end;
+        int count = numChildren();
+        if ((direction & FOCUS_FORWARD) != 0) {
+            index = 0;
+            increment = 1;
+            end = count;
+        } else {
+            index = count - 1;
+            increment = -1;
+            end = -1;
+        }
+        final Object3d[] children = (Object3d[]) mChildren.toArray(new Object3d[1]);
+        for (int i = index; i != end; i += increment) {
+            Object3d child = children[i];
+            if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                if (child.requestFocus(direction, previouslyFocusedRect)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void dispatchSetSelected(boolean selected) {
+        final Object3d[] children = (Object3d[]) mChildren.toArray(new Object3d[1]);
+        final int count = numChildren();
+        for (int i = 0; i < count; i++) {
+            children[i].setSelected(selected);
         }
     }
 }

@@ -105,7 +105,7 @@ public class TextureList
 	{
 		for (int i = 0; i < _t.size(); i++) {
 			String s = _t.get(i).textureId;
-			if ($textureId == s) {
+			if ($textureId.equals(s)) {
 				TextureVo t = _t.get(i);
 				return t;
 			}

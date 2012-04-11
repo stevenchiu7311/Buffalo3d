@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
@@ -49,18 +50,17 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        dispatchTouchEventToChild(e);
+        Scene scene = mGContext.getRenderer().getScene();
+        scene.dispatchTouchEventToChild(e);
         return true;
     }
 
-    private void dispatchTouchEventToChild(MotionEvent e) {
-        Ray ray = mGContext.getRenderer().getViewRay(e.getX(), e.getY());
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        boolean result = false;
         Scene scene = mGContext.getRenderer().getScene();
-        mGContext.getRenderer().updateAABBCoord();
-        Object3dContainer root = (Object3dContainer) scene.root();
-        ArrayList<Object3d> list =
-                (ArrayList<Object3d>) mGContext.getRenderer().getPickedObject(ray, root);
-        root.dispatchTouchEvent(ray ,e, list);
+        // If the key's purpose is to exit touch mode then we consume it and consider it handled.
+        scene.checkForLeavingTouchModeAndConsume(event);
+        return result;
     }
 
     /**

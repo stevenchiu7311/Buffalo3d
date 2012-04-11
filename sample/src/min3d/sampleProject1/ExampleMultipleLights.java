@@ -1,5 +1,6 @@
 package min3d.sampleProject1;
 
+import min3d.core.Object3d;
 import min3d.core.Object3dContainer;
 import min3d.core.RendererActivity;
 import min3d.objectPrimitives.Box;
@@ -106,11 +107,11 @@ public class ExampleMultipleLights extends RendererActivity
 		
 		if (_count % 30 == 0) {
 			_lightGreen.isVisible(true);
-			_boxGreen.isVisible(true);
+			_boxGreen.setVisibility(Object3d.VISIBLE);
 		}
 		else if (_count % 30 == 20) {
 			_lightGreen.isVisible(false);
-			_boxGreen.isVisible(false);
+			_boxGreen.setVisibility(Object3d.INVISIBLE);
 		}
 
 		_sphere.rotation().y += 1;

@@ -7,7 +7,7 @@ import min3d.core.Object3d;
 /**
  * Using Actionscript 3 nomenclature for what are essentially "pass-thru" methods to an underlying ArrayList  
  */
-public interface IObject3dContainer 
+public interface IObject3dContainer extends IObject3dParent
 {
     /**
      * Adds a child object.

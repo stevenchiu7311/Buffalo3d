@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import min3d.Min3d;
 import min3d.interfaces.IDirtyParent;
 import min3d.interfaces.IObject3dContainer;
+import min3d.interfaces.IObject3dParent;
 import min3d.interfaces.ISceneController;
 import min3d.materials.AMaterial;
 import min3d.materials.OpenGLESV1Material;
@@ -14,7 +15,11 @@ import min3d.vos.Color4;
 import min3d.vos.Color4Managed;
 import min3d.vos.FogType;
 import min3d.vos.LightType;
+import min3d.vos.Ray;
+
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 
 /**
  * The top of a object3d hierarchy, storing all the needed configurations of GL
@@ -24,6 +29,8 @@ import android.util.Log;
 public class Scene implements IObject3dContainer, IDirtyParent
 {
     private final static String TAG = "Scene";
+
+    private static final boolean DBG = true;
 
 	private ManagedLightList _lights;
 	private CameraVo _camera;
@@ -49,8 +56,12 @@ public class Scene implements IObject3dContainer, IDirtyParent
     int mMaterialType = OPENGLESV1_MATERIAL;
     private boolean mFogDirty = true;
     private boolean mMaterialDirty = true;
+    private boolean mInTouchMode = false;
 
     private GContext mGContext;
+
+    Object3d mFocusedView;
+    Object3d mRealFocusedView;  // this is not set to null in touch mode
 
 	public Scene(GContext context, ISceneController $sceneController)
 	{
@@ -539,5 +550,295 @@ public class Scene implements IObject3dContainer, IDirtyParent
      */
     public int getMaterialType() {
         return mMaterialType;
+    }
+
+    public void dispatchTouchEventToChild(MotionEvent e) {
+        // Enter touch mode on down or scroll.
+        final int action = e.getAction();
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
+            ensureTouchMode(true);
+        }
+
+        Ray ray = mGContext.getRenderer().getViewRay(e.getX(), e.getY());
+        mGContext.getRenderer().updateAABBCoord();
+
+        ArrayList<Object3d> list =
+                (ArrayList<Object3d>) mGContext.getRenderer().getPickedObject(ray, mObject3dContainer);
+        mObject3dContainer.dispatchTouchEvent(ray ,e, list);
+    }
+
+    /**
+     * <p>Finds the topmost view in the current view hierarchy.</p>
+     *
+     * @return the topmost object container
+     */
+    public Object3d getRootObjectContainer() {
+        return mObject3dContainer;
+    }
+
+    /**
+     * Indicates whether we are in touch mode. Calling this method triggers an IPC
+     * call and should be avoided whenever possible.
+     *
+     * @return True, if the device is in touch mode, false otherwise.
+     *
+     * @hide
+     */
+    public boolean isInTouchMode() {
+        return mInTouchMode;
+    }
+
+    /**
+     * Something in the current window tells us we need to change the touch mode.  For
+     * example, we are not in touch mode, and the user touches the screen.
+     *
+     * If the touch mode has changed, tell the window manager, and handle it locally.
+     *
+     * @param inTouchMode Whether we want to be in touch mode.
+     * @return True if the touch mode changed and focus changed was changed as a result
+     */
+    boolean ensureTouchMode(boolean inTouchMode) {
+        // handle the change
+        return ensureTouchModeLocally(inTouchMode);
+    }
+
+    /**
+     * Ensure that the touch mode for this window is set, and if it is changing,
+     * take the appropriate action.
+     * @param inTouchMode Whether we want to be in touch mode.
+     * @return True if the touch mode changed and focus changed was changed as a result
+     */
+    private boolean ensureTouchModeLocally(boolean inTouchMode) {
+        return (inTouchMode) ? enterTouchMode() : leaveTouchMode();
+    }
+
+    private boolean enterTouchMode() {
+        if (mObject3dContainer != null) {
+            if (mObject3dContainer.hasFocus()) {
+                // note: not relying on mFocusedView here because this could
+                // be when the window is first being added, and mFocused isn't
+                // set yet.
+                final Object3d focused = mObject3dContainer.findFocus();
+                if (focused != null && !focused.isFocusableInTouchMode()) {
+
+                    final Object3dContainer ancestorToTakeFocus =
+                            findAncestorToTakeFocusInTouchMode(focused);
+                    if (ancestorToTakeFocus != null) {
+                        // there is an ancestor that wants focus after its descendants that
+                        // is focusable in touch mode.. give it focus
+                        return ancestorToTakeFocus.requestFocus();
+                    } else {
+                        // nothing appropriate to have focus in touch mode, clear it out
+                        mObject3dContainer.unFocus();
+                        //mAttachInfo.mTreeObserver.dispatchOnGlobalFocusChange(focused, null);
+                        mFocusedView = null;
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Find an ancestor of focused that wants focus after its descendants and is
+     * focusable in touch mode.
+     * @param focused The currently focused view.
+     * @return An appropriate view, or null if no such view exists.
+     */
+    private Object3dContainer findAncestorToTakeFocusInTouchMode(Object3d focused) {
+        IObject3dParent parent = focused.parent();
+        while (parent instanceof Object3dContainer) {
+            final Object3dContainer vgParent = (Object3dContainer) parent;
+            if (vgParent.getDescendantFocusability() == Object3dContainer.FOCUS_AFTER_DESCENDANTS
+                    && vgParent.isFocusableInTouchMode()) {
+                return vgParent;
+            }
+            if (vgParent.isRootNamespace()) {
+                return null;
+            } else {
+                parent = vgParent.getParent();
+            }
+        }
+        return null;
+    }
+
+    private boolean leaveTouchMode() {
+        if (mObject3dContainer != null) {
+            if (mObject3dContainer.hasFocus()) {
+                // i learned the hard way to not trust mFocusedView :)
+                mFocusedView = mObject3dContainer.findFocus();
+                if (!(mFocusedView instanceof Object3dContainer)) {
+                    // some Object3d has focus, let it keep it
+                    return false;
+                } else if (((Object3dContainer)mFocusedView).getDescendantFocusability() !=
+                        Object3dContainer.FOCUS_AFTER_DESCENDANTS) {
+                    // some view group has focus, and doesn't prefer its children
+                    // over itself for focus, so let them keep it.
+                    return false;
+                }
+            }
+
+            // find the best view to give focus to in this brave new non-touch-mode
+            // world
+            final Object3d focused = focusSearch(null, Object3d.FOCUS_DOWN);
+            if (focused != null) {
+                return focused.requestFocus(Object3d.FOCUS_DOWN);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the key is used for keyboard navigation.
+     * @param keyEvent The key event.
+     * @return True if the key is used for keyboard navigation.
+     */
+    private static boolean isNavigationKey(KeyEvent keyEvent) {
+        switch (keyEvent.getKeyCode()) {
+        case KeyEvent.KEYCODE_DPAD_LEFT:
+        case KeyEvent.KEYCODE_DPAD_RIGHT:
+        case KeyEvent.KEYCODE_DPAD_UP:
+        case KeyEvent.KEYCODE_DPAD_DOWN:
+        case KeyEvent.KEYCODE_DPAD_CENTER:
+        case KeyEvent.KEYCODE_PAGE_UP:
+        case KeyEvent.KEYCODE_PAGE_DOWN:
+        case KeyEvent.KEYCODE_MOVE_HOME:
+        case KeyEvent.KEYCODE_MOVE_END:
+        case KeyEvent.KEYCODE_TAB:
+        case KeyEvent.KEYCODE_SPACE:
+        case KeyEvent.KEYCODE_ENTER:
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the key is used for typing.
+     * @param keyEvent The key event.
+     * @return True if the key is used for typing.
+     */
+    private static boolean isTypingKey(KeyEvent keyEvent) {
+        return keyEvent.getUnicodeChar() > 0;
+    }
+
+    /**
+     * See if the key event means we should leave touch mode (and leave touch mode if so).
+     * @param event The key event.
+     * @return Whether this key event should be consumed (meaning the act of
+     *   leaving touch mode alone is considered the event).
+     */
+    public boolean checkForLeavingTouchModeAndConsume(KeyEvent event) {
+        // Only relevant in touch mode.
+        if (!isInTouchMode()) {
+            return false;
+        }
+
+        // Only consider leaving touch mode on DOWN or MULTIPLE actions, never on UP.
+        final int action = event.getAction();
+        if (action != KeyEvent.ACTION_DOWN && action != KeyEvent.ACTION_MULTIPLE) {
+            return false;
+        }
+
+        // Don't leave touch mode if the IME told us not to.
+        if ((event.getFlags() & KeyEvent.FLAG_KEEP_TOUCH_MODE) != 0) {
+            return false;
+        }
+
+        // If the key can be used for keyboard navigation then leave touch mode
+        // and select a focused view if needed (in ensureTouchMode).
+        // When a new focused view is selected, we consume the navigation key because
+        // navigation doesn't make much sense unless a view already has focus so
+        // the key's purpose is to set focus.
+        if (isNavigationKey(event)) {
+            return ensureTouchMode(false);
+        }
+
+        // If the key can be used for typing then leave touch mode
+        // and select a focused view if needed (in ensureTouchMode).
+        // Always allow the view to process the typing key.
+        if (isTypingKey(event)) {
+            ensureTouchMode(false);
+            return false;
+        }
+
+        return false;
+    }
+
+    @Override
+    public IObject3dParent getParent() {
+        return null;
+    }
+
+    @Override
+    public void requestChildFocus(Object3d child, Object3d focused) {
+/*        if (mFocusedView != focused) {
+            mAttachInfo.mTreeObserver.dispatchOnGlobalFocusChange(mFocusedView, focused);
+            scheduleTraversals();
+        }*/
+        mFocusedView = mRealFocusedView = focused;
+        if (DBG) Log.v(TAG, "Request root's child focus: focus now "
+                + mFocusedView);
+    }
+
+    @Override
+    public void clearChildFocus(Object3d child) {
+        Object3d oldFocus = mFocusedView;
+
+        if (DBG) Log.v(TAG, "Clearing root's child focus");
+        mFocusedView = mRealFocusedView = null;
+        if (mObject3dContainer != null && !mObject3dContainer.hasFocus()) {
+            // If a view gets the focus, the listener will be invoked from requestChildFocus()
+            if (!mObject3dContainer.requestFocus(Object3d.FOCUS_FORWARD)) {
+                //mAttachInfo.mTreeObserver.dispatchOnGlobalFocusChange(oldFocus, null);
+            }
+        } else if (oldFocus != null) {
+            //mAttachInfo.mTreeObserver.dispatchOnGlobalFocusChange(oldFocus, null);
+        }
+    }
+
+    @Override
+    public Object3d focusSearch(Object3d obj, int direction) {
+        if (!(mObject3dContainer instanceof Object3dContainer)) {
+            return null;
+        }
+        return null;
+    }
+
+    @Override
+    public void focusableObjectAvailable(Object3d obj) {
+        if (DBG) {
+            Log.v(TAG, "Focus root's child available:" + obj);
+        }
+        if (mObject3dContainer != null) {
+            if (!mObject3dContainer.hasFocus()) {
+                obj.requestFocus();
+            } else {
+                // the one case where will transfer focus away from the current one
+                // is if the current view is a view group that prefers to give focus
+                // to its children first AND the view is a descendant of it.
+                mFocusedView = mObject3dContainer.findFocus();
+                boolean descendantsHaveDibsOnFocus =
+                        (mFocusedView instanceof Object3dContainer) &&
+                            (((Object3dContainer) mFocusedView).getDescendantFocusability() ==
+                                Object3dContainer.FOCUS_AFTER_DESCENDANTS);
+                if (descendantsHaveDibsOnFocus && isObjectDescendantOf(obj, mFocusedView)) {
+                    // If a view gets the focus, the listener will be invoked from requestChildFocus()
+                    obj.requestFocus();
+                }
+            }
+        }
+    }
+
+    /**
+     * Return true if child is an ancestor of parent, (or equal to the parent).
+     */
+    private static boolean isObjectDescendantOf(Object3d child, Object3d parent) {
+        if (child == parent) {
+            return true;
+        }
+
+        final IObject3dContainer theParent = child.parent();
+        return (theParent instanceof Object3dContainer) && isObjectDescendantOf((Object3d) theParent, parent);
     }
 }
