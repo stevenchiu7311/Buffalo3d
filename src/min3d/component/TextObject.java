@@ -1,9 +1,12 @@
-package min3d.objectPrimitives;
+package min3d.component;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import javax.microedition.khronos.opengles.GL10;
+
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -11,12 +14,11 @@ import android.graphics.Typeface;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.TextView.BufferType;
 import min3d.Utils;
 import min3d.core.GContext;
-import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 import min3d.vos.TextureVo;
 
@@ -27,7 +29,7 @@ import min3d.vos.TextureVo;
  *
  * Object origin is center of box.
  */
-public class TextObject extends Object3dContainer {
+public class TextObject extends ComponentBase {
     private static final String TAG = "TextObject";
     private static final float MAPPING_PIXEL = 256.0f;
 
@@ -36,17 +38,21 @@ public class TextObject extends Object3dContainer {
     private float mDepth;
     TextView mTextView;
 
-    public TextObject(GContext context, float width, float height,
-            float depth, Color4[] sixColor4s, Boolean useUvs,
-            Boolean useNormals, Boolean useVertexColors) {
-        super(context, 4, 2, useUvs, useNormals, useVertexColors);
+    public TextObject(GContext context, float width, float height, float depth,
+            Color4[] sixColor4s, Boolean useUvs, Boolean useNormals,
+            Boolean useVertexColors) {
+        super(context, 4, 2);
 
         mWidth = width;
         mHeight = height;
         mDepth = depth;
+        LinearLayout ll = new LinearLayout(context.getContext());
+
         mTextView = new TextView(context.getContext());
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams((int)(mWidth*MAPPING_PIXEL), (int)(mHeight*MAPPING_PIXEL));
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(
+                (int) (mWidth * MAPPING_PIXEL), (int) (mHeight * MAPPING_PIXEL));
         mTextView.setLayoutParams(layoutParams);
+        ll.addView(mTextView);
     }
 
     public TextObject(GContext context, float width, float height, float depth,
@@ -66,11 +72,11 @@ public class TextObject extends Object3dContainer {
 
     public void setText(CharSequence text) {
         mTextView.setText(text);
-        int w = (int)(mWidth*MAPPING_PIXEL);
+        int w = (int) (mWidth * MAPPING_PIXEL);
         if (w % 2 == 1) {
             w--;
         }
-        int h = (int)(mHeight*MAPPING_PIXEL);
+        int h = (int) (mHeight * MAPPING_PIXEL);
         if (h % 2 == 1) {
             h--;
         }
@@ -78,12 +84,14 @@ public class TextObject extends Object3dContainer {
         Bitmap bitmap = loadBitmapFromView(mTextView, w, h);
         if (mGContext.getTexureManager().contains(toString())) {
             mGContext.getTexureManager().deleteTexture(toString());
+            textures().removeById(toString());
         }
         mGContext.getTexureManager().addTextureId(bitmap, toString(), false);
         TextureVo textureText = new TextureVo(toString());
+        textureText.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
+                GL10.GL_DECAL);
         textureText.repeatU = false;
         textureText.repeatV = false;
-        textures().removeAll();
         textures().add(textureText);
         bitmap.recycle();
         createVertices();
@@ -94,17 +102,17 @@ public class TextObject extends Object3dContainer {
         float h = mHeight / 2;
         float d = mDepth / 2;
         short ul, ur, lr, ll;
-        float uvX=1.0f, uvY=1.0f;
+        float uvX = 1.0f, uvY = 1.0f;
 
         if (vertices().size() == 0) {
-            ul = vertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1,
-                    (short)0, (short)0, (short)0, (short)255);
-            ur = vertices().addVertex(+w, +h, d, uvX, 0f, 0, 0, 1,
-                    (short)0, (short)0, (short)0, (short)255);
-            lr = vertices().addVertex(+w, -h, d, uvX, uvY, 0, 0, 1,
-                    (short)0, (short)0, (short)0, (short)255);
-            ll = vertices().addVertex(-w, -h, d, 0f, uvY, 0, 0, 1,
-                    (short)0, (short)0, (short)0, (short)255);
+            ul = vertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1, (short) 0,
+                    (short) 0, (short) 0, (short) 255);
+            ur = vertices().addVertex(+w, +h, d, uvX, 0f, 0, 0, 1, (short) 0,
+                    (short) 0, (short) 0, (short) 255);
+            lr = vertices().addVertex(+w, -h, d, uvX, uvY, 0, 0, 1, (short) 0,
+                    (short) 0, (short) 0, (short) 255);
+            ll = vertices().addVertex(-w, -h, d, 0f, uvY, 0, 0, 1, (short) 0,
+                    (short) 0, (short) 0, (short) 255);
             Utils.addQuad(this, ul, ur, lr, ll);
         } else {
             vertices().overwriteVerts(
@@ -125,7 +133,8 @@ public class TextObject extends Object3dContainer {
     }
 
     // for debug.
-    private boolean saveBitmap(Bitmap bitmap, String fileName, String dateString) {
+    public static boolean saveBitmap(Bitmap bitmap, String fileName,
+            String dateString) {
         FileOutputStream fOut = null;
         boolean result = true;
         try {
@@ -160,10 +169,9 @@ public class TextObject extends Object3dContainer {
     }
 
     /**
-     * Sets the typeface and style in which the text should be displayed,
-     * and turns on the fake bold and italic bits in the Paint if the
-     * Typeface that you provided does not have all the bits in the
-     * style that you specified.
+     * Sets the typeface and style in which the text should be displayed, and
+     * turns on the fake bold and italic bits in the Paint if the Typeface that
+     * you provided does not have all the bits in the style that you specified.
      *
      */
     public void setTypeface(Typeface tf, int style) {
@@ -190,10 +198,10 @@ public class TextObject extends Object3dContainer {
     }
 
     /**
-     * @return the height of one standard line in pixels.  Note that markup
-     * within the text can cause individual lines to be taller or shorter
-     * than this height, and the layout may contain additional first-
-     * or last-line padding.
+     * @return the height of one standard line in pixels. Note that markup
+     *         within the text can cause individual lines to be taller or
+     *         shorter than this height, and the layout may contain additional
+     *         first- or last-line padding.
      */
     public int getLineHeight() {
         return mTextView.getLineHeight();
@@ -208,8 +216,8 @@ public class TextObject extends Object3dContainer {
 
     /**
      * Set the default text size to the given value, interpreted as "scaled
-     * pixel" units.  This size is adjusted based on the current density and
-     * user font size preference.
+     * pixel" units. This size is adjusted based on the current density and user
+     * font size preference.
      *
      * @param size The scaled pixel size.
      */
@@ -225,13 +233,12 @@ public class TextObject extends Object3dContainer {
      *
      */
     public void setTextSize(int unit, float size) {
-        mTextView.setTextSize(unit,size);
+        mTextView.setTextSize(unit, size);
     }
 
     /**
-     * Sets the typeface and style in which the text should be displayed.
-     * Note that not all Typeface families actually have bold and italic
-     * variants.
+     * Sets the typeface and style in which the text should be displayed. Note
+     * that not all Typeface families actually have bold and italic variants.
      *
      */
     public void setTypeface(Typeface tf) {
@@ -240,15 +247,15 @@ public class TextObject extends Object3dContainer {
 
     /**
      * @return the current typeface and style in which the text is being
-     * displayed.
+     *         displayed.
      */
     public Typeface getTypeface() {
         return mTextView.getTypeface();
     }
 
     /**
-     * Sets the text color for all the states (normal, selected,
-     * focused) to be this color.
+     * Sets the text color for all the states (normal, selected, focused) to be
+     * this color.
      *
      */
     public void setTextColor(int color) {
@@ -291,9 +298,9 @@ public class TextObject extends Object3dContainer {
     }
 
     /**
-     * Sets the horizontal alignment of the text and the
-     * vertical gravity that will be used when there is extra space
-     * in the TextObject beyond what is required for the text itself.
+     * Sets the horizontal alignment of the text and the vertical gravity that
+     * will be used when there is extra space in the TextObject beyond what is
+     * required for the text itself.
      *
      * @see android.view.Gravity
      */
@@ -312,8 +319,8 @@ public class TextObject extends Object3dContainer {
 
     /**
      * Sets the text that this TextObject is to display (see
-     * {@link #setText(CharSequence)}) and also sets whether it is stored
-     * in a styleable/spannable buffer and whether it is editable.
+     * {@link #setText(CharSequence)}) and also sets whether it is stored in a
+     * styleable/spannable buffer and whether it is editable.
      *
      */
     public void setText(CharSequence text, BufferType type) {
@@ -343,11 +350,10 @@ public class TextObject extends Object3dContainer {
     }
 
     /**
-     * Causes words in the text that are longer than the view is wide
-     * to be ellipsized instead of broken in the middle.  You may also
-     * want to {@link #setSingleLine} or {@link #setHorizontallyScrolling}
-     * to constrain the text to a single line.  Use <code>null</code>
-     * to turn off ellipsizing.
+     * Causes words in the text that are longer than the view is wide to be
+     * ellipsized instead of broken in the middle. You may also want to
+     * {@link #setSingleLine} or {@link #setHorizontallyScrolling} to constrain
+     * the text to a single line. Use <code>null</code> to turn off ellipsizing.
      *
      */
     public void setEllipsize(TextUtils.TruncateAt where) {
@@ -355,10 +361,19 @@ public class TextObject extends Object3dContainer {
     }
 
     /**
-     * Returns where, if anywhere, words that are longer than the view
-     * is wide should be ellipsized.
+     * Returns where, if anywhere, words that are longer than the view is wide
+     * should be ellipsized.
      */
     public TextUtils.TruncateAt getEllipsize() {
         return mTextView.getEllipsize();
+    }
+
+    public class TextView extends android.widget.TextView {
+
+        public TextView(Context context) {
+            super(context);
+            setMeasuredDimension((int) (mWidth * MAPPING_PIXEL),
+                    (int) (mHeight * MAPPING_PIXEL));
+        }
     }
 }

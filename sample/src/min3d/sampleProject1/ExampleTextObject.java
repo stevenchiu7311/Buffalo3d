@@ -27,7 +27,7 @@ public class ExampleTextObject extends RendererActivity {
         mTextObject.setGravity(Gravity.CENTER);
         mTextObject.setTextSize(TEXT_FONT_SIZE);
         mTextObject.setTextColor(Color.WHITE);
-        mTextObject.setText("I love acer~ lalala");
+        mTextObject.setText("I love GL~ lalala");
         scene.addChild(mTextObject);
     }
 }
