@@ -70,6 +70,7 @@ public class SplashActivity extends ListActivity
 			new ItemVo("Register touch listener", ExampleRegisterTouchListener.class, "ExampleRegisterTouchListener"),
 			new ItemVo("Register click listener", ExampleRegisterClickListener.class, "ExampleTouchHandler.java"),
 			new ItemVo("Text object", ExampleTextObject.class, "ExampleTextObject"),
+			new ItemVo("Image object", ExampleImageObject.class, "ExampleImageObject"),
 			new ItemVo("Object transparency", ExampleObjectTransparency.class, "ExampleObjectTransparency")
 	};
 	
