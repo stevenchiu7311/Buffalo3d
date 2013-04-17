@@ -1,8 +1,8 @@
-#define GL_MODULATE 0x2100
-#define GL_ADD 0x0104
-#define GL_DECAL 0x2101
-#define GL_BLEND 0x0BE2
-#define GL_REPLACE 0x1E01
+#define MODULATE 0x2100
+#define ADD 0x0104
+#define DECAL 0x2101
+#define BLEND 0x0BE2
+#define REPLACE 0x1E01
 
 uniform bool textureEnabled[NUM_TEXTURES];
 vec4 textureColor[NUM_TEXTURES];
@@ -31,12 +31,12 @@ void calcTextureEnvironment(inout vec4 color, int i)
 #if defined(COMMON_USED)
         color = color * textureColor[i];
 #else
-        if (textureEnvMode[i] == GL_MODULATE) {
+        if (textureEnvMode[i] == MODULATE) {
             color = color*textureColor[i];
-        } else if (textureEnvMode[i] == GL_ADD) {
+        } else if (textureEnvMode[i] == ADD) {
             color.rgb = color.rgb + textureColor[i].rgb;
             color.a = color.a * textureColor[i].a;
-        } else if (textureEnvMode[i] == GL_DECAL) {
+        } else if (textureEnvMode[i] == DECAL) {
             color.rgb = mix(color.rgb, textureColor[i].rgb, textureColor[i].a);
         } else {
             color = color*textureColor[i];

@@ -69,9 +69,9 @@ void main()
 }
 
 
-#define GL_LINEAR 0x2601
-#define GL_EXP 0x0800
-#define GL_EXP2 0x0801
+#define LINEAR 0x2601
+#define EXP 0x0800
+#define EXP2 0x0801
 
 // Uniforms
 uniform int u_fogMode;
@@ -84,12 +84,14 @@ float calcFogLinear(float distanceToEye);
 float calcFogExp(float distanceToEye);
 float calcFogExp2(float distanceToEye);
 
+#if defined(ENABLE_FOG)
+
 float calcFogFactor(float distanceToEye)
 {
     float fogFactor;
-#if FOG_TYPE == GL_LINEAR
+#if FOG_TYPE == LINEAR
     fogFactor = calcFogLinear(distanceToEye);
-#elif FOG_TYPE == GL_EXP
+#elif FOG_TYPE == EXP
     fogFactor = calcFogExp(distanceToEye);
 #else
     fogFactor = calcFogExp2(distanceToEye);
@@ -97,6 +99,8 @@ float calcFogFactor(float distanceToEye)
 
     return fogFactor;
 }
+
+#endif
 
 float calcFogLinear(float distanceToEye)
 {
