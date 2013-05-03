@@ -154,7 +154,7 @@ public class OpenGLESV1Material extends AMaterial {
                    case 1: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1,i);
                            setUniformMatrix(Uniforms.UNIFORM_LIST_ID.TEXTURE1_MATRIX, mMMatrix);
                            setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENV_MODE, textureVo.textureEnvs.get(0).param);
-                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 1);
+                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENABLED, 1);
                            break;
                    }
                }
@@ -162,7 +162,7 @@ public class OpenGLESV1Material extends AMaterial {
                switch (i) {
                case 0: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 0);
                        break;
-               case 1: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 0);
+               case 1: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENABLED, 0);
                        break;
                }
                GLES20.glBindTexture(type, 0);
@@ -199,7 +199,7 @@ public class OpenGLESV1Material extends AMaterial {
 
                if (light.ambient.isDirty()){
                    id = getUniformId("light[" + Integer.toString(i) + "].ambient");
-                   setUniformData(id , new float[] {0.06f,0.0f,0.0f,1.0f});
+                   setUniformData(id , light.ambient.toFloat());
                    light.ambient.clearDirtyFlag();
                }
 
