@@ -85,8 +85,12 @@ public class TextObject extends ComponentBase {
         destroyLastTextRes();
         mGContext.getTexureManager().addTextureId(bitmap, toString(), false);
         TextureVo textureText = new TextureVo(toString());
-        textureText.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
-                GL10.GL_DECAL);
+        // Texture env should be not used if text object background is transparent.
+        // On the contrary, texture env should be applied when it already have any background texture.
+        if (textures().size() > 0) {
+            textureText.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
+                    GL10.GL_DECAL);
+        }
         textureText.repeatU = false;
         textureText.repeatV = false;
         textures().add(textureText);
