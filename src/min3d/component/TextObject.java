@@ -82,10 +82,7 @@ public class TextObject extends ComponentBase {
         }
 
         Bitmap bitmap = loadBitmapFromView(mTextView, w, h);
-        if (mGContext.getTexureManager().contains(toString())) {
-            mGContext.getTexureManager().deleteTexture(toString());
-            textures().removeById(toString());
-        }
+        destroyLastTextRes();
         mGContext.getTexureManager().addTextureId(bitmap, toString(), false);
         TextureVo textureText = new TextureVo(toString());
         textureText.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
@@ -95,6 +92,15 @@ public class TextObject extends ComponentBase {
         textures().add(textureText);
         bitmap.recycle();
         createVertices();
+    }
+
+    public void destroyLastTextRes() {
+        if (mGContext.getTexureManager().contains(toString())) {
+            mGContext.getTexureManager().deleteTexture(toString());
+            if (textures().getById(toString()) != null) {
+                textures().removeById(toString());
+            }
+        }
     }
 
     private void createVertices() {
