@@ -497,6 +497,10 @@ public class Scene implements IObject3dContainer, IDirtyParent
         mMaterial = null;
     }
 
+    public void setMaterialDirty() {
+        mMaterialDirty = true;
+    }
+
     /**
      * Determines if support full feature or common used feature.
      * The function is available if developer use openglES2.0 and OpenGLV1Material material.

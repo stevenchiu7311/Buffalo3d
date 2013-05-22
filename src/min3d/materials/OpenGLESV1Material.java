@@ -217,7 +217,8 @@ public class OpenGLESV1Material extends AMaterial {
 
                if (light._spotCutoffAngle.isDirty()){
                    id = getUniformId("light[" + Integer.toString(i) + "].spotCutoffAngleCos");
-                   setUniformData(id , new float[] {light.spotCutoffAngle()});
+                   float spotCutoffAngleCos = (float) Math.cos(Math.PI * light.spotCutoffAngle() / 180.0);
+                   setUniformData(id , new float[] {spotCutoffAngleCos});
                }
 
                if (light._spotExponent.isDirty()){
