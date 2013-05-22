@@ -1504,6 +1504,11 @@ public class Object3d
     }
 
     private void calcAABBPos(Object3d parent, int mode, float[] result) {
+        if (parent == null) {
+            Log.w(TAG,"Ignore un-linked object. (In calcAABBPos)");
+            return;
+        }
+
         if ((mode & SCALE) != 0) {
             Matrix.multiplyMV(result, 0, parent.mScaleMC, 0, result, 0);
         }
@@ -1519,6 +1524,11 @@ public class Object3d
     }
 
     private void accmlAABBTrans(Object3d parent, int mode, Number3d result) {
+        if (parent == null) {
+            Log.w(TAG,"Ignore un-linked object. (In accmlAABBTrans)");
+            return;
+        }
+
         if (mode == SCALE) {
             Number3d.multiply(result,result,parent.scale());
         }
