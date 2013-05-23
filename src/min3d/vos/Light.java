@@ -227,6 +227,6 @@ public class Light extends AbstractDirtyManaged implements IDirtyParent
 	public Number3dManaged _attenuation; // (the 3 properties of N3D used for the 3 attenuation properties)
 
     public float[] getLightPosition() {
-        return (new float[] {position.getX(), position.getY(), position.getZ(), 0 });
+        return (new float[] {position.getX(), position.getY(), position.getZ(), type().glValue() });
     }
 }
