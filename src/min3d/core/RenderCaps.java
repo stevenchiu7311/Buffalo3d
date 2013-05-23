@@ -82,8 +82,8 @@ public class RenderCaps {
 
     static void setRenderCaps(GL10 $gl) /* package-private */
     {
-        int version = RendererGLSurfaceViewProxy.CURRENT_SDK_INT;
-        if (version >= Build.VERSION_CODES.FROYO) {
+        int version = RendererGLSurfaceViewProxy.getGlesVersion();
+        if (version == RendererGLSurfaceViewProxy.GLES20) {
             _openGlVersion = 2.0f;
             setRenderCapsES2();
         } else {

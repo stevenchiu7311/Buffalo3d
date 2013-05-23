@@ -70,6 +70,10 @@ public class RendererActivity extends Activity implements ISceneController
         });
         onCreateSetContentView();
 	}
+
+    public void setGlesVersion(int version) {
+        RendererGLSurfaceViewProxy.setGlesVersion(version);
+    }
     
     /**
      * Any GlSurfaceView settings that needs to be executed before 

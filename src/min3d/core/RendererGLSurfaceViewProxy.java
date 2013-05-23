@@ -5,15 +5,19 @@ import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
-import java.util.ArrayList;
-
-import min3d.vos.Ray;
-
 public class RendererGLSurfaceViewProxy extends GLSurfaceView {
-    static final public int CURRENT_SDK_INT = Build.VERSION.SDK_INT;
+    public static final String TAG = "RendererGLSurfaceViewProxy";
+
+    public static final int CURRENT_SDK_INT = Build.VERSION.SDK_INT;
+    public static final int GLES11 = 1;
+    public static final int GLES20 = 2;
+    public static final int DEFAULT_GLES_VERSION = GLES11;
+
+    private static int sVersion = DEFAULT_GLES_VERSION;
 
     protected MultisampleConfigChooser mConfigChooser = null;
     protected SnapshotCallback mSnapshotCallback = null;
@@ -21,17 +25,37 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
     private GContext mGContext = null;
 
     public RendererGLSurfaceViewProxy(Context context) {
-        this(context,null);
+        this(context, null);
     }
 
     public RendererGLSurfaceViewProxy(Context context, AttributeSet attrs) {
         super(context, attrs);
-        int version = CURRENT_SDK_INT;
-        if (version >= Build.VERSION_CODES.FROYO) {
-            setEGLContextClientVersion(2);
-            // Create an OpenGL ES 2.0 context.
-            setEGLConfigChooser(mConfigChooser = new MultisampleConfigChooser());
+        init();
+    }
+
+    private void init() {
+        int version = sVersion;
+        int osVersion = CURRENT_SDK_INT;
+        if (version == GLES20) {
+            if (osVersion >= Build.VERSION_CODES.FROYO) {
+                setEGLContextClientVersion(version);
+                // Create an OpenGL ES 2.0 context.
+                setEGLConfigChooser(mConfigChooser = new MultisampleConfigChooser());
+            } else {
+                Log.w(TAG,"OpenGL ES20 is not supported by your OS");
+            }
+        } else if (version == GLES11) {
+        } else {
+            Log.w(TAG,"Invalid version number");
         }
+    }
+
+    public static void setGlesVersion(int version) {
+        sVersion = version;
+    }
+
+    public static int getGlesVersion() {
+        return sVersion;
     }
 
     public void setGContext(GContext context) {
