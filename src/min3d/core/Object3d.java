@@ -1805,6 +1805,10 @@ public class Object3d
         int h = mGContext.getRenderer().getHeight();
         float[] eye = new float[4];
         int[] viewport = { 0, 0, w, h };
+        if (_scene == null) {
+            Log.w(TAG,"Get intersect point terminated. (scene obj is NULL)");
+            return null;
+        }
         FrustumManaged vf = _scene.camera().frustum;
         float distance = _scene.camera().position.z + z;
         float winZ = (1.0f / vf.zNear() - 1.0f / distance)
