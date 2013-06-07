@@ -67,11 +67,12 @@ public class SplashActivity extends ListActivity
 			new ItemVo("Load animated .md2 file", ExampleLoadMD2File.class, "ExampleLoadMD2File.java"),
 			new ItemVo("Keyframe animation", ExampleKeyframeAnimation.class, "ExampleKeyframeAnimation.java"),
 			new ItemVo("Using the accelerometer", ExampleAccelerometer.class, "ExampleAccelerometer.java"),
-			new ItemVo("Register touch listener", ExampleRegisterTouchListener.class, "ExampleRegisterTouchListener"),
+			new ItemVo("Register touch listener", ExampleRegisterTouchListener.class, "ExampleRegisterTouchListener.java"),
 			new ItemVo("Register click listener", ExampleRegisterClickListener.class, "ExampleTouchHandler.java"),
-			new ItemVo("Text object", ExampleTextObject.class, "ExampleTextObject"),
-			new ItemVo("Image object", ExampleImageObject.class, "ExampleImageObject"),
-			new ItemVo("Object transparency", ExampleObjectTransparency.class, "ExampleObjectTransparency")
+			new ItemVo("Text object", ExampleTextObject.class, "ExampleTextObject.java"),
+			new ItemVo("Image object", ExampleImageObject.class, "ExampleImageObject.java"),
+			new ItemVo("Object state", ExampleObjectState.class, "ExampleObjectState.java"),
+			new ItemVo("Object transparency", ExampleObjectTransparency.class, "ExampleObjectTransparency.java")
 	};
 	
     @Override

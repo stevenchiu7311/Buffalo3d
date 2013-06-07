@@ -43,6 +43,7 @@
 		<activity android:name=".ExampleRegisterClickListener"></activity>
 		<activity android:name=".ExampleTextObject"></activity>
 		<activity android:name=".ExampleImageObject"></activity>
+		<activity android:name=".ExampleObjectState"></activity>
 		<activity android:name=".ExampleObjectTransparency"></activity>
 		
 		<!-- Debugging-related activities: -->
