@@ -13,6 +13,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Drawable.Callback;
 import android.opengl.GLES20;
 import android.opengl.GLU;
 import android.opengl.Matrix;
@@ -46,7 +47,7 @@ import min3d.vos.TextureVo;
  * occupies a polygon area on the screen and is responsible for drawing and
  * event handling.
  */
-public class Object3d
+public class Object3d implements Callback
 {
     private final static String TAG = "Object3d";
     private static final boolean DBG = false;
@@ -229,6 +230,49 @@ public class Object3d
     static final int LAYOUT_REQUIRED                = 0x00002000;
 
     private static final int PRESSED                = 0x00004000;
+
+    /**
+     * View flag indicating whether this view was invalidated (fully or partially.)
+     *
+     * @hide
+     */
+    static final int DIRTY                          = 0x00200000;
+
+    /**
+     * View flag indicating whether this view was invalidated by an opaque
+     * invalidate request.
+     *
+     * @hide
+     */
+    static final int DIRTY_OPAQUE                   = 0x00400000;
+
+    /**
+     * Mask for {@link #DIRTY} and {@link #DIRTY_OPAQUE}.
+     *
+     * @hide
+     */
+    static final int DIRTY_MASK                     = 0x00600000;
+
+    /**
+     * Indicates whether the background is opaque.
+     *
+     * @hide
+     */
+    static final int OPAQUE_BACKGROUND              = 0x00800000;
+
+    /**
+     * Indicates whether the scrollbars are opaque.
+     *
+     * @hide
+     */
+    static final int OPAQUE_SCROLLBARS              = 0x01000000;
+
+    /**
+     * Indicates whether the view is opaque.
+     *
+     * @hide
+     */
+    static final int OPAQUE_MASK                    = 0x01800000;
 
     /**
      * Indicates that the view has received HOVER_ENTER.  Cleared on HOVER_EXIT.
@@ -1163,6 +1207,10 @@ public class Object3d
         mMaterial = _scene.getDefaultMaterial(mGContext);
         mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
 
+        if(isLayerTextureDirty()) {
+            onManageLayerTexture();
+        }
+
         mProjMatrix = projMatrix;
         if (doubleSidedEnabled()) {
             GLES20.glDisable(GL10.GL_CULL_FACE);
@@ -1307,6 +1355,34 @@ public class Object3d
                 Object3d o = container.children().get(i);
                 o.render(camera, projMatrix, vMatrix, mMMatrix);
             }
+        }
+    }
+
+    public boolean isLayerTextureDirty() {
+        return (mPrivateFlags & DIRTY_MASK) != 0;
+    }
+
+    protected void onManageLayerTexture() {
+        mPrivateFlags = (mPrivateFlags & ~DIRTY_MASK) | DRAWN;
+
+        String backgroundTexId = "background_" + toString();
+        if (getGContext().getTexureManager().contains(backgroundTexId)) {
+            getGContext().getTexureManager().deleteTexture(backgroundTexId);
+            textures().removeById(backgroundTexId);
+        }
+        if (mBGDrawable != null) {
+            Bitmap bitmap = Bitmap.createBitmap(mBGDrawable.getMinimumWidth(), mBGDrawable.getMinimumHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            final Drawable background = mBGDrawable;
+            background.setBounds(0,0,mBGDrawable.getMinimumWidth(),mBGDrawable.getMinimumHeight());
+            background.draw(canvas);
+
+            getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
+            bitmap.recycle();
+            TextureVo t = new TextureVo(backgroundTexId);
+            t.repeatU = false;
+            t.repeatV = false;
+            textures().add(0, t);
         }
     }
 
@@ -2281,6 +2357,32 @@ public class Object3d
     }
 
     /**
+     * Invalidate the whole view. If the view is visible,
+     * {@link #onDraw(android.graphics.Canvas)} will be called at some point in
+     * the future. This must be called from a UI thread. To call from a non-UI thread,
+     * call {@link #postInvalidate()}.
+     */
+    public void invalidate() {
+        invalidate(true);
+    }
+
+    /**
+     * This is where the invalidate() work actually happens. A full invalidate()
+     * causes the drawing cache to be invalidated, but this function can be called with
+     * invalidateCache set to false to skip that invalidation step for cases that do not
+     * need it (for example, a component that remains at the same dimensions with the same
+     * content).
+     *
+     * @param invalidateCache Whether the drawing cache for this view should be invalidated as
+     * well. This is usually true for a full invalidate, but may be set to false if the
+     * View's contents or dimensions have not changed.
+     */
+    void invalidate(boolean invalidateCache) {
+        mPrivateFlags &= ~DRAWN;
+        mPrivateFlags |= DIRTY;
+    }
+
+    /**
      * Set the background to a given Drawable, or remove the background. If the
      * background has padding, this View's padding is set to the background's
      * padding. However, when a background is removed, this View's padding isn't
@@ -2308,8 +2410,6 @@ public class Object3d
             //unscheduleDrawable(mBGDrawable);
         }
 
-        String backgroundTexId = "background_" + toString();
-
         if (d != null) {
             // Compare the minimum sizes of the old Drawable and the new.  If there isn't an old or
             // if it has a different minimum size, we should layout again
@@ -2318,29 +2418,12 @@ public class Object3d
                 requestLayout = true;
             }
 
-/*            d.setCallback(this);*/
+            d.setCallback(this);
             if (d.isStateful()) {
                 d.setState(getDrawableState());
             }
             d.setVisible(getVisibility() == VISIBLE, false);
             mBGDrawable = d;
-
-            if (getGContext().getTexureManager().contains(backgroundTexId)) {
-                getGContext().getTexureManager().deleteTexture(backgroundTexId);
-                textures().removeById(backgroundTexId);
-            }
-            Bitmap bitmap = Bitmap.createBitmap(mBGDrawable.getMinimumWidth(), mBGDrawable.getMinimumHeight(), Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-            final Drawable background = mBGDrawable;
-            background.setBounds(0,0,mBGDrawable.getMinimumWidth(),mBGDrawable.getMinimumHeight());
-            background.draw(canvas);
-
-            getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
-            bitmap.recycle();
-            TextureVo t = new TextureVo(backgroundTexId);
-            t.repeatU = false;
-            t.repeatV = false;
-            textures().add(0, t);
 /*            if ((mPrivateFlags & SKIP_DRAW) != 0) {
                 mPrivateFlags &= ~SKIP_DRAW;
                 mPrivateFlags |= ONLY_DRAWS_BACKGROUND;
@@ -2349,10 +2432,6 @@ public class Object3d
         } else {
             /* Remove the background */
             mBGDrawable = null;
-            if (getGContext().getTexureManager().contains(backgroundTexId)) {
-                getGContext().getTexureManager().deleteTexture(backgroundTexId);
-                textures().removeById(backgroundTexId);
-            }
 
             /*
              * When the background is set, we try to apply its padding to this
@@ -2371,7 +2450,7 @@ public class Object3d
         }*/
 
         mBackgroundSizeChanged = true;
-/*        invalidate(true);*/
+        invalidate(true);
     }
 
     /**
@@ -2599,6 +2678,38 @@ public class Object3d
     }
 
     /**
+     * Returns the enabled status for this view. The interpretation of the
+     * enabled state varies by subclass.
+     *
+     * @return True if this view is enabled, false otherwise.
+     */
+    public boolean isEnabled() {
+        return (mViewFlags & ENABLED_MASK) == ENABLED;
+    }
+
+    /**
+     * Set the enabled state of this view. The interpretation of the enabled
+     * state varies by subclass.
+     *
+     * @param enabled True if this view is enabled, false otherwise.
+     */
+    public void setEnabled(boolean enabled) {
+        if (enabled == isEnabled()) return;
+
+        setFlags(enabled ? ENABLED : DISABLED, ENABLED_MASK);
+
+        /*
+         * The View most likely has to change its appearance, so refresh
+         * the drawable state.
+         */
+        refreshDrawableState();
+
+        // Invalidate too, since the default behavior for views is to be
+        // be drawn at 50% alpha rather than to change the drawable.
+        invalidate(true);
+    }
+
+    /**
      * Returns true if this view has focus
      *
      * @return True if this view has focus, false otherwise.
@@ -2756,7 +2867,7 @@ public class Object3d
             onFocusLost();
         }
 
-/*        invalidate(true);*/
+        invalidate(true);
         if (mOnFocusChangeListener != null) {
             mOnFocusChangeListener.onFocusChange(this, gainFocus);
         }
@@ -2963,6 +3074,7 @@ public class Object3d
 
             onFocusChanged(true, direction, previouslyFocusedRect);
             refreshDrawableState();
+            invalidate(true);
         }
     }
 
@@ -3080,6 +3192,7 @@ public class Object3d
             mPrivateFlags = (mPrivateFlags & ~SELECTED) | (selected ? SELECTED : 0);
             if (!selected) resetPressedState();
             refreshDrawableState();
+            invalidate(true);
             dispatchSetSelected(selected);
         }
     }
@@ -3139,5 +3252,18 @@ public class Object3d
      */
     public boolean isDuplicateParentStateEnabled() {
         return (mViewFlags & DUPLICATE_PARENT_STATE) == DUPLICATE_PARENT_STATE;
+    }
+
+    @Override
+    public void invalidateDrawable(Drawable who) {
+        invalidate();
+    }
+
+    @Override
+    public void scheduleDrawable(Drawable who, Runnable what, long when) {
+    }
+
+    @Override
+    public void unscheduleDrawable(Drawable who, Runnable what) {
     }
 }

@@ -53,6 +53,8 @@ public class TextObject extends ComponentBase {
                 (int) (mWidth * MAPPING_PIXEL), (int) (mHeight * MAPPING_PIXEL));
         mTextView.setLayoutParams(layoutParams);
         ll.addView(mTextView);
+
+        createVertices();
     }
 
     public TextObject(GContext context, float width, float height, float depth,
@@ -72,6 +74,12 @@ public class TextObject extends ComponentBase {
 
     public void setText(CharSequence text) {
         mTextView.setText(text);
+    }
+
+    @Override
+    protected void onManageLayerTexture() {
+        super.onManageLayerTexture();
+
         int w = (int) (mWidth * MAPPING_PIXEL);
         if (w % 2 == 1) {
             w--;
@@ -95,7 +103,6 @@ public class TextObject extends ComponentBase {
         textureText.repeatV = false;
         textures().add(textureText);
         bitmap.recycle();
-        createVertices();
     }
 
     public void destroyLastTextRes() {

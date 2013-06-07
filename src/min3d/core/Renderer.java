@@ -500,6 +500,9 @@ public class Renderer implements GLSurfaceView.Renderer
 		    _gl.glEnable(GL10.GL_CULL_FACE);
 		}
 		
+        if ($o.isLayerTextureDirty()) {
+            $o.onManageLayerTexture();
+        }
 		drawObject_textures($o);
 
 		// Matrix operations in modelview

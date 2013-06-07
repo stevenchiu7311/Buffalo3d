@@ -793,4 +793,13 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
             children[i].setSelected(selected);
         }
     }
+
+    @Override
+    protected void dispatchSetPressed(boolean pressed) {
+        final Object3d[] children = (Object3d[]) mChildren.toArray(new Object3d[1]);
+        final int count = numChildren();
+        for (int i = 0; i < count; i++) {
+            children[i].setPressed(pressed);
+        }
+    }
 }

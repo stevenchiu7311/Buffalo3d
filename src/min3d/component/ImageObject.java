@@ -96,6 +96,7 @@ public class ImageObject extends ComponentBase {
     private void initImageView() {
         mMatrix = new Matrix();
         mScaleType = ScaleType.FIT_CENTER;
+        createVertices();
     }
 
     private void createVertices() {
@@ -149,9 +150,10 @@ public class ImageObject extends ComponentBase {
         }
     }
 
-    private void invalidate() {
-        createVertices();
-        // TODO Auto-generated method stub
+    @Override
+    protected void onManageLayerTexture() {
+        super.onManageLayerTexture();
+
         Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(),
                 Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(bitmap);
@@ -252,13 +254,22 @@ public class ImageObject extends ComponentBase {
     }
 
     private void updateDrawable(Drawable d) {
+        if (mDrawable != null) {
+            mDrawable.setCallback(null);
+        }
         mDrawable = d;
         if (d != null) {
+            d.setCallback(this);
+            if (d.isStateful()) {
+                d.setState(getDrawableState());
+            }
             d.setLevel(mLevel);
             mDrawableWidth = d.getIntrinsicWidth();
             mDrawableHeight = d.getIntrinsicHeight();
             applyColorMod();
             configureBounds();
+        } else {
+            mDrawableWidth = mDrawableHeight = -1;
         }
     }
 
