@@ -413,7 +413,8 @@ public class Object3d implements Callback
      */
     private static final int PREPRESSED = 0x02000000;
 
-	private boolean _isVisible = true;
+    private static final String PREFIX_BACKGROUND = "background_";
+
 	private boolean _vertexColorsEnabled = true;
 	private boolean _doubleSidedEnabled = false;
 	private boolean _texturesEnabled = true;
@@ -573,28 +574,6 @@ public class Object3d implements Callback
 	public TextureList textures()
 	{
 		return _textures;
-	}
-	
-    /**
-     * Indicates if object will be rendered.
-     * Default is true.
-     *
-     * @return true if object will be rendered
-     */
-	boolean isVisible()
-	{
-		return _isVisible;
-	}
-
-    /**
-     * Determines if object will be rendered.
-     * Default is true.
-     *
-     * @param $b true if object will be rendered
-     */
-	void isVisible(Boolean $b)
-	{
-		_isVisible = $b;
 	}
 	
     /**
@@ -1198,18 +1177,24 @@ public class Object3d implements Callback
         }
     }
 
+    protected void onRender() {
+    }
+
     protected void render(CameraVo camera, float[] projMatrix, float[] vMatrix) {
         render(camera, projMatrix, vMatrix, null);
     }
 
     protected void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
-        if (!isVisible()) return;
-        mMaterial = _scene.getDefaultMaterial(mGContext);
-        mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
-
         if(isLayerTextureDirty()) {
             onManageLayerTexture();
         }
+
+        int visibility = getVisibility() & VISIBILITY_MASK;
+        if (visibility == INVISIBLE || visibility == GONE) return;
+        mMaterial = _scene.getDefaultMaterial(mGContext);
+        mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
+
+        onRender();
 
         mProjMatrix = projMatrix;
         if (doubleSidedEnabled()) {
@@ -1365,11 +1350,24 @@ public class Object3d implements Callback
     protected void onManageLayerTexture() {
         mPrivateFlags = (mPrivateFlags & ~DIRTY_MASK) | DRAWN;
 
-        String backgroundTexId = "background_" + toString();
-        if (getGContext().getTexureManager().contains(backgroundTexId)) {
-            getGContext().getTexureManager().deleteTexture(backgroundTexId);
-            textures().removeById(backgroundTexId);
+        String backgroundTexId = (mBGDrawable != null)?PREFIX_BACKGROUND + mBGDrawable.toString() + mBGDrawable.getState():PREFIX_BACKGROUND;
+        String replaced = null;
+        for (String id:textures().getIds()) {
+            if (id.contains(PREFIX_BACKGROUND) && !id.equals(PREFIX_BACKGROUND)) {
+                if (id.equals(backgroundTexId)) {
+                    return;
+                } else {
+                    replaced = id;
+                }
+                break;
+            }
         }
+
+        if (replaced != null) {
+            getGContext().getTexureManager().deleteTexture(replaced);
+            textures().removeById(replaced);
+        }
+
         if (mBGDrawable != null) {
             Bitmap bitmap = Bitmap.createBitmap(mBGDrawable.getMinimumWidth(), mBGDrawable.getMinimumHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
@@ -1379,10 +1377,10 @@ public class Object3d implements Callback
 
             getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
             bitmap.recycle();
-            TextureVo t = new TextureVo(backgroundTexId);
-            t.repeatU = false;
-            t.repeatV = false;
-            textures().add(0, t);
+            TextureVo textureVo = new TextureVo(backgroundTexId);
+            textureVo.repeatU = false;
+            textureVo.repeatV = false;
+            textures().add(0, textureVo);
         }
     }
 
@@ -1620,7 +1618,8 @@ public class Object3d implements Callback
     }
 
     public boolean intersects(Ray ray) {
-        if (!_isVisible) {
+        int visibility = getVisibility() & VISIBILITY_MASK;
+        if (visibility == GONE) {
             return false;
         }
 
@@ -1710,7 +1709,6 @@ public class Object3d implements Callback
         mCoordinate = getIntersectPoint(event.getX(),event.getY(),mCenter.z);
 
         final int viewFlags = mViewFlags;
-
         if ((viewFlags & ENABLED_MASK) == DISABLED) {
             if (event.getAction() == MotionEvent.ACTION_UP && (mPrivateFlags & PRESSED) != 0) {
                 mPrivateFlags &= ~PRESSED;
@@ -2271,7 +2269,6 @@ public class Object3d implements Callback
 
         if ((flags & VISIBILITY_MASK) == VISIBLE) {
             if ((changed & VISIBILITY_MASK) != 0) {
-                isVisible(true);
                 // a view becoming visible is worth notifying the parent
                 // about in case nothing has focus.  even if this specific view
                 // isn't focusable, it may contain something that is, so let
@@ -2282,10 +2279,22 @@ public class Object3d implements Callback
             }
         }
 
+        /* Check if the GONE bit has changed */
+        if ((changed & GONE) != 0) {
+/*            requestLayout();*/
+
+            if (((mViewFlags & VISIBILITY_MASK) == GONE)) {
+                if (hasFocus()) clearFocus();
+/*                destroyDrawingCache();*/
+                // Mark the view drawn to ensure that it gets invalidated properly the next
+                // time it is visible and gets invalidated
+                mPrivateFlags |= DRAWN;
+            }
+        }
+
         /* Check if the VISIBLE bit has changed */
         if ((changed & INVISIBLE) != 0) {
             if (((mViewFlags & VISIBILITY_MASK) == INVISIBLE)) {
-                isVisible(false);
                 if (hasFocus()) {
                     // root view becoming invisible shouldn't clear focus
                     Scene scene = mGContext.getRenderer().getScene();

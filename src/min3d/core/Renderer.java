@@ -377,7 +377,14 @@ public class Renderer implements GLSurfaceView.Renderer
 
 	protected void drawObject(Object3d $o)
 	{
-        if ($o.isVisible() == false) return;
+        if ($o.isLayerTextureDirty()) {
+            $o.onManageLayerTexture();
+        }
+
+        int visibility = $o.getVisibility() & Object3d.VISIBILITY_MASK;
+        if (visibility == Object3d.INVISIBLE || visibility == Object3d.GONE) return;
+
+        $o.onRender();
 
         if (!$o.mBuffered) {
             $o.makeVertextBufferObject();
@@ -500,9 +507,6 @@ public class Renderer implements GLSurfaceView.Renderer
 		    _gl.glEnable(GL10.GL_CULL_FACE);
 		}
 		
-        if ($o.isLayerTextureDirty()) {
-            $o.onManageLayerTexture();
-        }
 		drawObject_textures($o);
 
 		// Matrix operations in modelview
@@ -866,6 +870,11 @@ public class Renderer implements GLSurfaceView.Renderer
     }
 
     ArrayList<Object3d> detectIntersectedObject(Ray ray, Object3d node, ArrayList<Object3d> list) {
+        int visibility = node.getVisibility() & Object3d.VISIBILITY_MASK;
+        if (visibility == Object3d.GONE) {
+            return list;
+        }
+
         if (node.intersects(ray)) {
             list.add(node);
         }
@@ -882,12 +891,13 @@ public class Renderer implements GLSurfaceView.Renderer
         return list;
     }
 
-    void updateAABBCoord() {
+    public void updateAABBCoord() {
         updateAABBCoordWithRay(_scene.root());
     }
 
     private void updateAABBCoordWithRay(Object3d node) {
-        if (!node.isVisible()) {
+        int visibility = node.getVisibility() & Object3d.VISIBILITY_MASK;
+        if (visibility == Object3d.GONE) {
             return;
         }
 

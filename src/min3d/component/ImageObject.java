@@ -27,6 +27,9 @@ import min3d.vos.TextureVo;
 public class ImageObject extends ComponentBase {
 
     private static final String TAG = "ImageObject";
+
+    private static final String PREFIX_IMAGE = "image_";
+
     private Uri mUri;
     private int mResource = 0;
     private Matrix mMatrix;
@@ -154,23 +157,39 @@ public class ImageObject extends ComponentBase {
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
 
-        Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(),
-                Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(bitmap);
-        onDraw(c);
-
-        if (mGContext.getTexureManager().contains(toString())) {
-            mGContext.getTexureManager().deleteTexture(toString());
-            textures().removeById(toString());
+        String imageTexId = (mDrawable != null)?"PREFIX_IMAGE" + mDrawable.toString() + mDrawable.getState():"PREFIX_IMAGE";
+        String replaced = null;
+        for (String id:textures().getIds()) {
+            if (id.contains("PREFIX_IMAGE") && !id.equals("PREFIX_IMAGE")) {
+                if (id.equals(imageTexId)) {
+                    return;
+                } else {
+                    replaced = id;
+                }
+                break;
+            }
         }
-        mGContext.getTexureManager().addTextureId(bitmap, toString(), false);
-        TextureVo textureText = new TextureVo(toString());
-        textureText.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
-                GL10.GL_DECAL);
-        textureText.repeatU = false;
-        textureText.repeatV = false;
-        textures().add(textureText);
-        bitmap.recycle();
+
+        if (replaced != null) {
+            getGContext().getTexureManager().deleteTexture(replaced);
+            textures().removeById(replaced);
+        }
+
+        if (mDrawable != null) {
+            Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(),
+                    Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            onDraw(canvas);
+
+            getGContext().getTexureManager().addTextureId(bitmap, imageTexId, false);
+            bitmap.recycle();
+            TextureVo textureVo = new TextureVo(imageTexId);
+            textureVo.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
+                    GL10.GL_DECAL);
+            textureVo.repeatU = false;
+            textureVo.repeatV = false;
+            textures().add(textureVo);
+        }
     }
 
     /**

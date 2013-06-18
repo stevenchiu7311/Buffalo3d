@@ -239,6 +239,10 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
             ArrayList<Object3d> children = (ArrayList<Object3d>) container.children().clone();
             Collections.sort(children, new DepthSort(DepthSort.UP));
             for (int i = children.size() - 1; i >= 0; i--) {
+                if ((children.get(i).getVisibility() & VISIBILITY_MASK) == GONE) {
+                    continue;
+                }
+
                 Object3d child = null;
                 for (int j = 0; j < container.numChildren(); j++) {
                     if (children.get(i).equals(container.getChildAt(j))) {
@@ -251,7 +255,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
                     find = contain(child,obj);
                 }
 
-                if (child != null && child.isVisible() && find) {
+                if (child != null && find) {
                     if (child.dispatchTouchEvent(ray, ev, list)) {
                         mMotionTarget = child;
                         return true;
