@@ -45,6 +45,7 @@
 		<activity android:name=".ExampleImageObject"></activity>
 		<activity android:name=".ExampleObjectState"></activity>
 		<activity android:name=".ExampleObjectTransparency"></activity>
+		<activity android:name=".ExampleScrollContainer"></activity>
 		
 		<!-- Debugging-related activities: -->
         <activity android:name=".ScratchActivity" android:label="@string/app_name"></activity>

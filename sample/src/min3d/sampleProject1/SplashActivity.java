@@ -72,7 +72,8 @@ public class SplashActivity extends ListActivity
 			new ItemVo("Text object", ExampleTextObject.class, "ExampleTextObject.java"),
 			new ItemVo("Image object", ExampleImageObject.class, "ExampleImageObject.java"),
 			new ItemVo("Object state", ExampleObjectState.class, "ExampleObjectState.java"),
-			new ItemVo("Object transparency", ExampleObjectTransparency.class, "ExampleObjectTransparency.java")
+			new ItemVo("Object transparency", ExampleObjectTransparency.class, "ExampleObjectTransparency.java"),
+			new ItemVo("Scroll Container", ExampleScrollContainer.class, "ExampleScrollContainer.java")
 	};
 	
     @Override
