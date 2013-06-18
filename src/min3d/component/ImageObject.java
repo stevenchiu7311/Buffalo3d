@@ -157,10 +157,10 @@ public class ImageObject extends ComponentBase {
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
 
-        String imageTexId = (mDrawable != null)?"PREFIX_IMAGE" + mDrawable.toString() + mDrawable.getState():"PREFIX_IMAGE";
+        String imageTexId = (mDrawable != null)?PREFIX_IMAGE + mDrawable.toString() + mDrawable.getState():PREFIX_IMAGE;
         String replaced = null;
         for (String id:textures().getIds()) {
-            if (id.contains("PREFIX_IMAGE") && !id.equals("PREFIX_IMAGE")) {
+            if (id.contains(PREFIX_IMAGE) && !id.equals(PREFIX_IMAGE)) {
                 if (id.equals(imageTexId)) {
                     return;
                 } else {

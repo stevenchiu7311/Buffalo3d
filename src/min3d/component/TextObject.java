@@ -31,6 +31,9 @@ import min3d.vos.TextureVo;
  */
 public class TextObject extends ComponentBase {
     private static final String TAG = "TextObject";
+
+    private static final String PREFIX_TEXT = "text_";
+
     private static final float MAPPING_PIXEL = 256.0f;
 
     private float mWidth;
@@ -74,42 +77,47 @@ public class TextObject extends ComponentBase {
 
     public void setText(CharSequence text) {
         mTextView.setText(text);
+        invalidate();
     }
 
     @Override
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
-
-        int w = (int) (mWidth * MAPPING_PIXEL);
-        if (w % 2 == 1) {
-            w--;
-        }
-        int h = (int) (mHeight * MAPPING_PIXEL);
-        if (h % 2 == 1) {
-            h--;
-        }
-
-        Bitmap bitmap = loadBitmapFromView(mTextView, w, h);
+        String textTexId = (mTextView != null)?PREFIX_TEXT + mTextView.toString():PREFIX_TEXT;
         destroyLastTextRes();
-        mGContext.getTexureManager().addTextureId(bitmap, toString(), false);
-        TextureVo textureText = new TextureVo(toString());
-        // Texture env should be not used if text object background is transparent.
-        // On the contrary, texture env should be applied when it already have any background texture.
-        if (textures().size() > 0) {
-            textureText.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
-                    GL10.GL_DECAL);
+        if (mTextView != null) {
+            int w = (int) (mWidth * MAPPING_PIXEL);
+            if (w % 2 == 1) {
+                w--;
+            }
+            int h = (int) (mHeight * MAPPING_PIXEL);
+            if (h % 2 == 1) {
+                h--;
+            }
+
+            Bitmap bitmap = loadBitmapFromView(mTextView, w, h);
+            mGContext.getTexureManager().addTextureId(bitmap, textTexId, false);
+            TextureVo textureText = new TextureVo(textTexId);
+            // Texture env should be not used if text object background is transparent.
+            // On the contrary, texture env should be applied when it already have any background texture.
+            if (textures().size() > 0) {
+                textureText.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
+                        GL10.GL_DECAL);
+            }
+            textureText.repeatU = false;
+            textureText.repeatV = false;
+            textures().add(textureText);
+            bitmap.recycle();
         }
-        textureText.repeatU = false;
-        textureText.repeatV = false;
-        textures().add(textureText);
-        bitmap.recycle();
     }
 
     public void destroyLastTextRes() {
-        if (mGContext.getTexureManager().contains(toString())) {
-            mGContext.getTexureManager().deleteTexture(toString());
-            if (textures().getById(toString()) != null) {
-                textures().removeById(toString());
+        for (String id:textures().getIds()) {
+            if (id.contains(PREFIX_TEXT)) {
+                if (mGContext.getTexureManager().contains(id)) {
+                    mGContext.getTexureManager().deleteTexture(id);
+                }
+                textures().removeById(id);
             }
         }
     }
@@ -193,6 +201,7 @@ public class TextObject extends ComponentBase {
      */
     public void setTypeface(Typeface tf, int style) {
         mTextView.setTypeface(tf, style);
+        invalidate();
     }
 
     /**
@@ -240,6 +249,7 @@ public class TextObject extends ComponentBase {
      */
     public void setTextSize(float size) {
         mTextView.setTextSize(size);
+        invalidate();
     }
 
     /**
@@ -251,6 +261,7 @@ public class TextObject extends ComponentBase {
      */
     public void setTextSize(int unit, float size) {
         mTextView.setTextSize(unit, size);
+        invalidate();
     }
 
     /**
@@ -260,6 +271,7 @@ public class TextObject extends ComponentBase {
      */
     public void setTypeface(Typeface tf) {
         mTextView.setTypeface(tf);
+        invalidate();
     }
 
     /**
@@ -277,6 +289,7 @@ public class TextObject extends ComponentBase {
      */
     public void setTextColor(int color) {
         mTextView.setTextColor(color);
+        invalidate();
     }
 
     /**
@@ -285,6 +298,7 @@ public class TextObject extends ComponentBase {
      */
     public void setTextColor(ColorStateList colors) {
         mTextView.setTextColor(colors);
+        invalidate();
     }
 
     /**
@@ -312,6 +326,7 @@ public class TextObject extends ComponentBase {
      */
     public void setShadowLayer(float radius, float dx, float dy, int color) {
         mTextView.setShadowLayer(radius, dx, dy, color);
+        invalidate();
     }
 
     /**
@@ -323,6 +338,7 @@ public class TextObject extends ComponentBase {
      */
     public void setGravity(int gravity) {
         mTextView.setGravity(gravity);
+        invalidate();
     }
 
     /**
@@ -342,10 +358,12 @@ public class TextObject extends ComponentBase {
      */
     public void setText(CharSequence text, BufferType type) {
         mTextView.setText(text, type);
+        invalidate();
     }
 
     public final void setText(char[] text, int start, int len) {
         mTextView.setText(text, start, len);
+        invalidate();
     }
 
     /**
@@ -364,6 +382,7 @@ public class TextObject extends ComponentBase {
      */
     public void setSingleLine() {
         mTextView.setSingleLine();
+        invalidate();
     }
 
     /**
@@ -375,6 +394,7 @@ public class TextObject extends ComponentBase {
      */
     public void setEllipsize(TextUtils.TruncateAt where) {
         mTextView.setEllipsize(where);
+        invalidate();
     }
 
     /**
