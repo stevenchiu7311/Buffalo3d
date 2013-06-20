@@ -39,6 +39,9 @@ public class ExampleScrollContainer extends RendererActivity {
 
     Object3dContainer mTouchPanel;
 
+    Object3dContainer mContainer;
+    Object3dContainer mShpereContainer;
+    Object3dContainer mBoxContainer;
     ImageObject mObjectShpere[];
     ImageObject mObjectBox[];
 
@@ -90,30 +93,40 @@ public class ExampleScrollContainer extends RendererActivity {
         Object3d objectBox = new Box(getGContext(), 1, 1, 1, null, true, true,
                 true);
 
+        mContainer = new Object3dContainer(getGContext());
+        mShpereContainer = new Object3dContainer(getGContext());
+        mBoxContainer = new Object3dContainer(getGContext());
         mObjectShpere = new ImageObject[200];
         mObjectBox = new ImageObject[200];
+        mShpereContainer.position().x = (IS_VERTICAL_SCROLL_SAMPLE)?-1f:0f;
+        mShpereContainer.position().y = (IS_VERTICAL_SCROLL_SAMPLE)?0f:1f;
         for (int i = 0; i < mObjectShpere.length; i++) {
             mObjectShpere[i] = new ImageObject(getGContext(), TEXT_WIDTH, TEXT_HEIGHT,
                     0f);
             mObjectShpere[i].name("Shpere_"+i);
             mObjectShpere[i].setShape(objectSphere);
-            mObjectShpere[i].position().x = (IS_VERTICAL_SCROLL_SAMPLE)?-1f:i;
-            mObjectShpere[i].position().y = (IS_VERTICAL_SCROLL_SAMPLE)?0f - i:1;
+            mObjectShpere[i].position().x = (IS_VERTICAL_SCROLL_SAMPLE)?0f:i;
+            mObjectShpere[i].position().y = (IS_VERTICAL_SCROLL_SAMPLE)?-i:0f;
 
-            mScrollView.addChild(mObjectShpere[i]);
+            mShpereContainer.addChild(mObjectShpere[i]);
         }
 
+        mBoxContainer.position().x = (IS_VERTICAL_SCROLL_SAMPLE)?1f:0f;
+        mBoxContainer.position().y = (IS_VERTICAL_SCROLL_SAMPLE)?0f:-1f;
         for (int i = 0; i < mObjectShpere.length; i++) {
             mObjectBox[i] = new ImageObject(getGContext(), TEXT_WIDTH, TEXT_HEIGHT,
                     0f);
             mObjectBox[i].name("Box_"+i);
             mObjectBox[i].setShape(objectBox);
-            mObjectBox[i].position().x = (IS_VERTICAL_SCROLL_SAMPLE)?1f:i;
-            mObjectBox[i].position().y = (IS_VERTICAL_SCROLL_SAMPLE)?0f - i:-1;
+            mObjectBox[i].position().x = (IS_VERTICAL_SCROLL_SAMPLE)?0f:i;
+            mObjectBox[i].position().y = (IS_VERTICAL_SCROLL_SAMPLE)?-i:0f;
 
-            mScrollView.addChild(mObjectBox[i]);
+            mBoxContainer.addChild(mObjectBox[i]);
         }
 
+        mContainer.addChild(mShpereContainer);
+        mContainer.addChild(mBoxContainer);
+        mScrollView.addChild(mContainer);
         scene.addChild(mTouchPanel);
         scene.addChild(mScrollView);
     }

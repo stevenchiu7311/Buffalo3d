@@ -34,6 +34,7 @@ public class ScrollContainer extends Object3dContainer {
     private Map<Object3d, ScrollItemInfo> mMap = new HashMap<Object3d, ScrollItemInfo>();
     private float mScrollTemp = -1;
     private ScrollContainerListener mScrollViewListener = null;
+    private List<Object3d> mMightInBoundList = new ArrayList<Object3d>();
 
     public ScrollContainer(GContext context, Mode mode) {
         super(context);
@@ -117,57 +118,81 @@ public class ScrollContainer extends Object3dContainer {
             mBound[1] = new Ray(source[1], direction[1]);
         }
 
-        for (int i = 0; i < numChildren(); i++) {
-            Number3d position = mMap.get(getChildAt(i)).mPosition;
+        if (numChildren() > 0) {
+            Object3dContainer directChild = (Object3dContainer) getChildAt(0);
+            Number3d position = mMap.get(directChild).mPosition;
             if ((mMode == CustomScroller.Mode.X)) {
-                getChildAt(i).position().x = position.x + (-mScroller.getScroll() * mRatio);
+                directChild.position().x = -mScroller.getScroll() * mRatio;
+                position.x = -mScroller.getScroll() * mRatio;
             } else {
-                getChildAt(i).position().y = position.y + (mScroller.getScroll() * mRatio);
+                directChild.position().y = mScroller.getScroll() * mRatio;
+                position.y = mScroller.getScroll() * mRatio;
+            }
+
+            if (mScrollTemp != mScroller.getScroll()) {
+                List<Object3d> visibilityChanged = new ArrayList<Object3d>();
+                calculateObjectCoodinate(directChild, mMightInBoundList);
+                getGContext().getRenderer().updateAABBCoord();
+                calculateObjectVisibility(mMightInBoundList, visibilityChanged);
+
+                if (!visibilityChanged.isEmpty() && mScrollViewListener != null) {
+                    mScrollViewListener.onItemVisibilityChanged(visibilityChanged);
+                }
             }
         }
 
-        if (mScrollTemp != mScroller.getScroll()) {
-            float bound[] = new float[2];
-            for (int i = 0; i < numChildren(); i++) {
-                Object3d obj = getChildAt(i);
-                float pos = (mMode == CustomScroller.Mode.X)?obj.position().x:obj.position().y;
-                bound[0] = (mMode == CustomScroller.Mode.X)?-mSize.x:-mSize.y;
-                bound[1] = (mMode == CustomScroller.Mode.X)?mSize.x:mSize.y;
-                if (pos > bound[0] && pos < bound[1]){
+        mScrollTemp = mScroller.getScroll();
+    }
+
+    void calculateObjectCoodinate(Object3dContainer parent, List<Object3d> mightInBound) {
+        float bound[] = new float[2];
+        bound[0] = (mMode == CustomScroller.Mode.X)?-mSize.x:-mSize.y;
+        bound[1] = (mMode == CustomScroller.Mode.X)?mSize.x:mSize.y;
+        for (int i = 0; i < parent.numChildren(); i++) {
+            Object3d obj = parent.getChildAt(i);
+            addInnerChild(obj);
+            Number3d.add(mMap.get(obj).mPosition, obj.position(), mMap.get(parent).mPosition);
+            float pos = (mMode == CustomScroller.Mode.X)?mMap.get(obj).mPosition.x:mMap.get(obj).mPosition.y;
+            if (obj.vertices().size() > 0) {
+                obj.setVisibility(Object3d.GONE);
+                if (pos > bound[0] && pos < bound[1]) {
                     obj.setVisibility(Object3d.INVISIBLE);
                     obj.setOnTouchListener(mTouchListener);
+                    mightInBound.add(obj);
                 }
             }
 
-            getGContext().getRenderer().updateAABBCoord();
-
-            List<Object3d> visibilityChanged = new ArrayList<Object3d>();
-            for (int i = 0; i < numChildren(); i++) {
-                Object3d obj = getChildAt(i);
-                float pos = (mMode == CustomScroller.Mode.X)?obj.position().x:obj.position().y;
-                int orig = mMap.get(obj).mVisibility;
-                if (pos > bound[0] / 2 && pos < bound[1] / 2) {
-                    obj.setVisibility(Object3d.VISIBLE);
-                    mMap.get(obj).mVisibility = Object3d.VISIBLE;
-                } else if (obj.intersects(mBound[0]) || obj.intersects(mBound[1])) {
-                    obj.setVisibility(Object3d.VISIBLE);
-                    mMap.get(obj).mVisibility = Object3d.VISIBLE;
-                } else {
-                    obj.setVisibility(Object3d.GONE);
-                    mMap.get(obj).mVisibility = Object3d.GONE;
-                    obj.setOnTouchListener(null);
-                }
-                int after = mMap.get(obj).mVisibility;
-                if (after != orig && (after == Object3d.VISIBLE || after == Object3d.GONE)) {
-                    visibilityChanged.add(obj);
-                }
+            if (obj instanceof Object3dContainer) {
+                calculateObjectCoodinate((Object3dContainer)obj, mightInBound);
             }
-            if (!visibilityChanged.isEmpty() && mScrollViewListener != null) {
-                mScrollViewListener.onItemVisibilityChanged(visibilityChanged);
-            }
-
         }
-        mScrollTemp = mScroller.getScroll();
+    }
+
+    void calculateObjectVisibility(List<Object3d> mightInBound, List<Object3d> visibilityChanged) {
+        float bound[] = new float[2];
+        bound[0] = (mMode == CustomScroller.Mode.X)?-mSize.x:-mSize.y;
+        bound[1] = (mMode == CustomScroller.Mode.X)?mSize.x:mSize.y;
+        for (Object3d obj:mightInBound) {
+            float pos = (mMode == CustomScroller.Mode.X)?mMap.get(obj).mPosition.x:mMap.get(obj).mPosition.y;
+
+            int orig = mMap.get(obj).mVisibility;
+            if (pos > bound[0] / 2 && pos < bound[1] / 2) {
+                obj.setVisibility(Object3d.VISIBLE);
+                mMap.get(obj).mVisibility = Object3d.VISIBLE;
+            } else if (obj.intersects(mBound[0]) || obj.intersects(mBound[1])) {
+                obj.setVisibility(Object3d.VISIBLE);
+                mMap.get(obj).mVisibility = Object3d.VISIBLE;
+            } else {
+                obj.setVisibility(Object3d.GONE);
+                mMap.get(obj).mVisibility = Object3d.GONE;
+                obj.setOnTouchListener(null);
+            }
+            int after = mMap.get(obj).mVisibility;
+            if (after != orig && (after == Object3d.VISIBLE || after == Object3d.GONE)) {
+                visibilityChanged.add(obj);
+            }
+        }
+        mightInBound.clear();
     }
 
     private OnTouchListener mTouchListener = new OnTouchListener() {
@@ -182,29 +207,38 @@ public class ScrollContainer extends Object3dContainer {
      * {@inheritDoc}
      */
     public void addChild(Object3d $o) {
+        if (numChildren() > 0) {
+            throw new IllegalStateException("ScrollContainer can host only one direct child");
+        }
         super.addChild($o);
-        ScrollItemInfo info = new ScrollItemInfo();
-        info.mVisibility = Object3d.GONE;
-        info.mPosition = $o.position().clone();
-        mMap.put($o, info);
+        addInnerChild($o);
     }
 
     /**
      * {@inheritDoc}
      */
     public void addChildAt(Object3d $o, int $index) {
+        if (numChildren() > 0) {
+            throw new IllegalStateException("ScrollContainer can host only one direct child");
+        }
         super.addChildAt($o, $index);
-        ScrollItemInfo info = new ScrollItemInfo();
-        info.mVisibility = Object3d.GONE;
-        info.mPosition = $o.position().clone();
-        mMap.put($o, info);
+        addInnerChild($o);
+    }
+
+    public void addInnerChild(Object3d $o) {
+        if (!mMap.containsKey($o)) {
+            ScrollItemInfo info = new ScrollItemInfo();
+            info.mVisibility = Object3d.GONE;
+            info.mPosition = $o.position().clone();
+            mMap.put($o, info);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean removeChild(Object3d $o) {
-        mMap.remove($o);
+        mMap.clear();
         return super.removeChild($o);
     }
 
@@ -213,7 +247,7 @@ public class ScrollContainer extends Object3dContainer {
      */
     public Object3d removeChildAt(int $index) {
         Object3d $o = super.removeChildAt($index);
-        mMap.remove($o);
+        mMap.clear();
         return $o;
     }
 
