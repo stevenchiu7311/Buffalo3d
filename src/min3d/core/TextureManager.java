@@ -1,7 +1,9 @@
 package min3d.core;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import min3d.Min3d;
@@ -26,6 +28,7 @@ public class TextureManager
 	private static int _counter = 1000001;
 	private static int _atlasId = 0;
 	private Renderer mRenderer;
+    private List<String> mWillBeRemoved;
 
 	public TextureManager(Renderer renderer)
 	{
@@ -53,6 +56,7 @@ public class TextureManager
 		
 		_idToTextureName = new HashMap<String, Integer>();
 		_idToHasMipMap = new HashMap<String, Boolean>();
+        mWillBeRemoved = new ArrayList<String>();
 	}
 
     /**
@@ -161,6 +165,10 @@ public class TextureManager
 		//xxx needs error check
 	}
 
+    public void scheduleTextureDeletion(String $id) {
+        mWillBeRemoved.add($id);
+    }
+
     /**
      * Returns a String Array of textureId's in the TextureManager
      *
@@ -173,6 +181,18 @@ public class TextureManager
 		set.toArray(a);
 		return a;
 	}
+
+    /**
+     * Used by Renderer
+     */
+    protected void recyleUnlinkedTextures() {
+        for (String id:mWillBeRemoved) {
+            if (contains(id)) {
+                deleteTexture(id);
+            }
+        }
+        mWillBeRemoved.clear();
+    }
 	
     /**
      * Used by Renderer

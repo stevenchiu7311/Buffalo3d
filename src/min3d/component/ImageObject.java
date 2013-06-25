@@ -276,8 +276,9 @@ public class ImageObject extends ComponentBase {
         if (mDrawable != null) {
             mDrawable.setCallback(null);
         }
-        mDrawable = d;
+
         if (d != null) {
+            mDrawable = d;
             d.setCallback(this);
             if (d.isStateful()) {
                 d.setState(getDrawableState());
@@ -289,6 +290,10 @@ public class ImageObject extends ComponentBase {
             configureBounds();
         } else {
             mDrawableWidth = mDrawableHeight = -1;
+
+            String imageTexId = (mDrawable != null)?PREFIX_IMAGE + mDrawable.toString() + mDrawable.getState():PREFIX_IMAGE;
+            getGContext().getTexureManager().scheduleTextureDeletion(imageTexId);
+            mDrawable = null;
         }
     }
 

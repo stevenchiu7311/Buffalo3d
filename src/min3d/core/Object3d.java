@@ -2439,6 +2439,9 @@ public class Object3d implements Callback
                 requestLayout = true;
             }*/
         } else {
+            String backgroundTexId = (mBGDrawable != null)?PREFIX_BACKGROUND + mBGDrawable.toString() + mBGDrawable.getState():PREFIX_BACKGROUND;
+            getGContext().getTexureManager().scheduleTextureDeletion(backgroundTexId);
+
             /* Remove the background */
             mBGDrawable = null;
 

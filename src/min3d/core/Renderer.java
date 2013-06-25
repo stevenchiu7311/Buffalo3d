@@ -132,6 +132,8 @@ public class Renderer implements GLSurfaceView.Renderer
             mVMatrix = mMg.mModelView;
         }
 
+        _textureManager.recyleUnlinkedTextures();
+
         // Update 'model'
         _scene.update();
 
