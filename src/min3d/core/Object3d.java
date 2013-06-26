@@ -3278,4 +3278,70 @@ public class Object3d implements Callback
     @Override
     public void unscheduleDrawable(Drawable who, Runnable what) {
     }
+
+    /**
+     * Call this when something has changed which has invalidated the
+     * layout of this view. This will schedule a layout pass of the view
+     * tree.
+     */
+    public void requestLayout() {
+        mPrivateFlags |= FORCE_LAYOUT;
+/*        mPrivateFlags |= INVALIDATED;
+
+        if (mParent != null) {
+            if (mLayoutParams != null) {
+                mLayoutParams.resolveWithDirection(getResolvedLayoutDirection());
+            }
+            if (!mParent.isLayoutRequested()) {
+                mParent.requestLayout();
+            }
+        }*/
+    }
+
+    /**
+     * Forces this view to be laid out during the next layout pass.
+     * This method does not call requestLayout() or forceLayout()
+     * on the parent.
+     */
+    public void forceLayout() {
+        mPrivateFlags |= FORCE_LAYOUT;
+/*        mPrivateFlags |= INVALIDATED;*/
+    }
+
+    /**
+     * <p>Indicates whether or not this view's layout will be requested during
+     * the next hierarchy layout pass.</p>
+     *
+     * @return true if the layout will be forced during next layout pass
+     */
+    public boolean isLayoutRequested() {
+        return (mPrivateFlags & FORCE_LAYOUT) == FORCE_LAYOUT;
+    }
+
+    public void layout(/*int l, int t, int r, int b*/) {
+/*        int oldL = mLeft;
+        int oldT = mTop;
+        int oldB = mBottom;
+        int oldR = mRight;
+        boolean changed = setFrame(l, t, r, b);
+        if (changed || (mPrivateFlags & LAYOUT_REQUIRED) == LAYOUT_REQUIRED) {
+            if (ViewDebug.TRACE_HIERARCHY) {
+                ViewDebug.trace(this, ViewDebug.HierarchyTraceType.ON_LAYOUT);
+            }
+
+            onLayout(changed, l, t, r, b);
+            mPrivateFlags &= ~LAYOUT_REQUIRED;
+
+            ListenerInfo li = mListenerInfo;
+            if (li != null && li.mOnLayoutChangeListeners != null) {
+                ArrayList<OnLayoutChangeListener> listenersCopy =
+                        (ArrayList<OnLayoutChangeListener>)li.mOnLayoutChangeListeners.clone();
+                int numListeners = listenersCopy.size();
+                for (int i = 0; i < numListeners; ++i) {
+                    listenersCopy.get(i).onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);
+                }
+            }
+        }*/
+        mPrivateFlags &= ~FORCE_LAYOUT;
+    }
 }

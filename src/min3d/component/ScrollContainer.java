@@ -33,8 +33,10 @@ public class ScrollContainer extends Object3dContainer {
     private Ray[] mBound = null;
     private Map<Object3d, ScrollItemInfo> mMap = new HashMap<Object3d, ScrollItemInfo>();
     private float mScrollTemp = -1;
-    private ScrollContainerListener mScrollViewListener = null;
+    private ScrollContainerListener mScrollContainerListener = null;
     private List<Object3d> mMightInBoundList = new ArrayList<Object3d>();
+    private float mScrollRange;
+    private float mOverScrollRange;
 
     public ScrollContainer(GContext context, Mode mode) {
         super(context);
@@ -45,21 +47,21 @@ public class ScrollContainer extends Object3dContainer {
         mScroller.setPositionListener(mScrollerListener);
     }
 
-    public void setOverScrollRange(int range) {
-        if (mScroller != null) {
-            mScroller.setPadding(range);
-        }
+    public void setOverScrollRange(float range) {
+        mOverScrollRange = range;
+        requestLayout();
     }
 
-    public void setScrollRange(int range) {
-        if (mMode == CustomScroller.Mode.X) {
-            mScroller.setContentWidth(range);
-        } else {
-            mScroller.setContentHeight(range);
-        }
+    public void setScrollRange(float range) {
+        mScrollRange = range;
+        requestLayout();
     }
 
-    public int getScroll() {
+    public float getScroll() {
+        return (mScroller != null && mRatio != 0)?(float)mScroller.getScroll() * mRatio:0;
+    }
+
+    public int getScrollNative() {
         return (mScroller != null)?mScroller.getScroll():0;
     }
 
@@ -69,8 +71,8 @@ public class ScrollContainer extends Object3dContainer {
         }
     }
 
-    public void setScrollViewListener(ScrollContainerListener listener) {
-        mScrollViewListener = listener;
+    public void setScrollContainerListener(ScrollContainerListener listener) {
+        mScrollContainerListener = listener;
     }
 
     public void scrollTo(int x, int y, int duration) {
@@ -82,15 +84,15 @@ public class ScrollContainer extends Object3dContainer {
     private ScrollerListener mScrollerListener = new ScrollerListener() {
         @Override
         public void onScrollChanged(int scrollX, int scrollY) {
-            if (mScrollViewListener != null) {
-                mScrollViewListener.onScrollChanged(scrollX, scrollY);
+            if (mScrollContainerListener != null) {
+                mScrollContainerListener.onScrollChanged(scrollX * mRatio, scrollY * mRatio, scrollX, scrollY);
             }
         }
 
         @Override
         public void onScrollFinished() {
-            if (mScrollViewListener != null) {
-                mScrollViewListener.onScrollFinished();
+            if (mScrollContainerListener != null) {
+                mScrollContainerListener.onScrollFinished();
             }
         }
     };
@@ -118,6 +120,19 @@ public class ScrollContainer extends Object3dContainer {
             mBound[1] = new Ray(source[1], direction[1]);
         }
 
+        if (isLayoutRequested()) {
+            if (mMode == CustomScroller.Mode.X) {
+                mScroller.setContentWidth((int) (mScrollRange / mRatio));
+            } else {
+                mScroller.setContentHeight((int) (mScrollRange / mRatio));
+            }
+
+            if (mScroller != null) {
+                mScroller.setPadding((int) (mOverScrollRange / mRatio));
+            }
+            layout();
+        }
+
         if (numChildren() > 0) {
             Object3dContainer directChild = (Object3dContainer) getChildAt(0);
             Number3d position = mMap.get(directChild).mPosition;
@@ -135,8 +150,8 @@ public class ScrollContainer extends Object3dContainer {
                 getGContext().getRenderer().updateAABBCoord();
                 calculateObjectVisibility(mMightInBoundList, visibilityChanged);
 
-                if (!visibilityChanged.isEmpty() && mScrollViewListener != null) {
-                    mScrollViewListener.onItemVisibilityChanged(visibilityChanged);
+                if (!visibilityChanged.isEmpty() && mScrollContainerListener != null) {
+                    mScrollContainerListener.onItemVisibilityChanged(visibilityChanged);
                 }
             }
         }
@@ -253,7 +268,7 @@ public class ScrollContainer extends Object3dContainer {
 
     public interface ScrollContainerListener {
         void onItemVisibilityChanged(List<Object3d> visibilityChanged);
-        void onScrollChanged(int scrollX, int scrollY);
+        void onScrollChanged(float scrollX, float scrollY, int nativeScrollX, int nativeScrollY);
         void onScrollFinished();
     }
 }

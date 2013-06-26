@@ -34,6 +34,9 @@ public class ExampleScrollContainer extends RendererActivity {
     final static float RECT_WIDTH = 6f;
     final static float RECT_HEIGHT = 8f;
 
+    final static int ITEM_NUM = 200;
+    final static float ITEM_SIZE = 1f;
+
     // Change this configuration to be vertical or horizontal scroll view sample.
     final static boolean IS_VERTICAL_SCROLL_SAMPLE = true;
 
@@ -52,9 +55,9 @@ public class ExampleScrollContainer extends RendererActivity {
         RendererGLSurfaceView.setGlesVersion(RendererGLSurfaceView.GLES20);
         super.onCreate(savedInstanceState);
         mScrollView = new ScrollContainer(getGContext(),(IS_VERTICAL_SCROLL_SAMPLE)?CustomScroller.Mode.Y:CustomScroller.Mode.X);
-        mScrollView.setOverScrollRange(250);
-        mScrollView.setScrollRange(100000);
-        mScrollView.setScrollViewListener(new ScrollContainerListener() {
+        mScrollView.setOverScrollRange(1 * ITEM_SIZE);
+        mScrollView.setScrollRange(ITEM_NUM * ITEM_SIZE);
+        mScrollView.setScrollContainerListener(new ScrollContainerListener() {
             @Override
             public void onItemVisibilityChanged(List<Object3d> visibilityChanged) {
                 for (Object3d obj:visibilityChanged) {
@@ -67,7 +70,8 @@ public class ExampleScrollContainer extends RendererActivity {
             }
 
             @Override
-            public void onScrollChanged(int scrollX, int scrollY) {
+            public void onScrollChanged(float scrollX, float scrollY,
+                    int nativeScrollX, int nativeScrollY) {
             }
 
             @Override
@@ -96,8 +100,8 @@ public class ExampleScrollContainer extends RendererActivity {
         mContainer = new Object3dContainer(getGContext());
         mShpereContainer = new Object3dContainer(getGContext());
         mBoxContainer = new Object3dContainer(getGContext());
-        mObjectShpere = new ImageObject[200];
-        mObjectBox = new ImageObject[200];
+        mObjectShpere = new ImageObject[ITEM_NUM];
+        mObjectBox = new ImageObject[ITEM_NUM];
         mShpereContainer.position().x = (IS_VERTICAL_SCROLL_SAMPLE)?-1f:0f;
         mShpereContainer.position().y = (IS_VERTICAL_SCROLL_SAMPLE)?0f:1f;
         for (int i = 0; i < mObjectShpere.length; i++) {
@@ -118,8 +122,8 @@ public class ExampleScrollContainer extends RendererActivity {
                     0f);
             mObjectBox[i].name("Box_"+i);
             mObjectBox[i].setShape(objectBox);
-            mObjectBox[i].position().x = (IS_VERTICAL_SCROLL_SAMPLE)?0f:i;
-            mObjectBox[i].position().y = (IS_VERTICAL_SCROLL_SAMPLE)?-i:0f;
+            mObjectBox[i].position().x = (IS_VERTICAL_SCROLL_SAMPLE)?0f:i * ITEM_SIZE;
+            mObjectBox[i].position().y = (IS_VERTICAL_SCROLL_SAMPLE)?-i * ITEM_SIZE:0f;
 
             mBoxContainer.addChild(mObjectBox[i]);
         }
