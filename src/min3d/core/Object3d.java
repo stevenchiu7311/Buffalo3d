@@ -2419,7 +2419,9 @@ public class Object3d implements Callback
             //unscheduleDrawable(mBGDrawable);
         }
 
+        String backgroundTexId = (mBGDrawable != null)?PREFIX_BACKGROUND + mBGDrawable.toString() + mBGDrawable.getState():PREFIX_BACKGROUND;
         if (d != null) {
+            getGContext().getTexureManager().cancelTextureDeletion(backgroundTexId);
             // Compare the minimum sizes of the old Drawable and the new.  If there isn't an old or
             // if it has a different minimum size, we should layout again
             if (mBGDrawable == null || mBGDrawable.getMinimumHeight() != d.getMinimumHeight() ||
@@ -2439,8 +2441,10 @@ public class Object3d implements Callback
                 requestLayout = true;
             }*/
         } else {
-            String backgroundTexId = (mBGDrawable != null)?PREFIX_BACKGROUND + mBGDrawable.toString() + mBGDrawable.getState():PREFIX_BACKGROUND;
             getGContext().getTexureManager().scheduleTextureDeletion(backgroundTexId);
+            if (textures().getById(backgroundTexId) != null) {
+                textures().removeById(backgroundTexId);
+            }
 
             /* Remove the background */
             mBGDrawable = null;

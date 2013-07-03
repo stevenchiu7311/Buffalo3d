@@ -165,6 +165,10 @@ public class TextureManager
 		//xxx needs error check
 	}
 
+    public void cancelTextureDeletion(String $id) {
+        mWillBeRemoved.remove($id);
+    }
+
     public void scheduleTextureDeletion(String $id) {
         mWillBeRemoved.add($id);
     }

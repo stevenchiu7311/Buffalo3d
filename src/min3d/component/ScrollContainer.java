@@ -48,17 +48,40 @@ public class ScrollContainer extends Object3dContainer {
     }
 
     public void setOverScrollRange(float range) {
-        mOverScrollRange = range;
-        requestLayout();
+        if (range != mOverScrollRange) {
+            mOverScrollRange = range;
+            if (mRatio != 0) {
+                if (mScroller != null) {
+                    mScroller.setPadding((int) (mOverScrollRange / mRatio));
+                }
+            } else {
+                requestLayout();
+            }
+            mOverScrollRange = range;
+        }
     }
 
     public void setScrollRange(float range) {
-        mScrollRange = range;
-        requestLayout();
+        if (range != mScrollRange) {
+            mScrollRange = range;
+            if (mRatio != 0) {
+                if (mMode == CustomScroller.Mode.X) {
+                    mScroller.setContentWidth((int) (mScrollRange / mRatio));
+                } else {
+                    mScroller.setContentHeight((int) (mScrollRange / mRatio));
+                }
+            } else {
+                requestLayout();
+            }
+        }
+    }
+
+    public float getScrollRange() {
+        return mScrollRange;
     }
 
     public float getScroll() {
-        return (mScroller != null && mRatio != 0)?(float)mScroller.getScroll() * mRatio:0;
+        return (mScroller != null && mRatio != 0)?((float)Math.round((float)mScroller.getScroll() * mRatio * 100) / 100):0;
     }
 
     public int getScrollNative() {
@@ -75,9 +98,9 @@ public class ScrollContainer extends Object3dContainer {
         mScrollContainerListener = listener;
     }
 
-    public void scrollTo(int x, int y, int duration) {
+    public void scrollTo(float x, float y, int duration) {
         if (mScroller != null) {
-            mScroller.scrollTo(x, y, duration);
+            mScroller.scrollTo((int)(x / mRatio), (int)(y / mRatio), duration);
         }
     }
 
@@ -96,6 +119,11 @@ public class ScrollContainer extends Object3dContainer {
             }
         }
     };
+
+    public void invalidate() {
+        super.invalidate();
+        mScrollTemp = Integer.MIN_VALUE;
+    }
 
     protected void onRender() {
         super.onRender();
