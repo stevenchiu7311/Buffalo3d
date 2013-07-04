@@ -21,6 +21,8 @@ import java.util.Map;
 public class ScrollContainer extends Object3dContainer {
     private static final String TAG = "ScrollView";
 
+    private static final boolean BOUND_RAY_DETECTION = false;
+
     class ScrollItemInfo {
         int mVisibility;
         Number3d mPosition;
@@ -175,7 +177,7 @@ public class ScrollContainer extends Object3dContainer {
             if (mScrollTemp != mScroller.getScroll()) {
                 List<Object3d> visibilityChanged = new ArrayList<Object3d>();
                 calculateObjectCoodinate(directChild, mMightInBoundList);
-                getGContext().getRenderer().updateAABBCoord();
+                if (BOUND_RAY_DETECTION) getGContext().getRenderer().updateAABBCoord();
                 calculateObjectVisibility(mMightInBoundList, visibilityChanged);
 
                 if (!visibilityChanged.isEmpty() && mScrollContainerListener != null) {
@@ -215,14 +217,20 @@ public class ScrollContainer extends Object3dContainer {
         float bound[] = new float[2];
         bound[0] = (mMode == CustomScroller.Mode.X)?-mSize.x:-mSize.y;
         bound[1] = (mMode == CustomScroller.Mode.X)?mSize.x:mSize.y;
+
+        if ((BOUND_RAY_DETECTION)) {
+            bound[0] /= 2;
+            bound[1] /= 2;
+        }
+
         for (Object3d obj:mightInBound) {
             float pos = (mMode == CustomScroller.Mode.X)?mMap.get(obj).mPosition.x:mMap.get(obj).mPosition.y;
 
             int orig = mMap.get(obj).mVisibility;
-            if (pos > bound[0] / 2 && pos < bound[1] / 2) {
+            if (pos > bound[0] && pos < bound[1]) {
                 obj.setVisibility(Object3d.VISIBLE);
                 mMap.get(obj).mVisibility = Object3d.VISIBLE;
-            } else if (obj.intersects(mBound[0]) || obj.intersects(mBound[1])) {
+            } else if (BOUND_RAY_DETECTION && (obj.intersects(mBound[0]) || obj.intersects(mBound[1]))) {
                 obj.setVisibility(Object3d.VISIBLE);
                 mMap.get(obj).mVisibility = Object3d.VISIBLE;
             } else {

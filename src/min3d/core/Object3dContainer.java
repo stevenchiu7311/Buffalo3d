@@ -216,7 +216,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
 		
 		for(int i = 0; i< this.numChildren();i++)
 		{
-			 clone.addChild(this.getChildAt(i));
+			 clone.addChild(getChildAt(i).clone());
 		}
 		 
 		return clone;

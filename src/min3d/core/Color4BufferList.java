@@ -16,7 +16,8 @@ public class Color4BufferList
 	
 	public Color4BufferList(ByteBuffer $b, int $size)
 	{
-		_b = ByteBuffer.allocate($b.limit() * BYTES_PER_PROPERTY);
+		_b = ByteBuffer.allocateDirect($b.limit() * BYTES_PER_PROPERTY);
+		_b.order(ByteOrder.nativeOrder());
 		_b.put($b);
 		_numElements = $size;
 	}
