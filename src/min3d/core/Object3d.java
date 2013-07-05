@@ -448,6 +448,8 @@ public class Object3d implements Callback
 	protected IObject3dContainer mParent;
     protected GContext mGContext;
 
+    AttachInfo mAttachInfo;
+
     /* Background setting */
     private Drawable mBGDrawable;
     private int mBackgroundResource;
@@ -460,7 +462,6 @@ public class Object3d implements Callback
     ArrayList<Object3d> mUpList = null;
     List<Object3d> mLongClickList = null;
     UnsetPressedState mUnsetPressedState;
-    Handler mHandler = null;
     CheckForLongPress mPendingCheckForLongPress;
     CheckForTap mPendingCheckForTap = null;
     PerformClick mPerformClick;
@@ -1343,6 +1344,35 @@ public class Object3d implements Callback
         }
     }
 
+    /**
+     * This is called when the object is attached to a window.  At this point it
+     * has a Surface and will start drawing.  Note that this function is
+     * guaranteed to be called before {@link #onDraw(android.graphics.Canvas)},
+     * however it may be called any time before the first onDraw -- including
+     * before or after {@link #onMeasure(int, int)}.
+     *
+     * @see #onDetachedFromWindow()
+     */
+    protected void onAttachedToWindow() {
+/*        if ((mPrivateFlags & REQUEST_TRANSPARENT_REGIONS) != 0) {
+            mParent.requestTransparentRegion(this);
+        }
+        if ((mPrivateFlags & AWAKEN_SCROLL_BARS_ON_ATTACH) != 0) {
+            initialAwakenScrollBars();
+            mPrivateFlags &= ~AWAKEN_SCROLL_BARS_ON_ATTACH;
+        }
+        jumpDrawablesToCurrentState();
+        // Order is important here: LayoutDirection MUST be resolved before Padding
+        // and TextDirection
+        resolveLayoutDirectionIfNeeded();
+        resolvePadding();
+        resolveTextDirection();
+        if (isFocused()) {
+            InputMethodManager imm = InputMethodManager.peekInstance();
+            imm.focusIn(this);
+        }*/
+    }
+
     public boolean isLayerTextureDirty() {
         return (mPrivateFlags & DIRTY_MASK) != 0;
     }
@@ -2076,12 +2106,10 @@ public class Object3d implements Callback
      * handler can be used to pump events in the UI events queue.
      */
     public Handler getHandler() {
-        if (mHandler == null) {
-            HandlerThread ht = new HandlerThread("");
-            ht.start();
-            mHandler = new Handler(ht.getLooper());
+        if (mAttachInfo != null) {
+            return mAttachInfo.mHandler;
         }
-        return mHandler;
+        return null;
     }
 
     /**
@@ -3347,5 +3375,36 @@ public class Object3d implements Callback
             }
         }*/
         mPrivateFlags &= ~FORCE_LAYOUT;
+    }
+
+    /**
+     * @param info the {@link android.view.View.AttachInfo} to associated with
+     *        this view
+     */
+    void dispatchAttachedToWindow(AttachInfo info, int visibility) {
+        mAttachInfo = info;
+        onAttachedToWindow();
+    }
+
+    /**
+     * A set of information given to a view when it is attached to its parent
+     * window.
+     */
+    static class AttachInfo {
+        /**
+         * A Handler supplied by a view's {@link android.view.ViewRootImpl}. This
+         * handler can be used to pump events in the UI events queue.
+         */
+        final Handler mHandler;
+
+        /**
+         * Creates a new set of attachment information with the specified
+         * events handler and thread.
+         *
+         * @param handler the events handler the view must use
+         */
+        AttachInfo(Handler handler) {
+            mHandler = handler;
+        }
     }
 }

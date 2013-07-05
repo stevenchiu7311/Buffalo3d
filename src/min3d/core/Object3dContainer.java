@@ -2,14 +2,16 @@ package min3d.core;
 
 import android.graphics.Rect;
 import android.view.MotionEvent;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import android.view.View;
+import android.view.ViewGroup;
 
 import min3d.interfaces.IObject3dContainer;
 import min3d.interfaces.IObject3dParent;
 import min3d.vos.Ray;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * A Object3dContainer is a special object3d that can contain other object3d
@@ -56,6 +58,13 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
      * of its children.
      */
     private static final int FLAG_ADD_STATES_FROM_CHILDREN = 0x2000;
+
+    /**
+     * When set, this ViewGroup will not dispatch onAttachedToWindow calls
+     * to children when adding new views. This is used to prevent multiple
+     * onAttached calls when a ViewGroup adds children in its own onAttached method.
+     */
+    private static final int FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW = 0x400000;
 
     protected int mGroupFlags;
     // The view contained within this ViewGroup that has or contains focus.
@@ -108,6 +117,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
 	public void addChild(Object3d $o)
 	{
 		mChildren.add($o);
+        addObjectInner($o);
 		
 		$o.parent(this);
 		$o.scene(mGContext.getRenderer().getScene());
@@ -119,6 +129,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
 	public void addChildAt(Object3d $o, int $index) 
 	{
 		mChildren.add($index, $o);
+        addObjectInner($o);
 		
 		$o.parent(this);
 		$o.scene(mGContext.getRenderer().getScene());
@@ -221,6 +232,22 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
 		 
 		return clone;
 	}
+
+    private void addObjectInner(Object3d child) {
+        if (child.parent() != null) {
+            throw new IllegalStateException("The specified child already has a parent. " +
+                    "You must call removeView() on the child's parent first. ("+ child.name() +")");
+        }
+
+        if (child.hasFocus()) {
+            requestChildFocus(child, child.findFocus());
+        }
+
+        AttachInfo ai = mAttachInfo;
+        if (ai != null && (mGroupFlags & FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW) == 0) {
+            child.dispatchAttachedToWindow(mAttachInfo, (mViewFlags&VISIBILITY_MASK));
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -784,6 +811,26 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
             }
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    void dispatchAttachedToWindow(AttachInfo info, int visibility) {
+        mGroupFlags |= FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
+        super.dispatchAttachedToWindow(info, visibility);
+        mGroupFlags &= ~FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
+
+        visibility |= mViewFlags & VISIBILITY_MASK;
+
+        final int count = numChildren();
+        final Object3d[] children = (Object3d[]) mChildren.toArray(new Object3d[1]);
+        for (int i = 0; i < count; i++) {
+            if (info != null) {
+                children[i].dispatchAttachedToWindow(info, visibility);
+            }
+        }
     }
 
     /**

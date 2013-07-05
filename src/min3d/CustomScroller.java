@@ -2,12 +2,12 @@ package min3d;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.OverScroller;
 
@@ -40,6 +40,7 @@ public class CustomScroller {
 
     private Context mContext;
     private OverScroller mScroller;
+    private Handler mHandler;
     private int mTouchSlop;
     private int mMinimumVelocity;
     private int mMaximumVelocity;
@@ -72,6 +73,10 @@ public class CustomScroller {
         mTouchSlop = configuration.getScaledTouchSlop();
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
+    }
+
+    public void setHandler(Handler handler) {
+        mHandler = new ScrollerHandler(handler.getLooper());
     }
 
     public void setContentWidth(int width) {
@@ -445,15 +450,24 @@ public class CustomScroller {
         return feedback;
     }
 
-    private Handler mHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-            case FLING_HANDLER_ACTION:
-                computeScroll();
-                break;
-            }
+    private class ScrollerHandler extends Handler {
+        public ScrollerHandler(Looper looper) {
+            super(looper);
         }
-    };
+
+        @Override
+        public void handleMessage(Message msg) {
+            handleScrollerMessage(msg);
+        }
+    }
+
+    private void handleScrollerMessage(Message msg) {
+        switch (msg.what) {
+        case FLING_HANDLER_ACTION:
+            computeScroll();
+            break;
+        }
+    }
 
     public interface ScrollerListener {
         void onScrollChanged(int scrollX, int scrollY);

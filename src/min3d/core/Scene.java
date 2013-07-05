@@ -17,6 +17,8 @@ import min3d.vos.FogType;
 import min3d.vos.LightType;
 import min3d.vos.Ray;
 
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -63,6 +65,8 @@ public class Scene implements IObject3dContainer, IDirtyParent
     Object3d mFocusedView;
     Object3d mRealFocusedView;  // this is not set to null in touch mode
 
+    final Object3d.AttachInfo mAttachInfo;
+
 	public Scene(GContext context, ISceneController $sceneController)
 	{
 	    mGContext = context;
@@ -77,6 +81,12 @@ public class Scene implements IObject3dContainer, IDirtyParent
         mObject3dContainer = new Object3dContainer(mGContext);
         mObject3dContainer.name("Root");
         mObject3dContainer.scene(this);
+
+        HandlerThread ht = new HandlerThread("");
+        ht.start();
+        Handler handler = new Handler(ht.getLooper());
+
+        mAttachInfo = new Object3d.AttachInfo(handler);
 	}
 
     /**
@@ -130,6 +140,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	public void addChild(Object3d $o)
 	{
         mObject3dContainer.addChild($o);
+        performTraversals();
 	}
 
     /**
@@ -142,6 +153,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	public void addChildAt(Object3d $o, int $index)
 	{
         mObject3dContainer.addChildAt($o, $index);
+        performTraversals();
 	}
 
     /**
@@ -569,6 +581,11 @@ public class Scene implements IObject3dContainer, IDirtyParent
         ArrayList<Object3d> list =
                 (ArrayList<Object3d>) mGContext.getRenderer().getPickedObject(ray, mObject3dContainer);
         mObject3dContainer.dispatchTouchEvent(ray ,e, list);
+    }
+
+    public void performTraversals() {
+        final Object3d.AttachInfo attachInfo = mAttachInfo;
+        mObject3dContainer.dispatchAttachedToWindow(attachInfo, Object3d.VISIBLE);
     }
 
     /**

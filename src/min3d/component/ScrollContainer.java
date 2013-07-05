@@ -43,9 +43,14 @@ public class ScrollContainer extends Object3dContainer {
     public ScrollContainer(GContext context, Mode mode) {
         super(context);
         mMode = mode;
+    }
 
-        mScroller = new CustomScroller(context.getContext(), mMode,
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        mScroller = new CustomScroller(getGContext().getContext(), mMode,
                 new DecelerateInterpolator(CustomScroller.FLING_DECELERATION_INTERPOLATOR));
+        mScroller.setHandler(getHandler());
         mScroller.setPositionListener(mScrollerListener);
     }
 
@@ -129,6 +134,8 @@ public class ScrollContainer extends Object3dContainer {
 
     protected void onRender() {
         super.onRender();
+
+        if (mScroller == null) return;
 
         if (mRatio == 0) {
             mSize = getGContext().getRenderer().getWorldPlaneSize(position().z);
