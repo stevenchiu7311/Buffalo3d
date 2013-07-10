@@ -127,6 +127,12 @@ public class ScrollContainer extends Object3dContainer {
         }
     };
 
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        invalidate();
+    }
+
     public void invalidate() {
         super.invalidate();
         mScrollTemp = Integer.MIN_VALUE;
@@ -256,7 +262,9 @@ public class ScrollContainer extends Object3dContainer {
     private OnTouchListener mTouchListener = new OnTouchListener() {
         public boolean onTouch(Object3d obj, MotionEvent event,
                 List<Object3d> list, Number3d coordinate) {
-            addMotionEvent(event);
+            if (isEnabled()) {
+                addMotionEvent(event);
+            }
             return true;
         }
     };
