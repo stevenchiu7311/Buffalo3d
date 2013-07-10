@@ -121,7 +121,11 @@ public class CustomScroller {
 
     public void setPadding(int value) {
         mPadding = value;
-        scrollTo(0, 0, 0);
+        if (mMode == Mode.X) {
+            scrollTo(getScroll(), 0, 0);
+        } else {
+            scrollTo(0, getScroll(), 0);
+        }
     }
 
     public int getScrollX() {
@@ -291,7 +295,7 @@ public class CustomScroller {
                     mVelocityTracker = null;
                 }
 
-                mScrolling = true;
+                mScrolling = false;
                 handled = true;
             }
             break;

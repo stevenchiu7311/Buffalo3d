@@ -30,7 +30,7 @@ public class ScrollContainer extends Object3dContainer {
 
     private CustomScroller mScroller;
     private CustomScroller.Mode mMode;
-    private float mRatio = 0;
+    private float mRatio = 0f;
     private Number3d mSize = null;
     private Ray[] mBound = null;
     private Map<Object3d, ScrollItemInfo> mMap = new HashMap<Object3d, ScrollItemInfo>();
@@ -39,17 +39,18 @@ public class ScrollContainer extends Object3dContainer {
     private List<Object3d> mMightInBoundList = new ArrayList<Object3d>();
     private float mScrollRange;
     private float mOverScrollRange;
+    private boolean mInit;;
 
     public ScrollContainer(GContext context, Mode mode) {
         super(context);
         mMode = mode;
+        mScroller = new CustomScroller(getGContext().getContext(), mMode,
+                new DecelerateInterpolator(CustomScroller.FLING_DECELERATION_INTERPOLATOR));
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        mScroller = new CustomScroller(getGContext().getContext(), mMode,
-                new DecelerateInterpolator(CustomScroller.FLING_DECELERATION_INTERPOLATOR));
         mScroller.setHandler(getHandler());
         mScroller.setPositionListener(mScrollerListener);
     }
@@ -57,7 +58,7 @@ public class ScrollContainer extends Object3dContainer {
     public void setOverScrollRange(float range) {
         if (range != mOverScrollRange) {
             mOverScrollRange = range;
-            if (mRatio != 0) {
+            if (mInit) {
                 if (mScroller != null) {
                     mScroller.setPadding((int) (mOverScrollRange / mRatio));
                 }
@@ -71,7 +72,7 @@ public class ScrollContainer extends Object3dContainer {
     public void setScrollRange(float range) {
         if (range != mScrollRange) {
             mScrollRange = range;
-            if (mRatio != 0) {
+            if (mInit) {
                 if (mMode == CustomScroller.Mode.X) {
                     mScroller.setContentWidth((int) (mScrollRange / mRatio));
                 } else {
@@ -143,7 +144,7 @@ public class ScrollContainer extends Object3dContainer {
 
         if (mScroller == null) return;
 
-        if (mRatio == 0) {
+        if (!mInit) {
             mSize = getGContext().getRenderer().getWorldPlaneSize(position().z);
             mRatio = (mMode == CustomScroller.Mode.X) ? mSize.x
                     / getGContext().getRenderer().getWidth() : mSize.y
@@ -200,6 +201,13 @@ public class ScrollContainer extends Object3dContainer {
         }
 
         mScrollTemp = mScroller.getScroll();
+
+        if (!mInit) {
+            if (mScrollContainerListener != null) {
+                mScrollContainerListener.onScrollerReady();
+            }
+            mInit = true;
+        }
     }
 
     void calculateObjectCoodinate(Object3dContainer parent, List<Object3d> mightInBound) {
@@ -321,5 +329,6 @@ public class ScrollContainer extends Object3dContainer {
         void onItemVisibilityChanged(List<Object3d> visibilityChanged);
         void onScrollChanged(float scrollX, float scrollY, int nativeScrollX, int nativeScrollY);
         void onScrollFinished();
+        void onScrollerReady();
     }
 }
