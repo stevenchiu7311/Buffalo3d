@@ -120,12 +120,14 @@ public class CustomScroller {
     }
 
     public void setPadding(int value) {
-        mPadding = value;
         if (mMode == Mode.X) {
-            scrollTo(getScroll(), 0, 0);
+            mScrollX = mScrollX - mPadding + value;
         } else {
-            scrollTo(0, getScroll(), 0);
+            mScrollY = mScrollY - mPadding + value;
         }
+
+        mPadding = value;
+        computeScroll();
     }
 
     public int getScrollX() {

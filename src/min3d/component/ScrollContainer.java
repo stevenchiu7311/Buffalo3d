@@ -65,7 +65,6 @@ public class ScrollContainer extends Object3dContainer {
             } else {
                 requestLayout();
             }
-            mOverScrollRange = range;
         }
     }
 
