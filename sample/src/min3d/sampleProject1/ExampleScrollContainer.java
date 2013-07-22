@@ -77,6 +77,10 @@ public class ExampleScrollContainer extends RendererActivity {
             @Override
             public void onScrollFinished() {
             }
+
+            @Override
+            public void onScrollerReady() {
+            }
         });
     }
 
