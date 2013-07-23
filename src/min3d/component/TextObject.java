@@ -1,11 +1,5 @@
 package min3d.component;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-import javax.microedition.khronos.opengles.GL10;
-
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
@@ -13,14 +7,22 @@ import android.graphics.Canvas;
 import android.graphics.Typeface;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.TextView.BufferType;
+
 import min3d.Utils;
+import min3d.core.FacesBufferedList;
 import min3d.core.GContext;
+import min3d.core.Object3d;
+import min3d.core.Vertices;
 import min3d.vos.Color4;
 import min3d.vos.TextureVo;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import javax.microedition.khronos.opengles.GL10;
 
 /**
  * Note how each 'face' (quad) of the box uses its own set of 4 vertices each,
@@ -34,12 +36,14 @@ public class TextObject extends ComponentBase {
 
     private static final String PREFIX_TEXT = "text_";
 
-    private static final float MAPPING_PIXEL = 256.0f;
-
     private float mWidth;
     private float mHeight;
     private float mDepth;
-    TextView mTextView;
+    private int mMeasuredWidth;
+    private int mMeasuredHeight;
+    private boolean mHasShape;
+    private TextView mTextView;
+    private float mRatio;
 
     public TextObject(GContext context, float width, float height, float depth,
             Color4[] sixColor4s, Boolean useUvs, Boolean useNormals,
@@ -49,15 +53,8 @@ public class TextObject extends ComponentBase {
         mWidth = width;
         mHeight = height;
         mDepth = depth;
-        LinearLayout ll = new LinearLayout(context.getContext());
 
         mTextView = new TextView(context.getContext());
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(
-                (int) (mWidth * MAPPING_PIXEL), (int) (mHeight * MAPPING_PIXEL));
-        mTextView.setLayoutParams(layoutParams);
-        ll.addView(mTextView);
-
-        createVertices();
     }
 
     public TextObject(GContext context, float width, float height, float depth,
@@ -75,27 +72,55 @@ public class TextObject extends ComponentBase {
         this(context, width, height, depth, null, true, true, false);
     }
 
+    public void setRatio(float ratio) {
+        mRatio = ratio;
+        invalidate();
+    }
+
+    public void setWidth(float width) {
+        mWidth = width;
+        invalidate();
+    }
+
     public void setText(CharSequence text) {
         mTextView.setText(text);
         invalidate();
     }
 
+    public void setShape(Vertices vertices, FacesBufferedList faces) {
+        super.setShape(vertices, faces);
+        mHasShape = true;
+    }
+
+    public void setShape(Object3d object3d) {
+        super.setShape(object3d);
+        mHasShape = true;
+    }
+
     @Override
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
+        if (mRatio == 0f) {
+            float x = getGContext().getRenderer().getWorldPlaneSize(position().z).x;
+            mRatio = getGContext().getRenderer().getWidth() / x;
+        }
+
+        int layoutWidth = (int) ((mWidth > 0) ? (int) (mWidth * mRatio) : mWidth);
+        int layoutHeight = (int) ((mHeight > 0) ? (int) (mHeight * mRatio) : mHeight);
+        LayoutParams layoutParams = new LayoutParams(layoutWidth, layoutHeight);
+        mTextView.setLayoutParams(layoutParams);
+        mTextView.updateMeasuredDimension();
+
+        int measuredWidth = mTextView.getMeasuredWidth();
+        int measuredHeight = mTextView.getMeasuredHeight();
+        if (!mHasShape && (mMeasuredWidth != measuredWidth || mMeasuredHeight != measuredHeight)) {
+            createVertices(measuredWidth / mRatio, measuredHeight / mRatio);
+        }
+
         String textTexId = (mTextView != null)?PREFIX_TEXT + mTextView.toString():PREFIX_TEXT;
         destroyLastTextRes();
         if (mTextView != null) {
-            int w = (int) (mWidth * MAPPING_PIXEL);
-            if (w % 2 == 1) {
-                w--;
-            }
-            int h = (int) (mHeight * MAPPING_PIXEL);
-            if (h % 2 == 1) {
-                h--;
-            }
-
-            Bitmap bitmap = loadBitmapFromView(mTextView, w, h);
+            Bitmap bitmap = loadBitmapFromView(mTextView, measuredWidth, measuredHeight);
             mGContext.getTexureManager().addTextureId(bitmap, textTexId, false);
             TextureVo textureText = new TextureVo(textTexId);
             // Texture env should be not used if text object background is transparent.
@@ -109,6 +134,9 @@ public class TextObject extends ComponentBase {
             textures().add(textureText);
             bitmap.recycle();
         }
+
+        mMeasuredWidth = measuredWidth;
+        mMeasuredHeight = measuredHeight;
     }
 
     public void destroyLastTextRes() {
@@ -122,9 +150,9 @@ public class TextObject extends ComponentBase {
         }
     }
 
-    private void createVertices() {
-        float w = mWidth / 2;
-        float h = mHeight / 2;
+    private void createVertices(float width, float height) {
+        float w = width / 2;
+        float h = height / 2;
         float d = mDepth / 2;
         short ul, ur, lr, ll;
         float uvX = 1.0f, uvY = 1.0f;
@@ -149,7 +177,7 @@ public class TextObject extends ComponentBase {
         }
     }
 
-    private Bitmap loadBitmapFromView(View v, int w, int h) {
+    private Bitmap loadBitmapFromView(TextView v, int w, int h) {
         Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         v.layout(0, 0, w, h);
@@ -406,11 +434,37 @@ public class TextObject extends ComponentBase {
     }
 
     public class TextView extends android.widget.TextView {
-
         public TextView(Context context) {
             super(context);
-            setMeasuredDimension((int) (mWidth * MAPPING_PIXEL),
-                    (int) (mHeight * MAPPING_PIXEL));
+        }
+
+        public int getMeasureSpec(int spec, int padding, int dimension) {
+            int resultSize = 0;
+            int resultMode = 0;
+            // In engine3d text view, parent asked to see how big we want to be
+            if (dimension >= 0) {
+                // Child wants a specific size... let him have it
+                resultSize = dimension;
+                resultMode = MeasureSpec.EXACTLY;
+            } else if (dimension == LayoutParams.MATCH_PARENT) {
+                // Child wants to be our size... find out how big it should
+                // be
+                resultSize = 0;
+                resultMode = MeasureSpec.UNSPECIFIED;
+            } else if (dimension == LayoutParams.WRAP_CONTENT) {
+                // Child wants to determine its own size.... find out how
+                // big it should be
+                resultSize = 0;
+                resultMode = MeasureSpec.UNSPECIFIED;
+            }
+            return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
+        }
+
+        public void updateMeasuredDimension() {
+            final LayoutParams lp = (LayoutParams) getLayoutParams();
+            final int childWidthMeasureSpec = getMeasureSpec(MeasureSpec.UNSPECIFIED, 0, lp.width);
+            final int childHeightMeasureSpec = getMeasureSpec(MeasureSpec.UNSPECIFIED, 0, lp.height);
+            measure(childWidthMeasureSpec, childHeightMeasureSpec);
         }
     }
 }
