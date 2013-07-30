@@ -286,6 +286,10 @@ public class CustomScroller {
                     if (feedback[FEEDBACK_WHAT] == NO_NEED_REBOUNDING) {
                         if (mItemSize != 0) {
                             scrollWithAlign(-initialVelocity, DURATION_SCROLLING_AUTOALIGN);
+                        } else {
+                            if (!mIsBeingDragged && mPositionListener != null) {
+                                mPositionListener.onScrollFinished();
+                            }
                         }
                     } else {
                         rebounding(feedback);
