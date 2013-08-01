@@ -178,6 +178,15 @@ public class Scene implements IObject3dContainer, IDirtyParent
 	}
 
     /**
+     * Removes all objects of scene's root object container.
+     *
+     * {@inheritDoc}
+     */
+    public void removeAllChildren() {
+        mObject3dContainer.removeAllChildren();
+    }
+
+    /**
      * Get object from specified position of scene's root object container.
      *
      * {@inheritDoc}
