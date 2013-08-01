@@ -44,6 +44,12 @@ public interface IObject3dContainer extends IObject3dParent
 	public Object3d removeChildAt(int $index);
 
     /**
+     * Call this method to remove all child object from the
+     * Container.
+     */
+    public void removeAllChildren();
+
+    /**
      * Returns the object at the specified position in the group.
      * (Not recommend call it out of GL thread)
      *
