@@ -132,10 +132,11 @@ public class Renderer implements GLSurfaceView.Renderer
             mVMatrix = mMg.mModelView;
         }
 
-        _textureManager.recyleUnlinkedTextures();
-
         // Update 'model'
         _scene.update();
+
+        // Execute all the removed texture command from update scene in GL thread immediately.
+        _textureManager.recyleUnlinkedTextures();
 
         if (RenderCaps.openGlVersion() == 2.0f) {
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
