@@ -182,14 +182,15 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
     /**
      * {@inheritDoc}
      */
-	public Object3d getChildByName(String $name)
-	{
-		for (int i = 0; i < mChildren.size(); i++)
-		{
-			if (mChildren.get(i).name().equals($name)) return mChildren.get(i);
-		}
-		return null;
-	}
+    public Object3d getChildByName(String $name) {
+        for (int i = 0; i < mChildren.size(); i++) {
+            if (mChildren.get(i).name() != null
+                    && mChildren.get(i).name().equals($name)) {
+                return mChildren.get(i);
+            }
+        }
+        return null;
+    }
 
     /**
      * {@inheritDoc}
