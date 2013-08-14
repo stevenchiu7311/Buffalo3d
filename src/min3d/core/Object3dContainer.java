@@ -168,6 +168,10 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
      * {@inheritDoc}
      */
     public void removeAllChildren() {
+        for (Object3d o : mChildren) {
+            o.parent(null);
+            o.scene(null);
+        }
         mChildren.clear();
     }
 
