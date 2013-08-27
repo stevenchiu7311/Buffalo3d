@@ -413,6 +413,13 @@ public class Object3d implements Callback
      */
     private static final int PREPRESSED = 0x02000000;
 
+    /**
+     * Indicates whether the view is temporarily detached.
+     *
+     * @hide
+     */
+    static final int CANCEL_NEXT_UP_EVENT = 0x04000000;
+
     private static final String PREFIX_BACKGROUND = "background_";
 
 	private boolean _vertexColorsEnabled = true;

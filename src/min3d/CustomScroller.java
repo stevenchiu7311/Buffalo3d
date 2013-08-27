@@ -127,7 +127,7 @@ public class CustomScroller {
         }
 
         mPadding = value;
-        computeScroll();
+        scrollTo(getScrollX(), getScrollY(), 0);
     }
 
     public int getScrollX() {
@@ -310,6 +310,7 @@ public class CustomScroller {
             if (mIsBeingDragged) {
                 mActivePointerId = INVALID_POINTER;
                 mIsBeingDragged = false;
+                mScrolling = false;
 
                 if (mVelocityTracker != null) {
                     mVelocityTracker.recycle();
@@ -428,6 +429,10 @@ public class CustomScroller {
         if (DEBUG) {
             Log.d(TAG, "Rebounding finish, and you will go to " + scrollToWhere);
         }
+    }
+
+    public boolean isScrolling() {
+        return mScrolling;
     }
 
     // Used in rebounding function to check if needs rebounding.

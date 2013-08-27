@@ -9,7 +9,6 @@ import min3d.CustomScroller.ScrollerListener;
 import min3d.core.GContext;
 import min3d.core.Object3d;
 import min3d.core.Object3dContainer;
-import min3d.listeners.OnTouchListener;
 import min3d.vos.Number3d;
 import min3d.vos.Ray;
 
@@ -96,7 +95,7 @@ public class ScrollContainer extends Object3dContainer {
     }
 
     public void addMotionEvent(MotionEvent event) {
-        if (mScroller != null) {
+        if (mScroller != null && isEnabled()) {
             mScroller.processScroll(event);
         }
     }
@@ -109,6 +108,27 @@ public class ScrollContainer extends Object3dContainer {
         if (mScroller != null) {
             mScroller.scrollTo((int)(x / mRatio), (int)(y / mRatio), duration);
         }
+    }
+
+    public boolean onInterceptTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
+        if (mScroller != null && isEnabled()) {
+            mScroller.processScroll(event);
+
+            if (mScroller.isScrolling()) {
+                return true;
+            }
+            return false;
+        }
+
+        return super.onInterceptTouchEvent(ray, event, list);
+    }
+
+    public boolean onTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
+        if (mScroller != null && isEnabled()) {
+            mScroller.processScroll(event);
+            return mScroller.isScrolling();
+        }
+        return super.onTouchEvent(ray, event, list);
     }
 
     private ScrollerListener mScrollerListener = new ScrollerListener() {
@@ -130,6 +150,12 @@ public class ScrollContainer extends Object3dContainer {
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
+        if (!enabled) {
+            MotionEvent event = MotionEvent.obtain(0, 0, MotionEvent.ACTION_CANCEL, 0, 0, 0);
+            if (mScroller != null) {
+                mScroller.processScroll(event);
+            }
+        }
         invalidate();
     }
 
@@ -220,11 +246,7 @@ public class ScrollContainer extends Object3dContainer {
             float pos = (mMode == CustomScroller.Mode.X)?mMap.get(obj).mPosition.x:mMap.get(obj).mPosition.y;
             if (obj.vertices().size() > 0) {
                 obj.setVisibility(Object3d.GONE);
-                if (pos > bound[0] && pos < bound[1]) {
-                    obj.setVisibility(Object3d.INVISIBLE);
-                    obj.setOnTouchListener(mTouchListener);
-                    mightInBound.add(obj);
-                }
+                mightInBound.add(obj);
             }
 
             if (obj instanceof Object3dContainer) {
@@ -256,7 +278,6 @@ public class ScrollContainer extends Object3dContainer {
             } else {
                 obj.setVisibility(Object3d.GONE);
                 mMap.get(obj).mVisibility = Object3d.GONE;
-                obj.setOnTouchListener(null);
             }
             int after = mMap.get(obj).mVisibility;
             if (after != orig && (after == Object3d.VISIBLE || after == Object3d.GONE)) {
@@ -265,16 +286,6 @@ public class ScrollContainer extends Object3dContainer {
         }
         mightInBound.clear();
     }
-
-    private OnTouchListener mTouchListener = new OnTouchListener() {
-        public boolean onTouch(Object3d obj, MotionEvent event,
-                List<Object3d> list, Number3d coordinate) {
-            if (isEnabled()) {
-                addMotionEvent(event);
-            }
-            return true;
-        }
-    };
 
     /**
      * {@inheritDoc}

@@ -47,6 +47,12 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
     public static final int FOCUS_BLOCK_DESCENDANTS = 0x60000;
 
     /**
+     * When set, this ViewGroup should not intercept touch events.
+     * {@hide}
+     */
+    protected static final int FLAG_DISALLOW_INTERCEPT = 0x80000;
+
+    /**
      * Used to map between enum in attrubutes and flag values.
      */
     private static final int[] DESCENDANT_FOCUSABILITY_FLAGS =
@@ -262,9 +268,51 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
     }
 
     /**
+     * Implement this method to intercept all touch screen motion events.  This
+     * allows you to watch events as they are dispatched to your children, and
+     * take ownership of the current gesture at any point.
+     *
+     * <p>Using this function takes some care, as it has a fairly complicated
+     * interaction with {@link Object3d#onTouchEvent(Ray, MotionEvent, ArrayList<Object3d>)
+     * Object3d.onTouchEvent(MotionEvent)}, and using it requires implementing
+     * that method as well as this one in the correct way.  Events will be
+     * received in the following order:
+     *
+     * <ol>
+     * <li> You will receive the down event here.
+     * <li> The down event will be handled either by a child of this object3d
+     * container, or given to your own onTouchEvent() method to handle; this means
+     * you should implement onTouchEvent() to return true, so you will
+     * continue to see the rest of the gesture (instead of looking for
+     * a parent object3d to handle it).  Also, by returning true from
+     * onTouchEvent(), you will not receive any following
+     * events in onInterceptTouchEvent() and all touch processing must
+     * happen in onTouchEvent() like normal.
+     * <li> For as long as you return false from this function, each following
+     * event (up to and including the final up) will be delivered first here
+     * and then to the target's onTouchEvent().
+     * <li> If you return true from here, you will not receive any
+     * following events: the target object3d will receive the same event but
+     * with the action {@link MotionEvent#ACTION_CANCEL}, and all further
+     * events will be delivered to your onTouchEvent() method and no longer
+     * appear here.
+     * </ol>
+     *
+     * @param event The motion event being dispatched down the hierarchy.
+     * @return Return true to steal motion events from the children and have
+     * them dispatched to this Object3dContainer through onTouchEvent().
+     * The current target will receive an ACTION_CANCEL event, and no further
+     * messages will be delivered here.
+     */
+    public boolean onInterceptTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
+        return false;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public boolean dispatchTouchEvent(Ray ray, MotionEvent ev, ArrayList<Object3d> list) {
+        boolean disallowIntercept = (mGroupFlags & FLAG_DISALLOW_INTERCEPT) != 0;
         final int action = ev.getAction();
         if (action == MotionEvent.ACTION_DOWN) {
             if (mMotionTarget != null) {
@@ -274,42 +322,85 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
                 // target.
                 mMotionTarget = null;
             }
-            Object3dContainer container = (Object3dContainer) this;
-            ArrayList<Object3d> children = (ArrayList<Object3d>) container.children().clone();
-            Collections.sort(children, new DepthSort(DepthSort.UP));
-            for (int i = children.size() - 1; i >= 0; i--) {
-                if ((children.get(i).getVisibility() & VISIBILITY_MASK) == GONE) {
-                    continue;
-                }
+            // If we're disallowing intercept or if we're allowing and we didn't
+            // intercept
+            if (disallowIntercept || !onInterceptTouchEvent(ray, ev, list)) {
+                // reset this event's action (just to protect ourselves)
+                ev.setAction(MotionEvent.ACTION_DOWN);
 
-                Object3d child = null;
-                for (int j = 0; j < container.numChildren(); j++) {
-                    if (children.get(i).equals(container.getChildAt(j))) {
-                        child = container.getChildAt(j);
+                Object3dContainer container = (Object3dContainer) this;
+                ArrayList<Object3d> children = (ArrayList<Object3d>) container.children().clone();
+                Collections.sort(children, new DepthSort(DepthSort.UP));
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    if ((children.get(i).getVisibility() & VISIBILITY_MASK) == GONE) {
+                        continue;
                     }
-                }
 
-                boolean find = false;
-                for (Object3d obj : list) {
-                    find = contain(child,obj);
-                }
+                    Object3d child = null;
+                    for (int j = 0; j < container.numChildren(); j++) {
+                        if (children.get(i).equals(container.getChildAt(j))) {
+                            child = container.getChildAt(j);
+                        }
+                    }
 
-                if (child != null && find) {
-                    if (child.dispatchTouchEvent(ray, ev, list)) {
-                        mMotionTarget = child;
-                        return true;
+                    boolean find = false;
+                    for (Object3d obj : list) {
+                        find = contain(child,obj);
+                    }
+
+                    if (child != null && find) {
+                        if (child.dispatchTouchEvent(ray, ev, list)) {
+                            mMotionTarget = child;
+                            return true;
+                        }
                     }
                 }
             }
         }
 
+        boolean isUpOrCancel = (action == MotionEvent.ACTION_UP)
+                || (action == MotionEvent.ACTION_CANCEL);
+
+        if (isUpOrCancel) {
+            // Note, we've already copied the previous state to our local
+            // variable, so this takes effect on the next event
+            mGroupFlags &= ~FLAG_DISALLOW_INTERCEPT;
+        }
+
+        // The event wasn't an ACTION_DOWN, dispatch it to our target if
+        // we have one.
         final Object3d target = mMotionTarget;
         if (target == null) {
+            // We don't have a target, this means we're handling the
+            // event as a regular view.
+/*            ev.setLocation(xf, yf);*/
+            if ((mPrivateFlags & CANCEL_NEXT_UP_EVENT) != 0) {
+                ev.setAction(MotionEvent.ACTION_CANCEL);
+                mPrivateFlags &= ~CANCEL_NEXT_UP_EVENT;
+            }
             return super.dispatchTouchEvent(ray, ev, list);
         }
 
-        boolean isUpOrCancel = (action == MotionEvent.ACTION_UP)
-                || (action == MotionEvent.ACTION_CANCEL);
+        // if have a target, see if we're allowed to and want to intercept its
+        // events
+        if (!disallowIntercept && onInterceptTouchEvent(ray, ev, list)) {
+/*            final float xc = scrolledXFloat - (float) target.mLeft;
+            final float yc = scrolledYFloat - (float) target.mTop;*/
+            mPrivateFlags &= ~CANCEL_NEXT_UP_EVENT;
+            ev.setAction(MotionEvent.ACTION_CANCEL);
+/*            ev.setLocation(xc, yc);*/
+            if (!target.dispatchTouchEvent(ray, ev, list)) {
+                // target didn't handle ACTION_CANCEL. not much we can do
+                // but they should have.
+            }
+
+            // clear the target
+            mMotionTarget = null;
+            // Don't dispatch this event to our own view, because we already
+            // saw it when intercepting; we just want to give the following
+            // event to the normal onTouchEvent().
+            return true;
+        }
 
         if (isUpOrCancel) {
             mMotionTarget = null;
