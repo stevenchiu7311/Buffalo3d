@@ -126,7 +126,7 @@ public class ScrollContainer extends Object3dContainer {
     public boolean onTouchEvent(Ray ray, MotionEvent event, ArrayList<Object3d> list) {
         if (mScroller != null && isEnabled()) {
             mScroller.processScroll(event);
-            return mScroller.isScrolling();
+            return true;
         }
         return super.onTouchEvent(ray, event, list);
     }
