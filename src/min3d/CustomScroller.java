@@ -23,6 +23,9 @@ public class CustomScroller {
     public final static float FLING_DECELERATION_INTERPOLATOR = 1.5f;
 
     private final static int CURRENT_VELOCITY_UNIT = 750;
+    private final static int FLING_MIN_VELOCITY_VALUE = 500;
+    private final static int MAX_DURATION_VALUE = 2000;
+
     private final static int BASE_PARAMETER_FLING = 9000;
     private final static int DURATION_SCROLLING_AUTOALIGN = 300;
     private final static int DURATION_REBOUNDING = 500;
@@ -164,13 +167,14 @@ public class CustomScroller {
         int delta;
         int scroll = ((mMode == Mode.X)?mScroller.getCurrX():mScroller.getCurrY());
         if (velocity > 0) {
-            int dyForward = (int)(ry - ry % mItemSize) - scroll % mItemSize;
+            int dyForward = (int)(ry - ry % mItemSize) - (scroll - mPadding) % mItemSize;
             if (scroll + dyForward > forwardLimit) {
                 dyForward -= dyForward - forwardLimit;
             }
             delta = dyForward;
         } else {
-            int dyBackward = -(mItemSize - scroll % mItemSize) - (int)(ry - ry % mItemSize);
+            int dyBackward = -(mItemSize - (scroll - mPadding) % mItemSize)
+                    - (int)(ry - ry % mItemSize);
             if (scroll + dyBackward < backwardLimit) {
                 dyBackward -= backwardLimit - dyBackward;
             }
@@ -186,9 +190,9 @@ public class CustomScroller {
 
     public void scrollWithAlign(float velocity, int duration) {
         int scroll = ((mMode == Mode.X)?mScroller.getCurrX():mScroller.getCurrY());
-        int delta = (scroll % mItemSize > mItemSize / 2) ?
-                ((int)((float)scroll / mItemSize) + 1) * mItemSize - scroll
-                : -(scroll % mItemSize);
+        int delta = ((scroll - mPadding) % mItemSize > mItemSize / 2) ? ((int)(((float)scroll / mItemSize) + 1)
+                * mItemSize - scroll) - (mItemSize - mPadding)
+                : -((scroll - mPadding) % mItemSize);
 
         if (mMode == Mode.X) {
             mScroller.startScroll(scroll, 0, delta, 0, duration);
@@ -274,10 +278,13 @@ public class CustomScroller {
                 int initialVelocity = (mMode == Mode.X) ? (int) velocityTracker
                         .getXVelocity(pointerId) : (int) velocityTracker
                         .getYVelocity(pointerId);
-
-                if (Math.abs(initialVelocity) > mMinimumVelocity) {
+                int scroll = ((mMode == Mode.X) ? mScroller.getCurrX() : mScroller.getCurrY());
+                if (Math.abs(initialVelocity) > FLING_MIN_VELOCITY_VALUE
+                            && (scroll > mPadding && scroll < (mContentHeight + mPadding))) {
                     if (mItemSize != 0) {
-                        flingWithAlign(-initialVelocity, (int) ((float)Math.abs(initialVelocity) / BASE_PARAMETER_FLING * 1000));
+                        int preDuration = (int)((float)Math.abs(initialVelocity) / BASE_PARAMETER_FLING * 1000);
+                        int duration = (int)(preDuration * (Math.sqrt(0.4 * (MAX_DURATION_VALUE / preDuration))));
+                        flingWithAlign(-initialVelocity, duration);
                     } else {
                         fling(-initialVelocity);
                     }
