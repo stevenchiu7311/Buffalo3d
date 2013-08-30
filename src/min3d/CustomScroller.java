@@ -279,8 +279,9 @@ public class CustomScroller {
                         .getXVelocity(pointerId) : (int) velocityTracker
                         .getYVelocity(pointerId);
                 int scroll = ((mMode == Mode.X) ? mScroller.getCurrX() : mScroller.getCurrY());
+                int length = ((mMode == Mode.X) ? mContentWidth : mContentHeight);
                 if (Math.abs(initialVelocity) > FLING_MIN_VELOCITY_VALUE
-                            && (scroll > mPadding && scroll < (mContentHeight + mPadding))) {
+                        && (scroll >= mPadding && scroll <= (length + mPadding))) {
                     if (mItemSize != 0) {
                         int preDuration = (int)((float)Math.abs(initialVelocity) / BASE_PARAMETER_FLING * 1000);
                         int duration = (int)(preDuration * (Math.sqrt(0.4 * (MAX_DURATION_VALUE / preDuration))));
