@@ -379,6 +379,15 @@ public class TextObject extends ComponentBase {
     }
 
     /**
+     * Makes the TextView at most this many lines tall.
+     *
+     * Setting this value overrides any other (maximum) height setting.
+     */
+    public void setMaxLines(int maxlines) {
+        mTextView.setMaxLines(maxlines);
+    }
+
+    /**
      * Sets the text that this TextObject is to display (see
      * {@link #setText(CharSequence)}) and also sets whether it is stored in a
      * styleable/spannable buffer and whether it is editable.
