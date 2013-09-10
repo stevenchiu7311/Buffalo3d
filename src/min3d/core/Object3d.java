@@ -1198,8 +1198,8 @@ public class Object3d implements Callback
         }
 
         int visibility = getVisibility() & VISIBILITY_MASK;
-        if (visibility == INVISIBLE || visibility == GONE) return;
-        mMaterial = _scene.getDefaultMaterial(mGContext);
+        if (visibility == INVISIBLE || visibility == GONE || scene() == null) return;
+        mMaterial = scene().getDefaultMaterial(mGContext);
         mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
 
         onRender();
@@ -1429,9 +1429,11 @@ public class Object3d implements Callback
     }
 
     protected void setShaderParams() {
-        mMaterial.setLightList(scene().lights());
-        mMaterial.setFog(scene().fogEnabled(), scene().fogColor(), scene().fogNear(), scene().fogFar(), scene().fogType() );
-        mMaterial.setMaterialColorEnable(colorMaterialEnabled());
+        if (scene() != null) {
+            mMaterial.setLightList(scene().lights());
+            mMaterial.setFog(scene().fogEnabled(), scene().fogColor(), scene().fogNear(), scene().fogFar(), scene().fogType() );
+            mMaterial.setMaterialColorEnable(colorMaterialEnabled());
+        }
     };
 
     void makeVertextBufferObject() {
@@ -1916,22 +1918,21 @@ public class Object3d implements Callback
         int h = mGContext.getRenderer().getHeight();
         float[] eye = new float[4];
         int[] viewport = { 0, 0, w, h };
-        if (_scene == null) {
-            Log.w(TAG,"Get intersect point terminated. (scene obj is NULL)");
-            return null;
+        if (scene() != null) {
+            FrustumManaged vf = scene().camera().frustum;
+            float distance = scene().camera().position.z + z;
+            float winZ = (1.0f / vf.zNear() - 1.0f / distance)
+                    / (1.0f / vf.zNear() - 1.0f / vf.zFar());
+            GLU.gluUnProject(x, h - y ,winZ, mGContext.getRenderer().getViewMatrix(), 0,
+                    mGContext.getRenderer().getProjectMatrix(), 0, viewport, 0, eye, 0);
+            if (eye[3] != 0) {
+                eye[0] = eye[0] / eye[3];
+                eye[1] = eye[1] / eye[3];
+                eye[2] = eye[2] / eye[3];
+            }
+            return new Number3d(eye[0], eye[1], -eye[2]);
         }
-        FrustumManaged vf = _scene.camera().frustum;
-        float distance = _scene.camera().position.z + z;
-        float winZ = (1.0f / vf.zNear() - 1.0f / distance)
-                / (1.0f / vf.zNear() - 1.0f / vf.zFar());
-        GLU.gluUnProject(x, h - y ,winZ, mGContext.getRenderer().getViewMatrix(), 0,
-                mGContext.getRenderer().getProjectMatrix(), 0, viewport, 0, eye, 0);
-        if (eye[3] != 0) {
-            eye[0] = eye[0] / eye[3];
-            eye[1] = eye[1] / eye[3];
-            eye[2] = eye[2] / eye[3];
-        }
-        return new Number3d(eye[0], eye[1], -eye[2]);
+        return null;
     }
 
     public final GContext getGContext() {
