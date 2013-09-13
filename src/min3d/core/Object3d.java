@@ -1412,7 +1412,10 @@ public class Object3d implements Callback
             background.setBounds(0,0,mBGDrawable.getMinimumWidth(),mBGDrawable.getMinimumHeight());
             background.draw(canvas);
 
-            getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
+            if (!getGContext().getTexureManager().contains(backgroundTexId)) {
+                getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
+            }
+
             bitmap.recycle();
             TextureVo textureVo = new TextureVo(backgroundTexId);
             textureVo.repeatU = false;
