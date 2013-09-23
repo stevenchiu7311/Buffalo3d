@@ -341,8 +341,10 @@ public class CustomScroller {
         }
         case MotionEvent.ACTION_POINTER_UP:
             onSecondaryPointerUp(ev);
-            mLastMotionX = (int) ev.getX(ev.findPointerIndex(mActivePointerId));
-            mLastMotionY = (int) ev.getY(ev.findPointerIndex(mActivePointerId));
+            if (mIsBeingDragged) {
+                mLastMotionX = (int) ev.getX(ev.findPointerIndex(mActivePointerId));
+                mLastMotionY = (int) ev.getY(ev.findPointerIndex(mActivePointerId));
+            }
             break;
         }
         return handled;
