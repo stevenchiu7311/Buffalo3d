@@ -458,6 +458,9 @@ public class Scene implements IObject3dContainer, IDirtyParent
                 vertexShaderDefine += lightDefineString;
                 fragmeShaderDefine += "#define COMMON_USED\n";
                 vertexShaderDefine += "#define COMMON_USED\n";
+// Disable multiple texture for GPU compatible.
+//                fragmeShaderDefine += "#define MULTIPLE_TEXTURE\n";
+//                vertexShaderDefine += "#define MULTIPLE_TEXTURE\n";
                 mMaterial.setLightNumber(_lights.size());
             }
 
