@@ -74,8 +74,16 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        Scene scene = mGContext.getRenderer().getScene();
-        scene.dispatchTouchEventToChild(e);
+        final Scene scene = mGContext.getRenderer().getScene();
+        final MotionEvent event = MotionEvent.obtain(e);
+        queueEvent(new Runnable() {
+            // This method will be called on the rendering
+            // thread:
+            public void run() {
+                scene.dispatchTouchEventToChild(event);
+                event.recycle();
+            }
+        });
         return true;
     }
 

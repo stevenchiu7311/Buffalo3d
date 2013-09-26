@@ -158,6 +158,7 @@ public class ScrollContainer extends Object3dContainer {
             if (mScroller != null) {
                 mScroller.processScroll(event);
             }
+            event.recycle();
         }
         invalidate();
     }

@@ -67,6 +67,8 @@ public class Scene implements IObject3dContainer, IDirtyParent
 
     final Object3d.AttachInfo mAttachInfo;
 
+    ArrayList<Object3d> mDownHitList = null;
+
 	public Scene(GContext context, ISceneController $sceneController)
 	{
 	    mGContext = context;
@@ -588,10 +590,18 @@ public class Scene implements IObject3dContainer, IDirtyParent
         }
 
         Ray ray = mGContext.getRenderer().getViewRay(e.getX(), e.getY());
-        mGContext.getRenderer().updateAABBCoord();
-
-        ArrayList<Object3d> list =
-                (ArrayList<Object3d>) mGContext.getRenderer().getPickedObject(ray, mObject3dContainer);
+        ArrayList<Object3d> list = null;
+        if (e.getAction() == MotionEvent.ACTION_DOWN) {
+            mGContext.getRenderer().updateAABBCoord();
+            mDownHitList = (ArrayList<Object3d>) mGContext.getRenderer().getPickedObject(ray, mObject3dContainer);
+            list = mDownHitList;
+        } else {
+            // Only check whether pointer is still on these object.
+            for (Object3d obj : mDownHitList) {
+                obj.containAABB();
+            }
+            list = (ArrayList<Object3d>) mGContext.getRenderer().getPickedObject(ray, mObject3dContainer);
+        }
         mObject3dContainer.dispatchTouchEvent(ray ,e, list);
     }
 
