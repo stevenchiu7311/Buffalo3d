@@ -1573,11 +1573,10 @@ public class Object3d implements Callback
 
         Matrix.multiplyMV(mResult, 0, mTransMC, 0, mResult, 0);
 
-        synchronized (this) {
-            if (mParent != null && mParent instanceof Object3d) {
-                calcAABBPos((Object3d) parent(), TRANSLATE | ROTATE | SCALE, mResult);
-            }
+        if (mParent != null && mParent instanceof Object3d) {
+            calcAABBPos((Object3d) parent(), TRANSLATE | ROTATE | SCALE, mResult);
         }
+
         mCenter.x = mResult[0];
         mCenter.y = mResult[1];
         mCenter.z = mResult[2];
@@ -1589,12 +1588,12 @@ public class Object3d implements Callback
 
         mAccmlR.setAll(mRotation.x, mRotation.y, mRotation.z);
         mAccmlS.setAll(mScale.x, mScale.y, mScale.z);
-        synchronized (this) {
-            if (mParent != null && mParent instanceof Object3d) {
-                accmlAABBTrans((Object3d) parent(), ROTATE, mAccmlR);
-                accmlAABBTrans((Object3d) parent(), SCALE, mAccmlS);
-            }
+
+        if (mParent != null && mParent instanceof Object3d) {
+            accmlAABBTrans((Object3d) parent(), ROTATE, mAccmlR);
+            accmlAABBTrans((Object3d) parent(), SCALE, mAccmlS);
         }
+
         Matrix.setIdentityM(mRotMExt, 0);
 
         Matrix.rotateM(mRotMExt, 0, mAccmlR.x, 1, 0, 0);

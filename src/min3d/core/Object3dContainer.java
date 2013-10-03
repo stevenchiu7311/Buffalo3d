@@ -145,14 +145,11 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
      * {@inheritDoc}
      */
     public boolean removeChild(Object3d $o) {
-        boolean b;
-        synchronized (this) {
-            b = mChildren.remove($o);
+        boolean b = mChildren.remove($o);
 
-            if (b) {
-                $o.parent(null);
-                $o.scene(null);
-            }
+        if (b) {
+            $o.parent(null);
+            $o.scene(null);
         }
         return b;
     }

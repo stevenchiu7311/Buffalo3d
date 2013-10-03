@@ -884,11 +884,9 @@ public class Renderer implements GLSurfaceView.Renderer
 
         if (node instanceof Object3dContainer) {
             Object3dContainer container = (Object3dContainer) node;
-            synchronized (container) {
-                for (int i = 0; i < container.children().size(); i++) {
-                    Object3d child = container.children().get(i);
-                    detectIntersectedObject(ray, child, list);
-                }
+            for (int i = 0; i < container.children().size(); i++) {
+                Object3d child = container.children().get(i);
+                detectIntersectedObject(ray, child, list);
             }
         }
         return list;
@@ -908,11 +906,9 @@ public class Renderer implements GLSurfaceView.Renderer
 
         if (node instanceof Object3dContainer) {
             Object3dContainer container = (Object3dContainer) node;
-            synchronized (container) {
-                for (int i = 0; i < container.children().size(); i++) {
-                    Object3d child = container.children().get(i);
-                    updateAABBCoordWithRay(child);
-                }
+            for (int i = 0; i < container.children().size(); i++) {
+                Object3d child = container.children().get(i);
+                updateAABBCoordWithRay(child);
             }
         }
     }

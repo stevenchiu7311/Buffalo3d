@@ -31,7 +31,7 @@ public class ScrollContainer extends Object3dContainer {
     private CustomScroller.Mode mMode;
     private float mRatio = 0f;
     private Number3d mSize = null;
-    private Ray[] mBound = null;
+    private Ray[] mBoundRay = null;
     private Map<Object3d, ScrollItemInfo> mMap = new HashMap<Object3d, ScrollItemInfo>();
     private float mScrollTemp = -1;
     private ScrollContainerListener mScrollContainerListener = null;
@@ -40,6 +40,7 @@ public class ScrollContainer extends Object3dContainer {
     private float mOverScrollRange;
     private boolean mInit;;
     private float mScroll;
+    private float mBound = 1f;
 
     public ScrollContainer(GContext context, Mode mode) {
         super(context);
@@ -168,6 +169,10 @@ public class ScrollContainer extends Object3dContainer {
         mScrollTemp = Integer.MIN_VALUE;
     }
 
+    public void setRenderBound(float bound) {
+        mBound = bound;
+    }
+
     protected void onRender() {
         super.onRender();
 
@@ -179,18 +184,18 @@ public class ScrollContainer extends Object3dContainer {
                     / getGContext().getRenderer().getWidth() : mSize.y
                     / getGContext().getRenderer().getHeight();
 
-            mBound = new Ray[2];
+            mBoundRay = new Ray[2];
             Number3d source[] = new Number3d[2];
             Number3d direction[] = new Number3d[2];
             source[0] = new Number3d(-mSize.x / 2, mSize.y / 2, 0);
             direction[0] = (mMode == CustomScroller.Mode.X)?new Number3d(0, -mSize.y / 2 - mSize.y / 2, 0):new Number3d(mSize.x / 2 - -mSize.x / 2, 0, 0);
             direction[0].normalize();
-            mBound[0] = new Ray(source[0], direction[0]);
+            mBoundRay[0] = new Ray(source[0], direction[0]);
 
             source[1] = (mMode == CustomScroller.Mode.X)?new Number3d(mSize.x / 2, mSize.y / 2, 0):new Number3d(-mSize.x / 2, -mSize.y / 2, 0);
             direction[1] = (mMode == CustomScroller.Mode.X)?new Number3d(0, -mSize.y / 2 - mSize.y / 2, 0):new Number3d(mSize.x / 2 - -mSize.x / 2, 0, 0);
             direction[1].normalize();
-            mBound[1] = new Ray(source[1], direction[1]);
+            mBoundRay[1] = new Ray(source[1], direction[1]);
         }
 
         if (isLayoutRequested()) {
@@ -248,20 +253,14 @@ public class ScrollContainer extends Object3dContainer {
     }
 
     void calculateObjectCoodinate(Object3dContainer parent, List<Object3d> mightInBound) {
-        float bound[] = new float[2];
-        bound[0] = (mMode == CustomScroller.Mode.X)?-mSize.x:-mSize.y;
-        bound[1] = (mMode == CustomScroller.Mode.X)?mSize.x:mSize.y;
         for (int i = 0; i < parent.numChildren(); i++) {
             Object3d obj = parent.getChildAt(i);
             addInnerChild(obj);
             Number3d.add(mMap.get(obj).mPosition, obj.position(), mMap.get(parent).mPosition);
-            float pos = (mMode == CustomScroller.Mode.X)?mMap.get(obj).mPosition.x:mMap.get(obj).mPosition.y;
-            if (obj.vertices().size() > 0) {
-                obj.setVisibility(Object3d.GONE);
-                mightInBound.add(obj);
-            }
+            obj.setVisibility(Object3d.GONE);
+            mightInBound.add(obj);
 
-            if (obj instanceof Object3dContainer) {
+            if (obj instanceof Object3dContainer && !(obj instanceof ScrollContainer)) {
                 calculateObjectCoodinate((Object3dContainer)obj, mightInBound);
             }
         }
@@ -269,8 +268,8 @@ public class ScrollContainer extends Object3dContainer {
 
     void calculateObjectVisibility(List<Object3d> mightInBound, List<Object3d> visibilityChanged) {
         float bound[] = new float[2];
-        bound[0] = (mMode == CustomScroller.Mode.X)?-mSize.x:-mSize.y;
-        bound[1] = (mMode == CustomScroller.Mode.X)?mSize.x:mSize.y;
+        bound[0] = (mMode == CustomScroller.Mode.X) ? -mSize.x * mBound : -mSize.y * mBound;
+        bound[1] = (mMode == CustomScroller.Mode.X) ? mSize.x * mBound : mSize.y * mBound;
 
         if ((BOUND_RAY_DETECTION)) {
             bound[0] /= 2;
@@ -284,7 +283,7 @@ public class ScrollContainer extends Object3dContainer {
             if (pos > bound[0] && pos < bound[1]) {
                 obj.setVisibility(Object3d.VISIBLE);
                 mMap.get(obj).mVisibility = Object3d.VISIBLE;
-            } else if (BOUND_RAY_DETECTION && (obj.intersects(mBound[0]) || obj.intersects(mBound[1]))) {
+            } else if (BOUND_RAY_DETECTION && (obj.intersects(mBoundRay[0]) || obj.intersects(mBoundRay[1]))) {
                 obj.setVisibility(Object3d.VISIBLE);
                 mMap.get(obj).mVisibility = Object3d.VISIBLE;
             } else {
