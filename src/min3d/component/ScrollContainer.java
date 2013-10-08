@@ -257,8 +257,10 @@ public class ScrollContainer extends Object3dContainer {
             Object3d obj = parent.getChildAt(i);
             addInnerChild(obj);
             Number3d.add(mMap.get(obj).mPosition, obj.position(), mMap.get(parent).mPosition);
-            obj.setVisibility(Object3d.GONE);
-            mightInBound.add(obj);
+            if (obj.vertices().size() > 0) {
+                obj.setVisibility(Object3d.GONE);
+                mightInBound.add(obj);
+            }
 
             if (obj instanceof Object3dContainer && !(obj instanceof ScrollContainer)) {
                 calculateObjectCoodinate((Object3dContainer)obj, mightInBound);
