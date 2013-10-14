@@ -24,6 +24,7 @@ public class ScrollContainer extends Object3dContainer {
 
     class ScrollItemInfo {
         int mVisibility;
+        boolean mFirst;
         Number3d mPosition;
     }
 
@@ -292,8 +293,12 @@ public class ScrollContainer extends Object3dContainer {
                 obj.setVisibility(Object3d.GONE);
                 mMap.get(obj).mVisibility = Object3d.GONE;
             }
+
             int after = mMap.get(obj).mVisibility;
-            if (after != orig && (after == Object3d.VISIBLE || after == Object3d.GONE)) {
+            if (mMap.get(obj).mFirst) {
+                mMap.get(obj).mFirst = false;
+                visibilityChanged.add(obj);
+            } else if (after != orig && (after == Object3d.VISIBLE || after == Object3d.GONE)) {
                 visibilityChanged.add(obj);
             }
         }
@@ -325,6 +330,7 @@ public class ScrollContainer extends Object3dContainer {
     public void addInnerChild(Object3d $o) {
         if (!mMap.containsKey($o)) {
             ScrollItemInfo info = new ScrollItemInfo();
+            info.mFirst = true;
             info.mVisibility = Object3d.GONE;
             info.mPosition = $o.position().clone();
             mMap.put($o, info);
