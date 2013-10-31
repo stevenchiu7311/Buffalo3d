@@ -11,6 +11,7 @@ import android.R;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Drawable.Callback;
@@ -1406,17 +1407,12 @@ public class Object3d implements Callback
         }
 
         if (mBGDrawable != null) {
-            Bitmap bitmap = Bitmap.createBitmap(mBGDrawable.getMinimumWidth(), mBGDrawable.getMinimumHeight(), Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-            final Drawable background = mBGDrawable;
-            background.setBounds(0,0,mBGDrawable.getMinimumWidth(),mBGDrawable.getMinimumHeight());
-            background.draw(canvas);
-
+            BitmapDrawable currentDrawable = (BitmapDrawable)mBGDrawable.getCurrent();
+            Bitmap bitmap = currentDrawable.getBitmap();
             if (!getGContext().getTexureManager().contains(backgroundTexId)) {
                 getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
             }
 
-            bitmap.recycle();
             TextureVo textureVo = new TextureVo(backgroundTexId);
             textureVo.repeatU = false;
             textureVo.repeatV = false;
