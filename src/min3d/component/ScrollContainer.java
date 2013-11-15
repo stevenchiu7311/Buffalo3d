@@ -38,6 +38,7 @@ public class ScrollContainer extends Object3dContainer {
     private ScrollContainerListener mScrollContainerListener = null;
     private List<Object3d> mMightInBoundList = new ArrayList<Object3d>();
     private float mScrollRange;
+    private float mAlignment;
     private float mOverScrollRange;
     private boolean mInit;;
     private float mScroll;
@@ -78,6 +79,21 @@ public class ScrollContainer extends Object3dContainer {
                     mScroller.setContentWidth((int) (mScrollRange / mRatio));
                 } else {
                     mScroller.setContentHeight((int) (mScrollRange / mRatio));
+                }
+            } else {
+                requestLayout();
+            }
+        }
+    }
+
+    public void setAlignment(float size) {
+        if (size != mAlignment) {
+            mAlignment = size;
+            if (mInit) {
+                if (mMode == CustomScroller.Mode.X) {
+                    mScroller.setItemSize((int) (mAlignment / mRatio));
+                } else {
+                    mScroller.setItemSize((int) (mAlignment / mRatio));
                 }
             } else {
                 requestLayout();
