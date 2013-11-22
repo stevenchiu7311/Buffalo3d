@@ -25,7 +25,7 @@ public class ExampleInsideLayout extends RendererActivity implements View.OnClic
 		setContentView(R.layout.custom_layout_example);
 		
         LinearLayout ll = (LinearLayout) this.findViewById(R.id.scene1Holder);
-        ll.addView(_glSurfaceView);
+        ll.addView(getGlSurfaceView());
         
         Button b;
         b = (Button) this.findViewById(R.id.layoutOkay);

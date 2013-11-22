@@ -1,12 +1,11 @@
 package min3d.core;
 
-import min3d.interfaces.ISceneController;
 import android.app.Activity;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
 
-import javax.microedition.khronos.opengles.GL;
+import min3d.interfaces.ISceneController;
 
 /**
  * Extend this class when creating your min3d-based Activity. 
@@ -21,14 +20,12 @@ import javax.microedition.khronos.opengles.GL;
 public class RendererActivity extends Activity implements ISceneController
 {
 	public Scene scene;
-	protected RendererGLSurfaceViewProxy _glSurfaceView;
+	protected RendererGLSurfaceView mGlSurfaceView;
 	
 	protected Handler _initSceneHander;
 	protected Handler _updateSceneHander;
 	
     private boolean _renderContinuously;
-
-    private GContext mGContext;
 
 	final Runnable _initSceneRunnable = new Runnable() 
 	{
@@ -51,48 +48,20 @@ public class RendererActivity extends Activity implements ISceneController
 
 		_initSceneHander = new Handler();
 		_updateSceneHander = new Handler();
-		
-        mGContext = new GContext(this);
-        Renderer r = new Renderer(mGContext);
 
-        scene = new Scene(mGContext, this);
-        r.setScene(scene);
-
-        _glSurfaceView = new RendererGLSurfaceViewProxy(this);
-        _glSurfaceView.setGContext(mGContext);
-        glSurfaceViewConfig();
-        _glSurfaceView.setRenderer(r);
-        _glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
-        _glSurfaceView.setGLWrapper(new GLSurfaceView.GLWrapper() {
-            public GL wrap(GL gl) {
-                return new MatrixTrackingGL(gl);
-            }
-        });
+        mGlSurfaceView = new RendererGLSurfaceView(this);
+        mGlSurfaceView.setSceneController(this);
+        scene = mGlSurfaceView.scene;
         onCreateSetContentView();
 	}
 
     public void setGlesVersion(int version) {
         RendererGLSurfaceViewProxy.setGlesVersion(version);
     }
-    
-    /**
-     * Any GlSurfaceView settings that needs to be executed before 
-     * GLSurfaceView.setRenderer() can be done by overriding this method. 
-     * A couple examples are included in comments below.
-     */
-    protected void glSurfaceViewConfig()
-    {
-	    // Example which makes glSurfaceView transparent (along with setting scene.backgroundColor to 0x0)
-	    // _glSurfaceView.setEGLConfigChooser(8,8,8,8, 16, 0);
-	    // _glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
 
-		// Example of enabling logging of GL operations 
-		// _glSurfaceView.setDebugFlags(GLSurfaceView.DEBUG_CHECK_GL_ERROR | GLSurfaceView.DEBUG_LOG_GL_CALLS);
-    }
-	
-	protected GLSurfaceView glSurfaceView()
+	protected GLSurfaceView getGlSurfaceView()
 	{
-		return _glSurfaceView;
+		return mGlSurfaceView;
 	}
 	
 	/**
@@ -100,7 +69,7 @@ public class RendererActivity extends Activity implements ISceneController
 	 */
 	protected void onCreateSetContentView()
 	{
-		setContentView(_glSurfaceView);
+		setContentView(mGlSurfaceView);
 	}
 	
 	@Override
@@ -161,10 +130,10 @@ public class RendererActivity extends Activity implements ISceneController
     {
     	_renderContinuously = $b;
     	if (_renderContinuously)
-    		_glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+    		mGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
     	
     	else
-    		_glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+    		mGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
     
 	public Handler getInitSceneHandler()
@@ -188,6 +157,9 @@ public class RendererActivity extends Activity implements ISceneController
     }
 
     public GContext getGContext() {
-        return mGContext;
+        if (mGlSurfaceView != null) {
+            return mGlSurfaceView.getGContext();
+        }
+        return null;
     }
 }

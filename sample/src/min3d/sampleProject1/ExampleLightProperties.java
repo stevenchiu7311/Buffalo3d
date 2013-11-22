@@ -37,7 +37,7 @@ public class ExampleLightProperties extends RendererActivity
 		
 		// Add OpenGL surface
         LinearLayout ll = (LinearLayout) this.findViewById(R.id.scene1Holder);
-        ll.addView(_glSurfaceView);
+        ll.addView(getGlSurfaceView());
 	}
 	
 	@Override

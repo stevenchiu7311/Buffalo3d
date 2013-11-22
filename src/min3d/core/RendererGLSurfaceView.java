@@ -7,6 +7,7 @@ import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.util.AttributeSet;
 
+import min3d.interfaces.IRendererGLSurfaceViewConfig;
 import min3d.interfaces.ISceneController;
 
 /**
@@ -19,7 +20,7 @@ import min3d.interfaces.ISceneController;
  * To update 3d scene-related variables from within the the main UI thread,
  * override onUpdateScene() and onUpdateScene() as needed.
  */
-public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements ISceneController {
+public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements ISceneController, IRendererGLSurfaceViewConfig {
 
     protected Handler _initSceneHander;
     protected Handler _updateSceneHander;
@@ -28,6 +29,8 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
     private boolean _renderContinuously;
 
     private GContext mGContext;
+
+    private ISceneController mSceneController;
 
     public RendererGLSurfaceView(Context context) {
         this(context, null);
@@ -38,13 +41,13 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
         _initSceneHander = new Handler();
         _updateSceneHander = new Handler();
 
+        onConfigSetting();
         mGContext = new GContext(context);
         min3d.core.Renderer r = new min3d.core.Renderer(mGContext);
         setGContext(mGContext);
         scene = new Scene(mGContext, this);
         r.setScene(scene);
 
-        glSurfaceViewConfig();
         setRenderer(r);
 
         renderContinuously(true);
@@ -53,6 +56,15 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
                 return new MatrixTrackingGL(gl);
             }
         });
+    }
+
+    /**
+     * Allows you to use any Class implementing ISceneController to drive the
+     * Scene...
+     */
+    public void setSceneController(ISceneController controller)
+    {
+        mSceneController = controller;
     }
 
     final Runnable _initSceneRunnable = new Runnable() {
@@ -77,6 +89,9 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
      * on-resume.
      */
     public void initScene() {
+        if (mSceneController != null) {
+            mSceneController.initScene();
+        }
     }
 
     /**
@@ -84,6 +99,9 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
      * here. Gets called on every frame, right before rendering.
      */
     public void updateScene() {
+        if (mSceneController != null) {
+            mSceneController.updateScene();
+        }
     }
 
     /**
@@ -131,10 +149,21 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
         return _updateSceneRunnable;
     }
 
-    protected void glSurfaceViewConfig() {
-    }
-
     public GContext getGContext() {
         return mGContext;
+    }
+
+    public Scene getScene() {
+        return scene;
+    }
+
+    @Override
+    public void onConfigSetting() {
+        // Example which makes glSurfaceView transparent (along with setting scene.backgroundColor to 0x0)
+        // _glSurfaceView.setEGLConfigChooser(8,8,8,8, 16, 0);
+        // _glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+
+        // Example of enabling logging of GL operations
+        // _glSurfaceView.setDebugFlags(GLSurfaceView.DEBUG_CHECK_GL_ERROR | GLSurfaceView.DEBUG_LOG_GL_CALLS);
     }
 }

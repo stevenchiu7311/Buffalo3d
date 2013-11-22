@@ -29,7 +29,7 @@ public class ScratchActivity extends RendererActivity
 		
 		// Add OpenGL surface
         LinearLayout ll = (LinearLayout) this.findViewById(R.id.sceneHolder);
-        ll.addView(_glSurfaceView);
+        ll.addView(getGlSurfaceView());
 	}
 	
 	@Override

@@ -24,7 +24,7 @@ public class ExampleKeyframeAnimation extends RendererActivity implements View.O
 		setContentView(R.layout.keyframe_anim_layout);
 		
         LinearLayout ll = (LinearLayout) this.findViewById(R.id.scene2Holder);
-        ll.addView(_glSurfaceView);
+        ll.addView(getGlSurfaceView());
         
         flipButton = (Button) this.findViewById(R.id.FlipButton);
         flipButton.setOnClickListener(this);
