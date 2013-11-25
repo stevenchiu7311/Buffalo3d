@@ -1,15 +1,7 @@
 package min3d.core;
 
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.microedition.khronos.opengles.GL10;
-
 import android.R;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
@@ -19,10 +11,12 @@ import android.opengl.GLES20;
 import android.opengl.GLU;
 import android.opengl.Matrix;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 
+import min3d.GLHandler;
 import min3d.interfaces.IObject3dContainer;
 import min3d.interfaces.IObject3dParent;
 import min3d.listeners.OnClickListener;
@@ -38,6 +32,13 @@ import min3d.vos.Ray;
 import min3d.vos.RenderType;
 import min3d.vos.ShadeModel;
 import min3d.vos.TextureVo;
+
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.microedition.khronos.opengles.GL10;
 
 /**
  * @author Lee
@@ -2117,7 +2118,7 @@ public class Object3d implements Callback
      * @return A handler associated with the thread running the object. This
      * handler can be used to pump events in the UI events queue.
      */
-    public Handler getHandler() {
+    public GLHandler getHandler() {
         if (mAttachInfo != null) {
             return mAttachInfo.mHandler;
         }
@@ -2138,8 +2139,8 @@ public class Object3d implements Callback
      *         looper processing the message queue is exiting.
      */
     public boolean post(Runnable action) {
-        Handler handler = getHandler();
-        return handler.post(action);
+        GLHandler handler = getHandler();
+        return handler.postGL(action);
     }
 
     /**
@@ -2162,8 +2163,8 @@ public class Object3d implements Callback
      *         occurs then the message will be dropped.
      */
     public boolean postDelayed(Runnable action, long delayMillis) {
-        Handler handler = getHandler();
-        return handler.postDelayed(action, delayMillis);
+        GLHandler handler = getHandler();
+        return handler.postDelayedGL(action, delayMillis);
     }
 
     /**
@@ -3407,7 +3408,7 @@ public class Object3d implements Callback
          * A Handler supplied by a view's {@link android.view.ViewRootImpl}. This
          * handler can be used to pump events in the UI events queue.
          */
-        final Handler mHandler;
+        final GLHandler mHandler;
 
         /**
          * Creates a new set of attachment information with the specified
@@ -3415,7 +3416,7 @@ public class Object3d implements Callback
          *
          * @param handler the events handler the view must use
          */
-        AttachInfo(Handler handler) {
+        AttachInfo(GLHandler handler) {
             mHandler = handler;
         }
     }

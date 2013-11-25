@@ -1,11 +1,13 @@
 package min3d.core;
 
 import android.content.Context;
+import android.opengl.GLSurfaceView;
 
 public class GContext {
     private Context mContext;
     private Renderer mRenderer;
     private TextureManager mTextureManager;
+    private GLSurfaceView mGLSurfaceView;
 
     public GContext(Context context) {
         this(context, null);
@@ -24,6 +26,10 @@ public class GContext {
         mRenderer = renderer;
     }
 
+    public void setGLSurfaceView(GLSurfaceView view) {
+        mGLSurfaceView = view;
+    }
+
     public void setTexureManager(TextureManager manager) {
         mTextureManager = manager;
     }
@@ -38,5 +44,9 @@ public class GContext {
 
     public TextureManager getTexureManager() {
         return mTextureManager;
+    }
+
+    public GLSurfaceView getGLSurfaceView() {
+        return mGLSurfaceView;
     }
 }

@@ -43,6 +43,7 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
 
         onConfigSetting();
         mGContext = new GContext(context);
+        mGContext.setGLSurfaceView(this);
         min3d.core.Renderer r = new min3d.core.Renderer(mGContext);
         setGContext(mGContext);
         scene = new Scene(mGContext, this);

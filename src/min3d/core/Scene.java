@@ -2,6 +2,7 @@ package min3d.core;
 
 import java.util.ArrayList;
 
+import min3d.GLHandler;
 import min3d.Min3d;
 import min3d.interfaces.IDirtyParent;
 import min3d.interfaces.IObject3dContainer;
@@ -86,7 +87,7 @@ public class Scene implements IObject3dContainer, IDirtyParent
 
         HandlerThread ht = new HandlerThread("");
         ht.start();
-        Handler handler = new Handler(ht.getLooper());
+        GLHandler handler = new GLHandler(ht.getLooper(), context.getGLSurfaceView());
 
         mAttachInfo = new Object3d.AttachInfo(handler);
 	}

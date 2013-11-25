@@ -54,7 +54,7 @@ public class ScrollContainer extends Object3dContainer {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        mScroller.setHandler(getHandler());
+        mScroller.setHandler(getHandler(), getGContext().getGLSurfaceView());
         mScroller.setPositionListener(mScrollerListener);
     }
 

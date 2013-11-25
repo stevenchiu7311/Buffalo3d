@@ -1,6 +1,7 @@
 package min3d;
 
 import android.content.Context;
+import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -19,7 +20,7 @@ public class CustomScroller {
     public enum Mode{X,Y};
 
     private final static int FLING_HANDLER_ACTION = 0;
-    private final static int FLING_HANDLER_INTERVEL = 30;
+    private final static int FLING_HANDLER_INTERVEL = 15; // Should be shorter than 1000 / 60
     public final static float FLING_DECELERATION_INTERPOLATOR = 1.5f;
 
     private final static int CURRENT_VELOCITY_UNIT = 750;
@@ -68,7 +69,7 @@ public class CustomScroller {
 
     private Mode mMode = Mode.X;
 
-    public CustomScroller (Context context, Mode mode , Interpolator interpolator) {
+    public CustomScroller(Context context, Mode mode , Interpolator interpolator) {
         mContext = context;
         mMode = mode;
         mScroller = new OverScroller(mContext, interpolator, 1, 1, true);
@@ -78,8 +79,8 @@ public class CustomScroller {
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
     }
 
-    public void setHandler(Handler handler) {
-        mHandler = new ScrollerHandler(handler.getLooper());
+    public void setHandler(Handler handler, GLSurfaceView view) {
+        mHandler = new ScrollerHandler(handler.getLooper(), view);
     }
 
     public void setContentWidth(int width) {
@@ -475,13 +476,14 @@ public class CustomScroller {
         return feedback;
     }
 
-    private class ScrollerHandler extends Handler {
-        public ScrollerHandler(Looper looper) {
-            super(looper);
+    private class ScrollerHandler extends GLHandler {
+        public ScrollerHandler(Looper looper, GLSurfaceView proxy) {
+            super(looper, proxy);
         }
 
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessageAtGL(Message msg) {
+            super.handleMessageAtGL(msg);
             handleScrollerMessage(msg);
         }
     }
