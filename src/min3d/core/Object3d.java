@@ -2140,7 +2140,7 @@ public class Object3d implements Callback
      */
     public boolean post(Runnable action) {
         GLHandler handler = getHandler();
-        return handler.postGL(action);
+        return handler.post(action);
     }
 
     /**
@@ -2164,7 +2164,7 @@ public class Object3d implements Callback
      */
     public boolean postDelayed(Runnable action, long delayMillis) {
         GLHandler handler = getHandler();
-        return handler.postDelayedGL(action, delayMillis);
+        return handler.postDelayed(action, delayMillis);
     }
 
     /**

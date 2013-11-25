@@ -482,8 +482,8 @@ public class CustomScroller {
         }
 
         @Override
-        public void handleMessageAtGL(Message msg) {
-            super.handleMessageAtGL(msg);
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
             handleScrollerMessage(msg);
         }
     }
