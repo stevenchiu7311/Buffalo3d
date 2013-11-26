@@ -814,6 +814,13 @@ public class Scene implements IObject3dContainer, IDirtyParent
         return null;
     }
 
+    public GLHandler getGLHandler() {
+        if (mAttachInfo != null) {
+            return mAttachInfo.mHandler;
+        }
+        return null;
+    }
+
     @Override
     public void requestChildFocus(Object3d child, Object3d focused) {
 /*        if (mFocusedView != focused) {
