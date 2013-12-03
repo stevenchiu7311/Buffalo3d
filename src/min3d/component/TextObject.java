@@ -73,18 +73,24 @@ public class TextObject extends ComponentBase {
     }
 
     public void setRatio(float ratio) {
-        mRatio = ratio;
-        invalidate();
+        if (ratio != mRatio) {
+            mRatio = ratio;
+            invalidate();
+        }
     }
 
     public void setWidth(float width) {
-        mWidth = width;
-        invalidate();
+        if (width != mWidth) {
+            mWidth = width;
+            invalidate();
+        }
     }
 
     public void setText(CharSequence text) {
-        mTextView.setText(text);
-        invalidate();
+        if (!text.equals(mTextView.getText())) {
+            mTextView.setText(text);
+            invalidate();
+        }
     }
 
     public void setShape(Vertices vertices, FacesBufferedList faces) {
@@ -95,6 +101,10 @@ public class TextObject extends ComponentBase {
     public void setShape(Object3d object3d) {
         super.setShape(object3d);
         mHasShape = true;
+    }
+
+    public float getMeasuredWidth() {
+        return mMeasuredWidth / mRatio;
     }
 
     @Override
@@ -276,8 +286,10 @@ public class TextObject extends ComponentBase {
      * @param size The scaled pixel size.
      */
     public void setTextSize(float size) {
-        mTextView.setTextSize(size);
-        invalidate();
+        if (size != getTextSize()) {
+            mTextView.setTextSize(size);
+            invalidate();
+        }
     }
 
     /**
@@ -316,8 +328,10 @@ public class TextObject extends ComponentBase {
      *
      */
     public void setTextColor(int color) {
-        mTextView.setTextColor(color);
-        invalidate();
+        if (color != getCurrentTextColor()) {
+            mTextView.setTextColor(color);
+            invalidate();
+        }
     }
 
     /**
@@ -325,8 +339,10 @@ public class TextObject extends ComponentBase {
      *
      */
     public void setTextColor(ColorStateList colors) {
-        mTextView.setTextColor(colors);
-        invalidate();
+        if (colors != getTextColors()) {
+            mTextView.setTextColor(colors);
+            invalidate();
+        }
     }
 
     /**
@@ -365,8 +381,10 @@ public class TextObject extends ComponentBase {
      * @see android.view.Gravity
      */
     public void setGravity(int gravity) {
-        mTextView.setGravity(gravity);
-        invalidate();
+        if (gravity != getGravity()) {
+            mTextView.setGravity(gravity);
+            invalidate();
+        }
     }
 
     /**
@@ -385,6 +403,7 @@ public class TextObject extends ComponentBase {
      */
     public void setMaxLines(int maxlines) {
         mTextView.setMaxLines(maxlines);
+        invalidate();
     }
 
     /**
@@ -430,8 +449,10 @@ public class TextObject extends ComponentBase {
      *
      */
     public void setEllipsize(TextUtils.TruncateAt where) {
-        mTextView.setEllipsize(where);
-        invalidate();
+        if (where != getEllipsize()) {
+            mTextView.setEllipsize(where);
+            invalidate();
+        }
     }
 
     /**
