@@ -91,9 +91,9 @@ public class ScrollContainer extends Object3dContainer {
             mAlignment = size;
             if (mInit) {
                 if (mMode == CustomScroller.Mode.X) {
-                    mScroller.setItemSize((int) (mAlignment / mRatio));
+                    mScroller.setItemSize(mAlignment / mRatio);
                 } else {
-                    mScroller.setItemSize((int) (mAlignment / mRatio));
+                    mScroller.setItemSize(mAlignment / mRatio);
                 }
             } else {
                 requestLayout();

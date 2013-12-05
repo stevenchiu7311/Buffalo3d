@@ -52,7 +52,7 @@ public class CustomScroller {
     public int mScrollX = 0;
     public int mScrollY = 0;
 
-    private int mItemSize = 0;
+    private float mItemSize = 0;
     private int mContentWidth;
     private int mWidth;
     private int mContentHeight;
@@ -115,7 +115,7 @@ public class CustomScroller {
         return mHeight;
     }
 
-    public void setItemSize(int size) {
+    public void setItemSize(float size) {
         mItemSize = size;
     }
 
@@ -164,22 +164,22 @@ public class CustomScroller {
         final int maxY = mContentHeight - mHeight + 2 * mPadding;
         int forwardLimit = (mMode == Mode.X) ? maxX : maxY;
         int backwardLimit = 0;
-        float ry = (int) (10.0 * mItemSize) * (float) (((float) velocity / ((float) mMaximumVelocity)));
+        float ry = (10f * mItemSize) * (float) (((float) velocity / ((float) mMaximumVelocity)));
         int delta;
         int scroll = ((mMode == Mode.X)?mScroller.getCurrX():mScroller.getCurrY());
         if (velocity > 0) {
-            int dyForward = (int)(ry - ry % mItemSize) - (scroll - mPadding) % mItemSize;
+            float dyForward = (int)(ry - ry % mItemSize) - (scroll - mPadding) % mItemSize;
             if (scroll + dyForward > forwardLimit) {
                 dyForward -= dyForward - forwardLimit;
             }
-            delta = dyForward;
+            delta = (int) dyForward;
         } else {
-            int dyBackward = -(mItemSize - (scroll - mPadding) % mItemSize)
-                    - (int)(ry - ry % mItemSize);
+            float dyBackward = -(mItemSize - (scroll - mPadding) % mItemSize)
+                    - (ry - ry % mItemSize);
             if (scroll + dyBackward < backwardLimit) {
                 dyBackward -= backwardLimit - dyBackward;
             }
-            delta = -dyBackward;
+            delta = (int) -dyBackward;
         }
         if (mMode == Mode.X) {
             mScroller.startScroll(scroll, 0, delta, 0, duration);
@@ -191,9 +191,9 @@ public class CustomScroller {
 
     public void scrollWithAlign(float velocity, int duration) {
         int scroll = ((mMode == Mode.X)?mScroller.getCurrX():mScroller.getCurrY());
-        int delta = ((scroll - mPadding) % mItemSize > mItemSize / 2) ? ((int)(((float)scroll / mItemSize) + 1)
+        int delta = (int) (((scroll - mPadding) % mItemSize > mItemSize / 2) ? ((int)(((float)scroll / mItemSize) + 1)
                 * mItemSize - scroll) - (mItemSize - mPadding)
-                : -((scroll - mPadding) % mItemSize);
+                : -((scroll - mPadding) % mItemSize));
 
         if (mMode == Mode.X) {
             mScroller.startScroll(scroll, 0, delta, 0, duration);
