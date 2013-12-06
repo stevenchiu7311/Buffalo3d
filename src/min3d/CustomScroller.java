@@ -3,8 +3,6 @@ package min3d;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -80,7 +78,7 @@ public class CustomScroller {
     }
 
     public void setHandler(Handler handler, GLSurfaceView view) {
-        mHandler = new ScrollerHandler(handler.getLooper(), view);
+        mHandler = handler;
     }
 
     public void setContentWidth(int width) {
@@ -369,6 +367,13 @@ public class CustomScroller {
         }
     }
 
+    private Runnable mFlingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            computeScroll();
+        }
+    };
+
     private void computeScroll() {
         final OverScroller scroller = mScroller;
         if (scroller.computeScrollOffset()) {
@@ -387,10 +392,8 @@ public class CustomScroller {
                     mPositionListener.onScrollChanged(getScrollX(), getScrollY());
                 }
                 if (scrollX != mScroller.getFinalX() && !((scrollX == 0 && mScroller.getFinalX() < scrollX) || (scrollX == maxX && mScroller.getFinalX() > scrollX))) {
-                    if (mHandler.hasMessages(FLING_HANDLER_ACTION)) {
-                        mHandler.removeMessages(FLING_HANDLER_ACTION);
-                    }
-                    mHandler.sendEmptyMessageDelayed(FLING_HANDLER_ACTION, FLING_HANDLER_INTERVEL);
+                    mHandler.removeCallbacks(mFlingRunnable);
+                    mHandler.postDelayed(mFlingRunnable, FLING_HANDLER_INTERVEL);
                 } else {
                     if (!mIsBeingDragged && mPositionListener != null) {
                         mPositionListener.onScrollFinished();
@@ -412,7 +415,8 @@ public class CustomScroller {
                     mPositionListener.onScrollChanged(getScrollX(), getScrollY());
                 }
                 if (scrollY != mScroller.getFinalY() && !((scrollY == 0 && mScroller.getFinalY() < scrollY) || (scrollY == maxY && mScroller.getFinalY() > scrollY))) {
-                    mHandler.sendEmptyMessageDelayed(FLING_HANDLER_ACTION, FLING_HANDLER_INTERVEL);
+                    mHandler.removeCallbacks(mFlingRunnable);
+                    mHandler.postDelayed(mFlingRunnable, FLING_HANDLER_INTERVEL);
                 } else {
                     if (!mIsBeingDragged && mPositionListener != null) {
                         mPositionListener.onScrollFinished();
@@ -425,7 +429,7 @@ public class CustomScroller {
                 }
             }
         } else {
-            mHandler.removeMessages(FLING_HANDLER_ACTION);
+            mHandler.removeCallbacks(mFlingRunnable);
         }
     }
 
@@ -474,26 +478,6 @@ public class CustomScroller {
             }
         }
         return feedback;
-    }
-
-    private class ScrollerHandler extends GLHandler {
-        public ScrollerHandler(Looper looper, GLSurfaceView proxy) {
-            super(looper, proxy);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            handleScrollerMessage(msg);
-        }
-    }
-
-    private void handleScrollerMessage(Message msg) {
-        switch (msg.what) {
-        case FLING_HANDLER_ACTION:
-            computeScroll();
-            break;
-        }
     }
 
     public interface ScrollerListener {

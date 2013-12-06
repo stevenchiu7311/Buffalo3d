@@ -107,6 +107,10 @@ public class TextObject extends ComponentBase {
         return mMeasuredWidth / mRatio;
     }
 
+    public float getMeasuredHeight() {
+        return mMeasuredHeight / mRatio;
+    }
+
     @Override
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
