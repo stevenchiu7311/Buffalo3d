@@ -2433,6 +2433,15 @@ public class Object3d implements Callback
     }
 
     /**
+     * Called by a parent to request that a child update its values for mScrollX
+     * and mScrollY if necessary. This will typically be done if the child is
+     * animating a scroll using a {@link android.widget.Scroller Scroller}
+     * object.
+     */
+    public void computeScroll() {
+    }
+
+    /**
      * Set the background to a given Drawable, or remove the background. If the
      * background has padding, this View's padding is set to the background's
      * padding. However, when a background is removed, this View's padding isn't

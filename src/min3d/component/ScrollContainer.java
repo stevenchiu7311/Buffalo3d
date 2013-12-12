@@ -28,21 +28,22 @@ public class ScrollContainer extends Object3dContainer {
         Number3d mPosition;
     }
 
-    private CustomScroller mScroller;
     private CustomScroller.Mode mMode;
     private float mRatio = 0f;
-    private Number3d mSize = null;
+
     private Ray[] mBoundRay = null;
     private Map<Object3d, ScrollItemInfo> mMap = new HashMap<Object3d, ScrollItemInfo>();
-    private float mScrollTemp = -1;
     private ScrollContainerListener mScrollContainerListener = null;
-    private List<Object3d> mMightInBoundList = new ArrayList<Object3d>();
     private float mScrollRange;
     private float mAlignment;
     private float mOverScrollRange;
-    private boolean mInit;;
+    private boolean mInit;
     private float mScroll;
-    private float mBound = 1f;
+
+    protected Number3d mSize = null;
+    protected float mBound = 1f;
+    protected CustomScroller mScroller;
+    protected int mScrollTemp = -1;
 
     public ScrollContainer(GContext context, Mode mode) {
         super(context);
@@ -237,26 +238,18 @@ public class ScrollContainer extends Object3dContainer {
         }
 
         if (numChildren() > 0) {
-            Object3dContainer directChild = (Object3dContainer) getChildAt(0);
-            Number3d position = mMap.get(directChild).mPosition;
-            if ((mMode == CustomScroller.Mode.X)) {
-                directChild.position().x = -mScroller.getScroll() * mRatio;
-                position.x = -mScroller.getScroll() * mRatio;
-            } else {
-                directChild.position().y = mScroller.getScroll() * mRatio;
-                position.y = mScroller.getScroll() * mRatio;
-            }
-
             if (mScrollTemp != mScroller.getScroll()) {
-                List<Object3d> visibilityChanged = new ArrayList<Object3d>();
-                calculateObjectCoodinate(directChild, mMightInBoundList);
-                if (BOUND_RAY_DETECTION) getGContext().getRenderer().updateAABBCoord();
-                calculateObjectVisibility(mMightInBoundList, visibilityChanged);
-
-                if (!visibilityChanged.isEmpty() && mScrollContainerListener != null) {
-                    mScrollContainerListener.onItemVisibilityChanged(visibilityChanged);
+                Object3dContainer directChild = (Object3dContainer) getChildAt(0);
+                Number3d position = mMap.get(directChild).mPosition;
+                if ((mMode == CustomScroller.Mode.X)) {
+                    directChild.position().x = -mScroller.getScroll() * mRatio;
+                    position.x = -mScroller.getScroll() * mRatio;
+                } else {
+                    directChild.position().y = mScroller.getScroll() * mRatio;
+                    position.y = mScroller.getScroll() * mRatio;
                 }
             }
+            computeScroll();
         }
 
         mScrollTemp = mScroller.getScroll();
@@ -266,6 +259,21 @@ public class ScrollContainer extends Object3dContainer {
                 mScrollContainerListener.onScrollerReady();
             }
             mInit = true;
+        }
+    }
+
+    public void computeScroll() {
+        if (mScrollTemp != mScroller.getScroll()) {
+            List<Object3d> mightInBound = new ArrayList<Object3d>();
+            List<Object3d> visibilityChanged = new ArrayList<Object3d>();
+            Object3dContainer directChild = (Object3dContainer) getChildAt(0);
+            calculateObjectCoodinate(directChild, mightInBound);
+            if (BOUND_RAY_DETECTION) getGContext().getRenderer().updateAABBCoord();
+            calculateObjectVisibility(mightInBound, visibilityChanged);
+            mightInBound.clear();
+            if (!visibilityChanged.isEmpty() && mScrollContainerListener != null) {
+                mScrollContainerListener.onItemVisibilityChanged(visibilityChanged);
+            }
         }
     }
 
@@ -318,7 +326,6 @@ public class ScrollContainer extends Object3dContainer {
                 visibilityChanged.add(obj);
             }
         }
-        mightInBound.clear();
     }
 
     /**
