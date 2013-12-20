@@ -1,6 +1,7 @@
 package min3d.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 import android.util.Log;
@@ -83,8 +84,8 @@ public class ManagedLightList
 		if (!result) return;
 
 		int glIndex = _lightToGlIndex.get($light);
-		
 		_availGlIndices.add(glIndex);
+        Collections.sort(_availGlIndices);
 
 		_glIndexEnabled[glIndex] = false;
 		_glIndexEnabledDirty[glIndex] = true;
