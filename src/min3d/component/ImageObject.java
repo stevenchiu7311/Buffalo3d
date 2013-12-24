@@ -176,7 +176,7 @@ public class ImageObject extends ComponentBase {
         }
 
         if (mDrawable != null) {
-            Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(),
+            Bitmap bitmap = Bitmap.createBitmap(getMeasuredWidth(), getMeasuredHeight(),
                     Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
             onDraw(canvas);
@@ -316,8 +316,8 @@ public class ImageObject extends ComponentBase {
         int dwidth = mDrawableWidth;
         int dheight = mDrawableHeight;
 
-        int vwidth = getWidth() - mPaddingLeft - mPaddingRight;
-        int vheight = getHeight() - mPaddingTop - mPaddingBottom;
+        int vwidth = getMeasuredWidth() - mPaddingLeft - mPaddingRight;
+        int vheight = getMeasuredHeight() - mPaddingTop - mPaddingBottom;
 
         boolean fits = (dwidth < 0 || vwidth == dwidth)
                 && (dheight < 0 || vheight == dheight);
@@ -409,8 +409,7 @@ public class ImageObject extends ComponentBase {
         }
     }
 
-    private int getHeight() {
-        // TODO Auto-generated method stub
+    private int getMeasuredHeight() {
         int height = (int) (mHeight * MAPPING_PIXEL);
         if (height % 2 == 1) {
             height--;
@@ -418,7 +417,7 @@ public class ImageObject extends ComponentBase {
         return height;
     }
 
-    private int getWidth() {
+    private int getMeasuredWidth() {
         // TODO Auto-generated method stub
         int width = (int) (mWidth * this.MAPPING_PIXEL);
         if (width % 2 == 1) {

@@ -16,6 +16,9 @@ public class Rectangle extends Object3dContainer
 	{
 		super(context, 4 * $segsW * $segsH, 2 * $segsW * $segsH);
 
+		setWidth($width);
+        setHeight($height);
+
 		int row, col;
 
 		float w = $width / $segsW;

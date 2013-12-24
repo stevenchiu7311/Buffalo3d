@@ -36,9 +36,8 @@ public class TextObject extends ComponentBase {
 
     private static final String PREFIX_TEXT = "text_";
 
-    private float mWidth;
-    private float mHeight;
-    private float mDepth;
+    float mDepth;
+
     private int mMeasuredWidth;
     private int mMeasuredHeight;
     private boolean mHasShape;
@@ -50,8 +49,8 @@ public class TextObject extends ComponentBase {
             Boolean useVertexColors) {
         super(context, 4, 2);
 
-        mWidth = width;
-        mHeight = height;
+        setWidth(width);
+        setHeight(height);
         mDepth = depth;
 
         mTextView = new TextView(context.getContext());
@@ -75,13 +74,6 @@ public class TextObject extends ComponentBase {
     public void setRatio(float ratio) {
         if (ratio != mRatio) {
             mRatio = ratio;
-            invalidate();
-        }
-    }
-
-    public void setWidth(float width) {
-        if (width != mWidth) {
-            mWidth = width;
             invalidate();
         }
     }
@@ -119,8 +111,8 @@ public class TextObject extends ComponentBase {
             mRatio = getGContext().getRenderer().getWidth() / x;
         }
 
-        int layoutWidth = (int) ((mWidth > 0) ? (int) (mWidth * mRatio) : mWidth);
-        int layoutHeight = (int) ((mHeight > 0) ? (int) (mHeight * mRatio) : mHeight);
+        int layoutWidth = (int) ((getWidth() > 0) ? (int) (getWidth() * mRatio) : getWidth());
+        int layoutHeight = (int) ((getHeight() > 0) ? (int) (getHeight() * mRatio) : getHeight());
         LayoutParams layoutParams = new LayoutParams(layoutWidth, layoutHeight);
         mTextView.setLayoutParams(layoutParams);
         mTextView.updateMeasuredDimension();
@@ -128,7 +120,7 @@ public class TextObject extends ComponentBase {
         int measuredWidth = mTextView.getMeasuredWidth();
         int measuredHeight = mTextView.getMeasuredHeight();
         if (!mHasShape && (mMeasuredWidth != measuredWidth || mMeasuredHeight != measuredHeight)) {
-            createVertices(measuredWidth / mRatio, measuredHeight / mRatio);
+            createVertices(measuredWidth / mRatio, measuredHeight / mRatio, 1f, 1f);
         }
 
         String textTexId = (mTextView != null)?PREFIX_TEXT + mTextView.toString():PREFIX_TEXT;
@@ -136,6 +128,8 @@ public class TextObject extends ComponentBase {
         if (mTextView != null) {
             Bitmap bitmap = loadBitmapFromView(mTextView, measuredWidth, measuredHeight);
             mGContext.getTexureManager().addTextureId(bitmap, textTexId, false);
+            recycleTextBitmap(bitmap);
+
             TextureVo textureText = new TextureVo(textTexId);
             // Texture env should be not used if text object background is transparent.
             // On the contrary, texture env should be applied when it already have any background texture.
@@ -146,7 +140,6 @@ public class TextObject extends ComponentBase {
             textureText.repeatU = false;
             textureText.repeatV = false;
             textures().add(textureText);
-            bitmap.recycle();
         }
 
         mMeasuredWidth = measuredWidth;
@@ -164,12 +157,12 @@ public class TextObject extends ComponentBase {
         }
     }
 
-    private void createVertices(float width, float height) {
+    private void createVertices(float width, float height, float uRatio, float vRatio) {
         float w = width / 2;
         float h = height / 2;
         float d = mDepth / 2;
         short ul, ur, lr, ll;
-        float uvX = 1.0f, uvY = 1.0f;
+        float uvX = uRatio, uvY = vRatio;
 
         if (vertices().size() == 0) {
             ul = vertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1, (short) 0,
@@ -191,12 +184,22 @@ public class TextObject extends ComponentBase {
         }
     }
 
-    private Bitmap loadBitmapFromView(TextView v, int w, int h) {
-        Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(b);
-        v.layout(0, 0, w, h);
-        v.draw(c);
-        return b;
+    private Bitmap loadBitmapFromView(TextView view, int width, int height) {
+        Bitmap bitmap = createTextBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        view.layout(0, 0, width, height);
+        view.draw(canvas);
+        return bitmap;
+    }
+
+    protected Bitmap createTextBitmap(int width, int height, Bitmap.Config config) {
+        return Bitmap.createBitmap(width, height, config);
+    }
+
+    protected void recycleTextBitmap(Bitmap bitmap) {
+        if (bitmap != null && !bitmap.isRecycled()) {
+            bitmap.recycle();
+        }
     }
 
     // for debug.

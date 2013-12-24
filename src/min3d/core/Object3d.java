@@ -2,11 +2,14 @@ package min3d.core;
 
 import android.R;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Drawable.Callback;
+import android.graphics.drawable.NinePatchDrawable;
 import android.opengl.GLES20;
 import android.opengl.GLU;
 import android.opengl.Matrix;
@@ -531,6 +534,9 @@ public class Object3d implements Callback
     float[] mTmpMatrix = new float[16];
 
     AMaterial mMaterial;
+
+    float mWidth;
+    float mHeight;
 
 	/**
 	 * Maximum number of vertices and faces must be specified at instantiation.
@@ -1408,8 +1414,24 @@ public class Object3d implements Callback
         }
 
         if (mBGDrawable != null) {
-            BitmapDrawable currentDrawable = (BitmapDrawable)mBGDrawable.getCurrent();
-            Bitmap bitmap = currentDrawable.getBitmap();
+            Drawable current = mBGDrawable.getCurrent();
+            Bitmap bitmap = null;
+            if (current instanceof BitmapDrawable) {
+                BitmapDrawable currentDrawable = (BitmapDrawable)current;
+                bitmap = currentDrawable.getBitmap();
+            } else if (current instanceof NinePatchDrawable) {
+                float width = (getWidth() > 0) ? getWidth() : 1.0f;
+                float height = (getHeight() > 0) ? getHeight() : 1.0f;
+                float x = getGContext().getRenderer().getWorldPlaneSize(position().z).x;
+                float ratio = x / getGContext().getRenderer().getWidth();
+                NinePatchDrawable currentDrawable = (NinePatchDrawable)current.getCurrent();
+                Rect rect = new Rect(0, 0, (int)(width / ratio), (int)(height / ratio));
+                currentDrawable.setBounds(rect);
+                bitmap = Bitmap.createBitmap(rect.width(), rect.height(), Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                currentDrawable.draw(canvas);
+            }
+
             if (!getGContext().getTexureManager().contains(backgroundTexId)) {
                 getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
             }
@@ -1942,6 +1964,28 @@ public class Object3d implements Callback
 
     public final GContext getGContext() {
         return mGContext;
+    }
+
+    public void setWidth(float width) {
+        if (width != mWidth) {
+            mWidth = width;
+            invalidate();
+        }
+    }
+
+    public float getWidth() {
+        return mWidth;
+    }
+
+    public void setHeight(float height) {
+        if (height != mHeight) {
+            mHeight = height;
+            invalidate();
+        }
+    }
+
+    public float getHeight() {
+        return mHeight;
     }
 
     /**
