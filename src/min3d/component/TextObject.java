@@ -43,6 +43,7 @@ public class TextObject extends ComponentBase {
     private boolean mHasShape;
     private TextView mTextView;
     private float mRatio;
+    private float mMaxWidth = Integer.MAX_VALUE;
 
     public TextObject(GContext context, float width, float height, float depth,
             Color4[] sixColor4s, Boolean useUvs, Boolean useNormals,
@@ -116,6 +117,7 @@ public class TextObject extends ComponentBase {
         LayoutParams layoutParams = new LayoutParams(layoutWidth, layoutHeight);
         mTextView.setLayoutParams(layoutParams);
         mTextView.updateMeasuredDimension();
+        mTextView.setMaxWidth((int) (mMaxWidth * mRatio));
 
         int measuredWidth = mTextView.getMeasuredWidth();
         int measuredHeight = mTextView.getMeasuredHeight();
@@ -410,6 +412,14 @@ public class TextObject extends ComponentBase {
      */
     public void setMaxLines(int maxlines) {
         mTextView.setMaxLines(maxlines);
+        invalidate();
+    }
+
+    /**
+     * Makes the TextView at most this GL wide
+     */
+    public void setMaxWidth(float width) {
+        mMaxWidth = width;
         invalidate();
     }
 
