@@ -1416,6 +1416,7 @@ public class Object3d implements Callback
         if (mBGDrawable != null) {
             Drawable current = mBGDrawable.getCurrent();
             Bitmap bitmap = null;
+            Bitmap bitmapNeedRecycled = null;
             if (current instanceof BitmapDrawable) {
                 BitmapDrawable currentDrawable = (BitmapDrawable)current;
                 bitmap = currentDrawable.getBitmap();
@@ -1427,13 +1428,20 @@ public class Object3d implements Callback
                 NinePatchDrawable currentDrawable = (NinePatchDrawable)current.getCurrent();
                 Rect rect = new Rect(0, 0, (int)(width / ratio), (int)(height / ratio));
                 currentDrawable.setBounds(rect);
-                bitmap = Bitmap.createBitmap(rect.width(), rect.height(), Config.ARGB_8888);
-                Canvas canvas = new Canvas(bitmap);
+                bitmapNeedRecycled = Bitmap.createBitmap(rect.width(), rect.height(), Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmapNeedRecycled);
                 currentDrawable.draw(canvas);
             }
 
             if (!getGContext().getTexureManager().contains(backgroundTexId)) {
-                getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
+                bitmap = (bitmapNeedRecycled != null) ? bitmapNeedRecycled : bitmap;
+                if (bitmap != null) {
+                    getGContext().getTexureManager().addTextureId(bitmap, backgroundTexId, false);
+                }
+            }
+
+            if (bitmapNeedRecycled != null && !bitmapNeedRecycled.isRecycled()) {
+                bitmapNeedRecycled.recycle();
             }
 
             TextureVo textureVo = new TextureVo(backgroundTexId);
