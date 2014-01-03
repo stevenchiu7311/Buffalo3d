@@ -55,7 +55,7 @@ public class Renderer implements GLSurfaceView.Renderer
 
 	// stats-related
 	public static final int FRAMERATE_SAMPLEINTERVAL_MS = 1000; 
-	private boolean _logFps = false;
+	private boolean _logFps = true;
 	private long _frameCount = 0;
 	private float _fps = 0;
 	private long _timeLastSample;

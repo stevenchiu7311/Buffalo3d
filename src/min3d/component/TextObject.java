@@ -116,8 +116,8 @@ public class TextObject extends ComponentBase {
         int layoutHeight = (int) ((getHeight() > 0) ? (int) (getHeight() * mRatio) : getHeight());
         LayoutParams layoutParams = new LayoutParams(layoutWidth, layoutHeight);
         mTextView.setLayoutParams(layoutParams);
-        mTextView.updateMeasuredDimension();
         mTextView.setMaxWidth((int) (mMaxWidth * mRatio));
+        mTextView.updateMeasuredDimension();
 
         int measuredWidth = mTextView.getMeasuredWidth();
         int measuredHeight = mTextView.getMeasuredHeight();
