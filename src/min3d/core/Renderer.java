@@ -64,8 +64,10 @@ public class Renderer implements GLSurfaceView.Renderer
 
     private MatrixGrabber mMg = new MatrixGrabber();
 
-    private int mWidth = 0;
-    private int mHeight = 0;
+    private int mSurfaceWidth = 0;
+    private int mSurfaceHeight = 0;
+
+    private float mProjectionRatio;
 
     protected float[] mProjMatrix = new float[16];
     protected float[] mVMatrix = new float[16];
@@ -119,8 +121,8 @@ public class Renderer implements GLSurfaceView.Renderer
 
         updateViewFrustrum();
 
-        mWidth = w;
-        mHeight = h;
+        mSurfaceWidth = w;
+        mSurfaceHeight = h;
 	}
 	
 	public void onDrawFrame(GL10 gl)
@@ -841,7 +843,7 @@ public class Renderer implements GLSurfaceView.Renderer
         float[] eyeFar = new float[4];
         float[] eyeNear = new float[4];
         // view port
-        int[] viewport = {0, 0, mWidth, mHeight};
+        int[] viewport = {0, 0, mSurfaceWidth, mSurfaceHeight};
         // far eye point
         GLU.gluUnProject(x, viewport[3] - y, 1.0f, mVMatrix, 0,
                 mProjMatrix, 0, viewport, 0, eyeFar, 0);
@@ -919,8 +921,18 @@ public class Renderer implements GLSurfaceView.Renderer
      * @return plane boundary vector
      */
     public Number3d getWorldPlaneSize(float depth) {
-        Number3d coord = getWorldCoord(mWidth,mHeight,depth);
+        Number3d coord = getWorldCoord(mSurfaceWidth,mSurfaceHeight,depth);
         return new Number3d(Math.abs(coord.x * 2),Math.abs(coord.y * 2),coord.z);
+    }
+
+    /**
+     * Return 2d -> 3d ratio.
+     *
+     * @return 2d -> 3d ratio
+     */
+    public float getProjRatio(float depth) {
+        Number3d coord = getWorldCoord(mSurfaceWidth, mSurfaceHeight, depth);
+        return Math.abs(coord.x * 2) / mSurfaceWidth;
     }
 
     /**
@@ -931,7 +943,7 @@ public class Renderer implements GLSurfaceView.Renderer
     public Number3d getWorldCoord(int x, int y, float z) {
         float[] eye = new float[4];
         float[] size = new float[4];
-        int[] viewport = {0, 0, mWidth, mHeight};
+        int[] viewport = {0, 0, mSurfaceWidth, mSurfaceHeight};
         FrustumManaged vf = _scene.camera().frustum;
         float distance = _scene.camera().position.z + z;
         float winZ = (1.0f / vf.zNear() - 1.0f / distance)
@@ -956,11 +968,11 @@ public class Renderer implements GLSurfaceView.Renderer
     }
 
     public int getWidth() {
-        return mWidth;
+        return mSurfaceWidth;
     }
 
     public int getHeight() {
-        return mHeight;
+        return mSurfaceHeight;
     }
 
     /**
