@@ -43,7 +43,7 @@ public class HollowCylinder extends Object3dContainer
 	
 	private void addHorizontalSurface(boolean $isTopSide, float $zOffset)
 	{
-		int indexOffset = _vertices.size();
+		int indexOffset = mVertices.size();
 		float step = (float)((360.0 / _segs) * DEG);
 
 		// verts
@@ -60,7 +60,7 @@ public class HollowCylinder extends Object3dContainer
 			float z1 		= $zOffset; 
 			Uv uv1 			= new Uv(x1,y1);
 			Number3d n1 	= new Number3d(0,0, $isTopSide ? -1 : +1);
-			this.vertices().addVertex(new Number3d(x1,y1,z1), uv1, n1, col);
+			this.getVertices().addVertex(new Number3d(x1,y1,z1), uv1, n1, col);
 
 			// inner 
 			float x2 		= (float) Math.sin(angle) * _radiusInner;
@@ -68,7 +68,7 @@ public class HollowCylinder extends Object3dContainer
 			float z2 		= $zOffset; 
 			Uv uv2			= new Uv(x2,y2);
 			Number3d n2	= new Number3d(0,0, $isTopSide ? -1 : +1);
-			this.vertices().addVertex(new Number3d(x2,y2,z2), uv2, n2, col);
+			this.getVertices().addVertex(new Number3d(x2,y2,z2), uv2, n2, col);
 		}
 		
 		// indicies
@@ -92,7 +92,7 @@ public class HollowCylinder extends Object3dContainer
 	// 
 	private void addVerticalSurface(boolean $isOuter)
 	{
-		int off = (int)(_vertices.size() / 2); 
+		int off = (int)(mVertices.size() / 2); 
 		
 		for (int i = 0; i < _segs - 1; i++)
 		{
@@ -131,13 +131,13 @@ public class HollowCylinder extends Object3dContainer
 		
 		if (! $flipped)
 		{
-			_faces.add((short)ul,(short)bl,(short)ur);
-			_faces.add((short)bl,(short)br,(short)ur);
+			mFaces.add((short)ul,(short)bl,(short)ur);
+			mFaces.add((short)bl,(short)br,(short)ur);
 		}
 		else
 		{
-			_faces.add((short)ur,(short)br,(short)ul);
-			_faces.add((short)br,(short)bl,(short)ul);
+			mFaces.add((short)ur,(short)br,(short)ul);
+			mFaces.add((short)br,(short)bl,(short)ul);
 		}
 	}
 }

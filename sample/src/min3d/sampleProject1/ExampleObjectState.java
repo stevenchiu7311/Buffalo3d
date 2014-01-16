@@ -42,7 +42,7 @@ public class ExampleObjectState extends RendererActivity {
         mObject.setScaleType(ScaleType.CENTER);
         mObject.setBackgroundResource(R.drawable.btn_default_holo_light);
         mObject.position().x = -1.0f;
-        mObject.textures();
+        mObject.getTextures();
         mObject.setFocusable(true);
         mObject.requestFocus();
 

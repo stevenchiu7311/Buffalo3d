@@ -217,7 +217,7 @@ public abstract class AMaterial {
     }
 
     public void bindTextures(Object3d obj) {
-        int num = obj.textures().size();
+        int num = obj.getTextures().size();
         drawObject_textures(obj);
         GLES20.glUniform1i(muUseTextureHandle, num == 0 ? 0 : 1);
     }
@@ -229,8 +229,8 @@ public abstract class AMaterial {
             int type = usesCubeMap ? GLES20.GL_TEXTURE_CUBE_MAP
                     : GLES20.GL_TEXTURE_2D;
             if ($o.hasUvs() && $o.texturesEnabled()) {
-                TextureVo textureVo = ((i < $o.textures().size())) ? textureVo = $o
-                        .textures().get(i) : null;
+                TextureVo textureVo = ((i < $o.getTextures().size())) ? textureVo = $o
+                        .getTextures().get(i) : null;
 
                 if (textureVo != null) {
                     // activate texture

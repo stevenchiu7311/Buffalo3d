@@ -35,7 +35,7 @@ public class ExampleFog extends RendererActivity {
 			box.position().x = (float) (-4 + ( Math.random() * 8));
 			box.position().y = (float) (-4 + ( Math.random() * 8));
 			box.position().z = (i + 1) * -8;
-			box.textures().addById("barong");
+			box.getTextures().addById("barong");
 			box.vertexColorsEnabled(false);
 			boxes[i] = box;
 	   		scene.addChild(box);
@@ -51,27 +51,27 @@ public class ExampleFog extends RendererActivity {
 		east.rotation().y = -90;
 		east.position().z = -20;
 		east.lightingEnabled(false);
-		east.textures().addById("wood");
+		east.getTextures().addById("wood");
 		
 		west.position().x = 6;
 		west.rotation().y = 90;
 		west.position().z = -20;
 		west.lightingEnabled(false);
-		west.textures().addById("wood");
+		west.getTextures().addById("wood");
 		
 		up.rotation().x = -90;
 		up.rotation().z = 90;
 		up.position().y = 6;
 		up.position().z = -20;
 		up.lightingEnabled(false);
-		up.textures().addById("wood");
+		up.getTextures().addById("wood");
 		
 		down.rotation().x = 90;
 		down.rotation().z = 90;
 		down.position().y = -6;
 		down.position().z = -20;
 		down.lightingEnabled(false);
-		down.textures().addById("wood");
+		down.getTextures().addById("wood");
 
    		scene.addChild(east);
    		scene.addChild(west);

@@ -282,7 +282,7 @@ public class ScrollContainer extends Object3dContainer {
             Object3d obj = parent.getChildAt(i);
             addInnerChild(obj);
             Number3d.add(mMap.get(obj).mPosition, obj.position(), mMap.get(parent).mPosition);
-            if (obj.vertices().capacity() > 0) {
+            if (obj.getVertices().capacity() > 0) {
                 obj.setVisibility(Object3d.GONE);
                 mightInBound.add(obj);
             }

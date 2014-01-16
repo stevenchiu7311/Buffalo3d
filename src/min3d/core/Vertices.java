@@ -7,10 +7,10 @@ import min3d.vos.Uv;
 
 public class Vertices
 {
-	private Number3dBufferList _points;
-	private UvBufferList _uvs;
-	private Number3dBufferList _normals;
-	private Color4BufferList _colors;
+	private Number3dBufferList mPoints;
+	private UvBufferList mUvs;
+	private Number3dBufferList mNormals;
+	private Color4BufferList mColors;
 	
 	private boolean _hasUvs;
 	private boolean _hasNormals;
@@ -26,15 +26,15 @@ public class Vertices
 	 */
 	public Vertices(int $maxElements)
 	{
-		_points = new Number3dBufferList($maxElements);
+		mPoints = new Number3dBufferList($maxElements);
 		
 		_hasUvs = true;
 		_hasNormals = true;
 		_hasColors = true;
 		
-		if (_hasUvs) _uvs = new UvBufferList($maxElements);
-		if (_hasNormals) _normals = new Number3dBufferList($maxElements);
-		if (_hasColors) _colors = new Color4BufferList($maxElements);
+		if (_hasUvs) mUvs = new UvBufferList($maxElements);
+		if (_hasNormals) mNormals = new Number3dBufferList($maxElements);
+		if (_hasColors) mColors = new Color4BufferList($maxElements);
 	}
 
 	/**
@@ -44,38 +44,38 @@ public class Vertices
 	 */
 	public Vertices(int $maxElements, Boolean $useUvs, Boolean $useNormals, Boolean $useColors)
 	{
-		_points = new Number3dBufferList($maxElements);
+		mPoints = new Number3dBufferList($maxElements);
 		
 		_hasUvs = $useUvs;
 		_hasNormals = $useNormals;
 		_hasColors = $useColors;
 		
-		if (_hasUvs) _uvs = new UvBufferList($maxElements);
-		if (_hasNormals) _normals = new Number3dBufferList($maxElements);
-		if (_hasColors) _colors = new Color4BufferList($maxElements);
+		if (_hasUvs) mUvs = new UvBufferList($maxElements);
+		if (_hasNormals) mNormals = new Number3dBufferList($maxElements);
+		if (_hasColors) mColors = new Color4BufferList($maxElements);
 	}
 	
 	public Vertices(Number3dBufferList $points, UvBufferList $uvs, Number3dBufferList $normals,
 			Color4BufferList $colors)
 	{
-		_points = $points;
-		_uvs = $uvs;
-		_normals = $normals;
-		_colors = $colors;
+		mPoints = $points;
+		mUvs = $uvs;
+		mNormals = $normals;
+		mColors = $colors;
 		
-		_hasUvs = _uvs != null && _uvs.size() > 0;
-		_hasNormals = _normals != null && _normals.size() > 0;
-		_hasColors = _colors != null && _colors.size() > 0;
+		_hasUvs = mUvs != null && mUvs.size() > 0;
+		_hasNormals = mNormals != null && mNormals.size() > 0;
+		_hasColors = mColors != null && mColors.size() > 0;
 	}
 	
 	public int size()
 	{
-		return _points.size();
+		return mPoints.size();
 	}
 	
 	public int capacity()
 	{
-		return _points.capacity();
+		return mPoints.capacity();
 	}
 	
 	public boolean hasUvs()
@@ -107,13 +107,13 @@ public class Vertices
 		float $normalX, float $normalY, float $normalZ,  
 		short $colorR, short $colorG, short $colorB, short $colorA)
 	{
-		_points.add($pointX, $pointY, $pointZ);
+		mPoints.add($pointX, $pointY, $pointZ);
 		
-		if (_hasUvs) _uvs.add($textureU, $textureV);
-		if (_hasNormals) _normals.add($normalX, $normalY, $normalZ);
-		if (_hasColors) _colors.add($colorR, $colorG, $colorB, $colorA);
+		if (_hasUvs) mUvs.add($textureU, $textureV);
+		if (_hasNormals) mNormals.add($normalX, $normalY, $normalZ);
+		if (_hasColors) mColors.add($colorR, $colorG, $colorB, $colorA);
 		
-		return (short)(_points.size()-1);
+		return (short)(mPoints.size()-1);
 	}
 	
 	/**
@@ -127,61 +127,61 @@ public class Vertices
 	 */
 	public short addVertex(Number3d $point, Uv $textureUv, Number3d $normal, Color4 $color)
 	{
-		_points.add($point);
+		mPoints.add($point);
 		
-		if (_hasUvs) _uvs.add($textureUv);
-		if (_hasNormals) _normals.add($normal);
-		if (_hasColors) _colors.add($color);
+		if (_hasUvs) mUvs.add($textureUv);
+		if (_hasNormals) mNormals.add($normal);
+		if (_hasColors) mColors.add($color);
 		
-		return (short)(_points.size()-1);
+		return (short)(mPoints.size()-1);
 	}
 	
 	public void overwriteVerts(float[] $newVerts)
 	{
-		_points.overwrite($newVerts);
+		mPoints.overwrite($newVerts);
 	}
 	
 	public void overwriteNormals(float[] $newNormals)
 	{
-		_normals.overwrite($newNormals);
+		mNormals.overwrite($newNormals);
 	}
 	
-	Number3dBufferList points() /*package-private*/
+	public Number3dBufferList getPoints()
 	{
-		return _points;
+		return mPoints;
 	}
 	
 	/**
 	 * List of texture coordinates
 	 */
-	UvBufferList uvs() /*package-private*/
+	public UvBufferList getUvs()
 	{
-		return _uvs;
+		return mUvs;
 	}
 	
 	/**
 	 * List of normal values 
 	 */
-	Number3dBufferList normals() /*package-private*/
+	public Number3dBufferList getNormals()
 	{
-		return _normals;
+		return mNormals;
 	}
 	
 	/**
 	 * List of color values
 	 */
-	Color4BufferList colors() /*package-private*/
+	public Color4BufferList getColors()
 	{
-		return _colors;
+		return mColors;
 	}
 	
 	public Vertices clone()
 	{
-		Vertices v = new Vertices(_points.clone(), _uvs.clone(), _normals.clone(), _colors.clone());
+		Vertices v = new Vertices(mPoints.clone(), mUvs.clone(), mNormals.clone(), mColors.clone());
 		return v;
 	}
 
     public void setUv(int x, float u, float v) {
-        _uvs.set(x,u,v);
+        mUvs.set(x,u,v);
     }
 }

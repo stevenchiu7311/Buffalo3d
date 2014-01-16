@@ -31,7 +31,7 @@ public class ExampleObjectTransparency extends RendererActivity {
                 R.drawable.wood);
         getGContext().getTexureManager().addTextureId(b, "wood", false);
         b.recycle();
-        mCube.textures().addById("wood");
+        mCube.getTextures().addById("wood");
 
         scene.addChild(mCube);
     }

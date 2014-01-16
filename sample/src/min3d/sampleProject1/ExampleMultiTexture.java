@@ -79,8 +79,8 @@ public class ExampleMultiTexture extends RendererActivity
 		b.recycle();
 		
 		// Add textures to sphere
-		_sphere.textures().addById("jupiter");
-		TextureVo texture = _sphere.textures().addById("alpha");
+		_sphere.getTextures().addById("jupiter");
+		TextureVo texture = _sphere.getTextures().addById("alpha");
 		
 		// We saved a reference to the sphere's "alpha" texture above so we can target 
 		// its texture environment VO, which we will change around in the loop below.

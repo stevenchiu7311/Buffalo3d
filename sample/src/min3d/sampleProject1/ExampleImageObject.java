@@ -41,7 +41,7 @@ public class ExampleImageObject extends RendererActivity {
         mImageObject.setImageResource(R.drawable.icon);
         mImageObject.doubleSidedEnabled(true);
         mImageObject.position().x = -1.0f;
-        mImageObject.textures();
+        mImageObject.getTextures();
 
         mImageObjectShpere = new ImageObject(getGContext(), TEXT_WIDTH,
                 TEXT_HEIGHT, 0f);

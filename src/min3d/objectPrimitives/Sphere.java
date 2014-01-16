@@ -104,7 +104,7 @@ public class Sphere extends Object3dContainer
 				posFull.multiply(_radius);
 				
 				
-				this.vertices().addVertex(posFull.x,posFull.y,posFull.z,  u,v,  pos.x,pos.y,pos.z,  defaultColor().r,defaultColor().g,defaultColor().b,defaultColor().a);
+				this.getVertices().addVertex(posFull.x,posFull.y,posFull.z,  u,v,  pos.x,pos.y,pos.z,  defaultColor().r,defaultColor().g,defaultColor().b,defaultColor().a);
 			}
 		}
 

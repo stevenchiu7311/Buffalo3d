@@ -39,7 +39,7 @@ public class ExampleAnimatingVertices extends RendererActivity
 		scene.addChild(_plane);
 
 		getGContext().getTexureManager().addTextureId(b, "mickey", false);
-		_plane.textures().addById("mickey");
+		_plane.getTextures().addById("mickey");
 		
 		b.recycle();
 

@@ -73,20 +73,20 @@ public class ExampleAssigningTexturesDynamically extends RendererActivity
 		// every second or so
 		
 		if (_count % 240 == 0) {
-			_object1.textures().clear(); // ie, no texture
-			_object2.textures().clear();
+			_object1.getTextures().clear(); // ie, no texture
+			_object2.getTextures().clear();
 		}
 		else if (_count % 240 == 60) { 
-			_object1.textures().addReplace(_jupiterTexture);
-			_object2.textures().addReplace(_jupiterTexture);
+			_object1.getTextures().addReplace(_jupiterTexture);
+			_object2.getTextures().addReplace(_jupiterTexture);
 		}
 		else if (_count % 240 == 120) { 
-			_object1.textures().addReplace(_earthTexture);
-			_object2.textures().addReplace(_earthTexture);
+			_object1.getTextures().addReplace(_earthTexture);
+			_object2.getTextures().addReplace(_earthTexture);
 		}
 		else if (_count % 240 == 180) { 
-			_object1.textures().addReplace(_moonTexture);
-			_object2.textures().addReplace(_moonTexture);
+			_object1.getTextures().addReplace(_moonTexture);
+			_object2.getTextures().addReplace(_moonTexture);
 		}
 		
 		_object1.rotation().y +=1;

@@ -135,13 +135,13 @@ public class TextObject extends ComponentBase {
             TextureVo textureText = new TextureVo(textTexId);
             // Texture env should be not used if text object background is transparent.
             // On the contrary, texture env should be applied when it already have any background texture.
-            if (textures().size() > 0) {
+            if (getTextures().size() > 0) {
                 textureText.textureEnvs.get(0).setAll(GL10.GL_TEXTURE_ENV_MODE,
                         GL10.GL_DECAL);
             }
             textureText.repeatU = false;
             textureText.repeatV = false;
-            textures().add(textureText);
+            getTextures().add(textureText);
         }
 
         mMeasuredWidth = measuredWidth;
@@ -149,12 +149,12 @@ public class TextObject extends ComponentBase {
     }
 
     public void destroyLastTextRes() {
-        for (String id:textures().getIds()) {
+        for (String id:getTextures().getIds()) {
             if (id.contains(PREFIX_TEXT)) {
                 if (mGContext.getTexureManager().contains(id)) {
                     mGContext.getTexureManager().deleteTexture(id);
                 }
-                textures().removeById(id);
+                getTextures().removeById(id);
             }
         }
     }
@@ -166,35 +166,35 @@ public class TextObject extends ComponentBase {
         short ul, ur, lr, ll;
         float uvX = uRatio, uvY = vRatio;
 
-        if (vertices().size() == 0) {
-            ul = vertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1, (short) 0,
+        if (getVertices().size() == 0) {
+            ul = getVertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            ur = vertices().addVertex(+w, +h, d, uvX, 0f, 0, 0, 1, (short) 0,
+            ur = getVertices().addVertex(+w, +h, d, uvX, 0f, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            lr = vertices().addVertex(+w, -h, d, uvX, uvY, 0, 0, 1, (short) 0,
+            lr = getVertices().addVertex(+w, -h, d, uvX, uvY, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            ll = vertices().addVertex(-w, -h, d, 0f, uvY, 0, 0, 1, (short) 0,
+            ll = getVertices().addVertex(-w, -h, d, 0f, uvY, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
             Utils.addQuad(this, ul, ur, lr, ll);
         } else {
-            vertices().overwriteVerts(
+            getVertices().overwriteVerts(
                     new float[] { -w, +h, d, +w, +h, d, +w, -h, d, -w, -h, d });
-            vertices().setUv(0, 0f, 0f);
-            vertices().setUv(1, uvX, 0f);
-            vertices().setUv(2, uvX, uvY);
-            vertices().setUv(3, 0f, uvY);
+            getVertices().setUv(0, 0f, 0f);
+            getVertices().setUv(1, uvX, 0f);
+            getVertices().setUv(2, uvX, uvY);
+            getVertices().setUv(3, 0f, uvY);
         }
     }
 
     private Bitmap loadBitmapFromView(TextView view, int width, int height) {
-        Bitmap bitmap = createTextBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = createTextureBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         view.layout(0, 0, width, height);
         view.draw(canvas);
         return bitmap;
     }
 
-    protected Bitmap createTextBitmap(int width, int height, Bitmap.Config config) {
+    protected Bitmap createTextureBitmap(int width, int height, Bitmap.Config config) {
         return Bitmap.createBitmap(width, height, config);
     }
 

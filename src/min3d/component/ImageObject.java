@@ -109,23 +109,23 @@ public class ImageObject extends ComponentBase {
         short ul, ur, lr, ll;
         float uvX = 1.0f, uvY = 1.0f;
 
-        if (vertices().size() == 0) {
-            ul = vertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1, (short) 0,
+        if (getVertices().size() == 0) {
+            ul = getVertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            ur = vertices().addVertex(+w, +h, d, uvX, 0f, 0, 0, 1, (short) 0,
+            ur = getVertices().addVertex(+w, +h, d, uvX, 0f, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            lr = vertices().addVertex(+w, -h, d, uvX, uvY, 0, 0, 1, (short) 0,
+            lr = getVertices().addVertex(+w, -h, d, uvX, uvY, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            ll = vertices().addVertex(-w, -h, d, 0f, uvY, 0, 0, 1, (short) 0,
+            ll = getVertices().addVertex(-w, -h, d, 0f, uvY, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
             Utils.addQuad(this, ul, ur, lr, ll);
         } else {
-            vertices().overwriteVerts(
+            getVertices().overwriteVerts(
                     new float[] { -w, +h, d, +w, +h, d, +w, -h, d, -w, -h, d });
-            vertices().setUv(0, 0f, 0f);
-            vertices().setUv(1, uvX, 0f);
-            vertices().setUv(2, uvX, uvY);
-            vertices().setUv(3, 0f, uvY);
+            getVertices().setUv(0, 0f, 0f);
+            getVertices().setUv(1, uvX, 0f);
+            getVertices().setUv(2, uvX, uvY);
+            getVertices().setUv(3, 0f, uvY);
         }
     }
 
@@ -159,7 +159,7 @@ public class ImageObject extends ComponentBase {
 
         String imageTexId = (mDrawable != null)?PREFIX_IMAGE + mDrawable.toString() + mDrawable.getState():PREFIX_IMAGE;
         String replaced = null;
-        for (String id:textures().getIds()) {
+        for (String id:getTextures().getIds()) {
             if (id.contains(PREFIX_IMAGE) && !id.equals(PREFIX_IMAGE)) {
                 if (id.equals(imageTexId)) {
                     return;
@@ -172,7 +172,7 @@ public class ImageObject extends ComponentBase {
 
         if (replaced != null) {
             getGContext().getTexureManager().deleteTexture(replaced);
-            textures().removeById(replaced);
+            getTextures().removeById(replaced);
         }
 
         if (mDrawable != null) {
@@ -188,7 +188,7 @@ public class ImageObject extends ComponentBase {
                     GL10.GL_DECAL);
             textureVo.repeatU = false;
             textureVo.repeatV = false;
-            textures().add(textureVo);
+            getTextures().add(textureVo);
         }
     }
 

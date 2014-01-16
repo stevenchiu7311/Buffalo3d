@@ -189,6 +189,12 @@ public class Object3d implements Callback
     static final int CLICKABLE = 0x00004000;
 
     /**
+     * <p>Indicates this view is caching its drawing into a bitmap.</p>
+     * {@hide}
+     */
+    static final int RENDER_CACHE_ENABLED = 0x00008000;
+
+    /**
      * <p>
      * Indicates this view can be long clicked. When long clickable, a View
      * reacts to long clicks by notifying the OnLongClickListener or showing a
@@ -449,10 +455,10 @@ public class Object3d implements Callback
 	private float _lineWidth = 1f;
 	private boolean _lineSmoothing = false;
 
-	protected Vertices _vertices; 
+	protected Vertices mVertices;
     protected Color4BufferList mColors;
-	protected TextureList _textures;
-	protected FacesBufferedList _faces;
+	protected TextureList mTextures;
+	protected FacesBufferedList mFaces;
 
 	protected boolean _animationEnabled = false;
 	
@@ -544,9 +550,9 @@ public class Object3d implements Callback
 	public Object3d(GContext context, int $maxVertices, int $maxFaces)
 	{
         mGContext = context;
-		_vertices = new Vertices($maxVertices, true,true,true);
-		_faces = new FacesBufferedList($maxFaces);
-		_textures = new TextureList(context);
+		mVertices = new Vertices($maxVertices, true,true,true);
+		mFaces = new FacesBufferedList($maxFaces);
+		mTextures = new TextureList(context);
 	}
 	
 	/**
@@ -555,9 +561,9 @@ public class Object3d implements Callback
 	public Object3d(GContext context, int $maxVertices, int $maxFaces, Boolean $useUvs, Boolean $useNormals, Boolean $useVertexColors)
 	{
         mGContext = context;
-		_vertices = new Vertices($maxVertices, $useUvs,$useNormals,$useVertexColors);
-		_faces = new FacesBufferedList($maxFaces);
-		_textures = new TextureList(context);
+		mVertices = new Vertices($maxVertices, $useUvs,$useNormals,$useVertexColors);
+		mFaces = new FacesBufferedList($maxFaces);
+		mTextures = new TextureList(context);
 	}
 	
 	/**
@@ -566,30 +572,30 @@ public class Object3d implements Callback
 	public Object3d(GContext context, Vertices $vertices, FacesBufferedList $faces, TextureList $textures)
 	{
         mGContext = context;
-		_vertices = $vertices;
-		_faces = $faces;
-		_textures = $textures;
+		mVertices = $vertices;
+		mFaces = $faces;
+		mTextures = $textures;
 	}
 	
 	/**
 	 * Holds references to vertex position list, vertex u/v mappings list, vertex normals list, and vertex colors list
 	 */
-	public Vertices vertices()
+	public Vertices getVertices()
 	{
-		return _vertices;
+		return mVertices;
 	}
 
 	/**
 	 * List of object's faces (ie, index buffer) 
 	 */
-	public FacesBufferedList faces()
+	public FacesBufferedList getFaces()
 	{
-		return _faces;
+		return mFaces;
 	}
 	
-	public TextureList textures()
+	public TextureList getTextures()
 	{
-		return _textures;
+		return mTextures;
 	}
 	
     /**
@@ -828,7 +834,7 @@ public class Object3d implements Callback
 	 */
 	public Number3dBufferList points()
 	{
-		return _vertices.points();
+		return mVertices.getPoints();
 	}
 	
 	/**
@@ -836,7 +842,7 @@ public class Object3d implements Callback
 	 */
 	public UvBufferList uvs()
 	{
-		return _vertices.uvs();
+		return mVertices.getUvs();
 	}
 	
 	/**
@@ -844,7 +850,7 @@ public class Object3d implements Callback
 	 */
 	public Number3dBufferList normals()
 	{
-		return _vertices.normals();
+		return mVertices.getNormals();
 	}
 	
 	/**
@@ -852,7 +858,7 @@ public class Object3d implements Callback
 	 */
 	public Color4BufferList colors()
 	{
-		return _vertices.colors();
+		return mVertices.getColors();
 	}
 	
 	/**
@@ -860,7 +866,7 @@ public class Object3d implements Callback
 	 */
 	public boolean hasUvs()
 	{
-		return _vertices.hasUvs();
+		return mVertices.hasUvs();
 	}
 
 	/**
@@ -868,7 +874,7 @@ public class Object3d implements Callback
 	 */
 	public boolean hasNormals()
 	{
-		return _vertices.hasNormals();
+		return mVertices.hasNormals();
 	}
 	
 	/**
@@ -876,7 +882,7 @@ public class Object3d implements Callback
 	 */
 	public boolean hasVertexColors()
 	{
-		return _vertices.hasColors();
+		return mVertices.hasColors();
 	}
 
 
@@ -885,11 +891,11 @@ public class Object3d implements Callback
 	 */
 	public void clear()
 	{
-		if (this.vertices().points() != null) 	this.vertices().points().clear();
-		if (this.vertices().uvs() != null) 		this.vertices().uvs().clear();
-		if (this.vertices().normals() != null) 	this.vertices().normals().clear();
-		if (this.vertices().colors() != null) 	this.vertices().colors().clear();
-		if (_textures != null) 					_textures.clear();
+		if (this.getVertices().getPoints() != null) 	this.getVertices().getPoints().clear();
+		if (this.getVertices().getUvs() != null) 		this.getVertices().getUvs().clear();
+		if (this.getVertices().getNormals() != null) 	this.getVertices().getNormals().clear();
+		if (this.getVertices().getColors() != null) 	this.getVertices().getColors().clear();
+		if (mTextures != null) 					mTextures.clear();
 		
 		if (this.parent() != null) 				this.parent().removeChild(this);
 	}
@@ -913,13 +919,13 @@ public class Object3d implements Callback
      */
     public void defaultColor(Color4 color) {
         _defaultColor = color;
-        if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
-            for (int i = 0; i < _vertices.capacity(); i++) {
-                _vertices.colors().set(i, color);
+        if (hasVertexColors() && vertexColorsEnabled() && mVertices.getColors() != null) {
+            for (int i = 0; i < mVertices.capacity(); i++) {
+                mVertices.getColors().set(i, color);
             }
         } else {
-            mColors = new Color4BufferList(_vertices.capacity());
-            for (int i = 0; i < _vertices.capacity(); i++) {
+            mColors = new Color4BufferList(mVertices.capacity());
+            for (int i = 0; i < mVertices.capacity(); i++) {
                 mColors.set(i, color);
             }
         }
@@ -1117,10 +1123,10 @@ public class Object3d implements Callback
 	
 	public Object3d clone()
 	{
-		Vertices v = _vertices.clone();
-		FacesBufferedList f = _faces.clone();
+		Vertices v = mVertices.clone();
+		FacesBufferedList f = mFaces.clone();
 			
-		Object3d clone = new Object3d(mGContext, v, f, _textures);
+		Object3d clone = new Object3d(mGContext, v, f, mTextures);
 		
 		clone.position().x = position().x;
 		clone.position().y = position().y;
@@ -1206,89 +1212,114 @@ public class Object3d implements Callback
         }
 
         int visibility = getVisibility() & VISIBILITY_MASK;
-        if (visibility == INVISIBLE || visibility == GONE || scene() == null) return;
+
+        if (visibility == GONE || scene() == null) return;
 
         onRender();
 
         mProjMatrix = projMatrix;
 
-        if (vertices() != null && vertices().size() > 0) {
-            mMaterial = scene().getDefaultMaterial(mGContext);
-            mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
-            mMaterial.useProgram();
-            mMaterial.bindTextures(this);
-            mMaterial.setCamera(camera);
-
-            if (doubleSidedEnabled()) {
-                GLES20.glDisable(GL10.GL_CULL_FACE);
-            } else {
-                GLES20.glEnable(GL10.GL_CULL_FACE);
-            }
-
-            if(mTransparent) {
-                GLES20.glEnable(GLES20.GL_BLEND);
-                GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-            }
-
-            if (mForcedDepth) {
-                GLES20.glEnable(GL10.GL_DEPTH_TEST);
-                GLES20.glClearDepthf(1.0f);
-                GLES20.glDepthFunc(GL10.GL_LESS);
-                GLES20.glDepthRangef(0, 1f);
-                GLES20.glDepthMask(true);
-            }
-
-
-            if (!mBuffered) {
-                makeVertextBufferObject();
-                mBuffered = true;
-            }
-
-            if (mVertexBufferObject) {
-                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.POINT.ordinal()]);
-                mMaterial.setVertices();
-            } else {
-                mMaterial.setVertices(_vertices.points().buffer());
-            }
-
-            if (_vertices.uvs() != null) {
-                if (mVertexBufferObject) {
-                    GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.UV.ordinal()]);
-                    mMaterial.setTextureCoords();
-                } else {
-                    mMaterial.setTextureCoords(_vertices.uvs().buffer());
-                }
-            }
-
-            if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
-                if (mVertexBufferObject) {
-                    GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.COLOR.ordinal()]);
-                    mMaterial.setColors();
-                } else {
-                    mMaterial.setColors(_vertices.colors().buffer());
-                }
-            } else if (mColors != null) {
-                if (mVertexBufferObject) {
-                    GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.COLOR.ordinal()]);
-                    mMaterial.setColors();
-                } else {
-                    mMaterial.setColors(mColors.buffer());
-                }
-            } else {
-                mMaterial.setColors(defaultColor());
-            }
-
-            if (hasNormals() && normalsEnabled() && _vertices.normals() != null) {
-                if (mVertexBufferObject) {
-                    GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.NORMAL.ordinal()]);
-                    mMaterial.setNormals();
-                } else {
-                    mMaterial.setNormals(_vertices.normals().buffer());
-                }
-            }
-            setShaderParams();
+        if (getVertices() != null && getVertices().size() > 0) {
+            prepareRenderingShader(camera);
+            prepareRenderingBuffer();
         }
 
+        computeRenderingMatrix(projMatrix, vMatrix, parentMatrix);
+
+        if (getVertices() != null && getVertices().size() > 0) {
+            doRenderingTask(vMatrix);
+        }
+
+        if (this instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer)this;
+
+            for (int i = 0; i < container.children().size(); i++) {
+                Object3d o = container.children().get(i);
+                o.render(camera, projMatrix, vMatrix, mMMatrix);
+            }
+        }
+    }
+
+    protected void prepareRenderingShader(CameraVo camera) {
+        mMaterial = scene().getDefaultMaterial(mGContext);
+        mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
+        mMaterial.useProgram();
+        mMaterial.bindTextures(this);
+        mMaterial.setCamera(camera);
+
+        if (doubleSidedEnabled()) {
+            GLES20.glDisable(GL10.GL_CULL_FACE);
+        } else {
+            GLES20.glEnable(GL10.GL_CULL_FACE);
+        }
+
+        if(mTransparent) {
+            GLES20.glEnable(GLES20.GL_BLEND);
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        }
+
+        if (mForcedDepth) {
+            GLES20.glEnable(GL10.GL_DEPTH_TEST);
+            GLES20.glClearDepthf(1.0f);
+            GLES20.glDepthFunc(GL10.GL_LESS);
+            GLES20.glDepthRangef(0, 1f);
+            GLES20.glDepthMask(true);
+        }
+
+        setShaderParams();
+    }
+
+    protected void prepareRenderingBuffer() {
+        if (!mBuffered) {
+            makeVertextBufferObject();
+            mBuffered = true;
+        }
+
+        if (mVertexBufferObject) {
+            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.POINT.ordinal()]);
+            mMaterial.setVertices();
+        } else {
+            mMaterial.setVertices(mVertices.getPoints().buffer());
+        }
+
+        if (mVertices.getUvs() != null) {
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.UV.ordinal()]);
+                mMaterial.setTextureCoords();
+            } else {
+                mMaterial.setTextureCoords(mVertices.getUvs().buffer());
+            }
+        }
+
+        if (hasVertexColors() && vertexColorsEnabled() && mVertices.getColors() != null) {
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.COLOR.ordinal()]);
+                mMaterial.setColors();
+            } else {
+                mMaterial.setColors(mVertices.getColors().buffer());
+            }
+        } else if (mColors != null) {
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.COLOR.ordinal()]);
+                mMaterial.setColors();
+            } else {
+                mMaterial.setColors(mColors.buffer());
+            }
+        } else {
+            mMaterial.setColors(defaultColor());
+        }
+
+        if (hasNormals() && normalsEnabled() && mVertices.getNormals() != null) {
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.NORMAL.ordinal()]);
+                mMaterial.setNormals();
+            } else {
+                mMaterial.setNormals(mVertices.getNormals().buffer());
+            }
+        }
+    }
+
+    protected void computeRenderingMatrix(float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
         Matrix.setIdentityM(mMMatrix, 0);
 
         Matrix.setIdentityM(mTranslateMatrix, 0);
@@ -1313,56 +1344,47 @@ public class Object3d implements Callback
         }
         Matrix.multiplyMM(mMVPMatrix, 0, vMatrix, 0, mMMatrix, 0);
         Matrix.multiplyMM(mMVPMatrix, 0, projMatrix, 0, mMVPMatrix, 0);
+    }
 
-        if (vertices() != null && vertices().size() > 0) {
-            mMaterial.setMVPMatrix(mMVPMatrix);
-            mMaterial.setModelMatrix(mMMatrix);
-            mMaterial.setViewMatrix(vMatrix);
+    protected void doRenderingTask(float[] vMatrix) {
+        mMaterial.setMVPMatrix(mMVPMatrix);
+        mMaterial.setModelMatrix(mMMatrix);
+        mMaterial.setViewMatrix(vMatrix);
 
-            vertices().points().buffer().position(0);
-            if (!ignoreFaces()) {
-                int pos, len;
+        getVertices().getPoints().buffer().position(0);
+        if (!ignoreFaces()) {
+            int pos, len;
 
-                if (!faces().renderSubsetEnabled()) {
-                    pos = 0;
-                    len = faces().size();
-                } else {
-                    pos = faces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
-                    len = faces().renderSubsetLength();
-                }
-
-                if (mVertexBufferObject) {
-                    GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, mBuffers[VBO_ID.FACE.ordinal()]);
-                    GLES20.glDrawElements(
-                            renderType().glValue(),
-                            len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
-                            GLES20.GL_UNSIGNED_SHORT,
-                            0);
-                } else {
-                    faces().buffer().position(pos);
-                    GLES20.glDrawElements(
-                            renderType().glValue(),
-                            len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
-                            GLES20.GL_UNSIGNED_SHORT,
-                            faces().buffer());
-                }
+            if (!getFaces().renderSubsetEnabled()) {
+                pos = 0;
+                len = getFaces().size();
             } else {
-                GLES20.glDrawArrays(renderType().glValue(), 0, vertices().size());
+                pos = getFaces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
+                len = getFaces().renderSubsetLength();
             }
 
-            GLES20.glDisable(GLES20.GL_BLEND);
-            GLES20.glDisable(GLES20.GL_DEPTH_TEST);
-            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
-        }
-
-        if (this instanceof Object3dContainer) {
-            Object3dContainer container = (Object3dContainer)this;
-
-            for (int i = 0; i < container.children().size(); i++) {
-                Object3d o = container.children().get(i);
-                o.render(camera, projMatrix, vMatrix, mMMatrix);
+            if (mVertexBufferObject) {
+                GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, mBuffers[VBO_ID.FACE.ordinal()]);
+                GLES20.glDrawElements(
+                        renderType().glValue(),
+                        len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
+                        GLES20.GL_UNSIGNED_SHORT,
+                        0);
+            } else {
+                getFaces().buffer().position(pos);
+                GLES20.glDrawElements(
+                        renderType().glValue(),
+                        len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
+                        GLES20.GL_UNSIGNED_SHORT,
+                        getFaces().buffer());
             }
+        } else {
+            GLES20.glDrawArrays(renderType().glValue(), 0, getVertices().size());
         }
+
+        GLES20.glDisable(GLES20.GL_BLEND);
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
     }
 
     /**
@@ -1403,7 +1425,7 @@ public class Object3d implements Callback
 
         String backgroundTexId = (mBGDrawable != null)?PREFIX_BACKGROUND + mBGDrawable.toString() + mBGDrawable.getState():PREFIX_BACKGROUND;
         String replaced = null;
-        for (String id:textures().getIds()) {
+        for (String id:getTextures().getIds()) {
             if (id.contains(PREFIX_BACKGROUND) && !id.equals(PREFIX_BACKGROUND)) {
                 if (id.equals(backgroundTexId)) {
                     return;
@@ -1416,7 +1438,7 @@ public class Object3d implements Callback
 
         if (replaced != null) {
             getGContext().getTexureManager().deleteTexture(replaced);
-            textures().removeById(replaced);
+            getTextures().removeById(replaced);
         }
 
         if (mBGDrawable != null) {
@@ -1453,8 +1475,12 @@ public class Object3d implements Callback
             TextureVo textureVo = new TextureVo(backgroundTexId);
             textureVo.repeatU = false;
             textureVo.repeatV = false;
-            textures().add(0, textureVo);
+            getTextures().add(0, textureVo);
         }
+    }
+
+    protected Bitmap createTextureBitmap(int width, int height, Bitmap.Config config) {
+        return null;
     }
 
     protected void rotateM(float[] m, int mOffset, float a, float x, float y, float z) {
@@ -1476,28 +1502,28 @@ public class Object3d implements Callback
         GLES20.glDeleteBuffers(VBO_ID.TOTAL.ordinal(), mBuffers, 0);
         GLES20.glGenBuffers(VBO_ID.TOTAL.ordinal(), mBuffers, 0);
 
-        _vertices.points().buffer().position(0);
+        mVertices.getPoints().buffer().position(0);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.POINT.ordinal()]);
         GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
-                _vertices.points().capacity() * Number3dBufferList.PROPERTIES_PER_ELEMENT * Number3dBufferList.BYTES_PER_PROPERTY,
-                _vertices.points().buffer(),
+                mVertices.getPoints().capacity() * Number3dBufferList.PROPERTIES_PER_ELEMENT * Number3dBufferList.BYTES_PER_PROPERTY,
+                mVertices.getPoints().buffer(),
                 GLES20.GL_STATIC_DRAW);
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.UV.ordinal()]);
-        if (_vertices.uvs() != null) {
-            _vertices.uvs().buffer().position(0);
+        if (mVertices.getUvs() != null) {
+            mVertices.getUvs().buffer().position(0);
             GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
-                    _vertices.uvs().capacity() * UvBufferList.PROPERTIES_PER_ELEMENT * UvBufferList.BYTES_PER_PROPERTY,
-                    _vertices.uvs().buffer(),
+                    mVertices.getUvs().capacity() * UvBufferList.PROPERTIES_PER_ELEMENT * UvBufferList.BYTES_PER_PROPERTY,
+                    mVertices.getUvs().buffer(),
                     GLES20.GL_STATIC_DRAW);
         }
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.COLOR.ordinal()]);
-        if (hasVertexColors() && vertexColorsEnabled() && _vertices.colors() != null) {
-            _vertices.colors().buffer().position(0);
+        if (hasVertexColors() && vertexColorsEnabled() && mVertices.getColors() != null) {
+            mVertices.getColors().buffer().position(0);
             GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
-                    _vertices.colors().capacity() * Color4BufferList.PROPERTIES_PER_ELEMENT,
-                    _vertices.colors().buffer(),
+                    mVertices.getColors().capacity() * Color4BufferList.PROPERTIES_PER_ELEMENT,
+                    mVertices.getColors().buffer(),
                     GLES20.GL_STATIC_DRAW);
         } else if (mColors != null) {
             mColors.buffer().position(0);
@@ -1508,34 +1534,34 @@ public class Object3d implements Callback
         }
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mBuffers[VBO_ID.NORMAL.ordinal()]);
-        if (hasNormals() && normalsEnabled() && _vertices.normals() != null) {
-            _vertices.normals().buffer().position(0);
+        if (hasNormals() && normalsEnabled() && mVertices.getNormals() != null) {
+            mVertices.getNormals().buffer().position(0);
             GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER,
-                    _vertices.normals().capacity() * Number3dBufferList.PROPERTIES_PER_ELEMENT * Number3dBufferList.BYTES_PER_PROPERTY,
-                    _vertices.normals().buffer(),
+                    mVertices.getNormals().capacity() * Number3dBufferList.PROPERTIES_PER_ELEMENT * Number3dBufferList.BYTES_PER_PROPERTY,
+                    mVertices.getNormals().buffer(),
                     GLES20.GL_STATIC_DRAW);
         }
 
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, mBuffers[VBO_ID.FACE.ordinal()]);
         if (!ignoreFaces()) {
-            _faces.buffer().position(0);
+            mFaces.buffer().position(0);
             GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER,
-                    _faces.capacity() * FacesBufferedList.PROPERTIES_PER_ELEMENT * 2,
-                    _faces.buffer(),
+                    mFaces.capacity() * FacesBufferedList.PROPERTIES_PER_ELEMENT * 2,
+                    mFaces.buffer(),
                     GLES20.GL_STATIC_DRAW);
         }
     }
 
     void containAABB() {
         FloatBuffer[] points = mAabbBuffer;
-        points[0] = vertices().points().buffer();
+        points[0] = getVertices().getPoints().buffer();
 
         if (points == null || points.length == 0) {
             Log.i(TAG, "contain nothing, return!!!");
             return;
         }
 
-        if (vertices().size() > 0) {
+        if (getVertices().size() > 0) {
             if (!mObtainAABB) {
                 mMinX = mMinY = mMinZ = Float.MAX_VALUE;
                 mMaxX = mMaxY = mMaxZ = Float.MIN_VALUE;
@@ -1603,7 +1629,7 @@ public class Object3d implements Callback
         Matrix.setIdentityM(mScaleMC, 0);
         Matrix.scaleM(mScaleMC, 0, mScale.x, mScale.y, mScale.z);
 
-        if (vertices().size() > 0) {
+        if (getVertices().size() > 0) {
             mResult[0] = mCenter.x;
             mResult[1] = mCenter.y;
             mResult[2] = mCenter.z;
@@ -2000,6 +2026,15 @@ public class Object3d implements Callback
 
     public float getHeight() {
         return mHeight;
+    }
+
+    /**
+     * True if this view has changed since the last time being drawn.
+     *
+     * @return The dirty state of this view.
+     */
+    public boolean isDirty() {
+        return (mPrivateFlags & DIRTY_MASK) != 0;
     }
 
     /**
@@ -2550,8 +2585,8 @@ public class Object3d implements Callback
             }*/
         } else {
             getGContext().getTexureManager().scheduleTextureDeletion(backgroundTexId);
-            if (textures().getById(backgroundTexId) != null) {
-                textures().removeById(backgroundTexId);
+            if (getTextures().getById(backgroundTexId) != null) {
+                getTextures().removeById(backgroundTexId);
             }
 
             /* Remove the background */
@@ -3455,6 +3490,49 @@ public class Object3d implements Callback
             }
         }*/
         mPrivateFlags &= ~FORCE_LAYOUT;
+    }
+
+    /**
+     * <p>Enables or disables the drawing cache. When the rendering cache is enabled, the next call
+     * to {@link #getRenderingCache()} or {@link #layout()} will draw the view in a
+     * bitmap. Calling {@link #draw(android.graphics.Canvas)} will not draw from the cache when
+     * the cache is enabled. To benefit from the cache, you must request the rendering cache by
+     * calling {@link #getRenderingCache()} and draw it on screen if the returned bitmap is not
+     * null.</p>
+     *
+     * <p>Enabling the rendering cache is similar to
+     * {@link #setLayerType(int, android.graphics.Paint) setting a layer} when hardware
+     * acceleration is turned off. When hardware acceleration is turned on, enabling the
+     * rendering cache has no effect on rendering because the system uses a different mechanism
+     * for acceleration which ignores the flag. If you want to use a Bitmap for the view, even
+     * when hardware acceleration is enabled, see {@link #setLayerType(int, android.graphics.Paint)}
+     * for information on how to enable software and hardware layers.</p>
+     *
+     * <p>This API can be used to manually generate
+     * a bitmap copy of this view, by setting the flag to <code>true</code> and calling
+     * {@link #getRenderingCache()}.</p>
+     *
+     * @param enabled true to enable the rendering cache, false otherwise
+     *
+     * @see #isRenderCacheEnabled()
+     * @see #getRenderingCache()
+     * @see #layout()
+     * @see #setLayerType(int, android.graphics.Paint)
+     */
+    public void setRenderCacheEnabled(boolean enabled) {
+        setFlags(enabled ? RENDER_CACHE_ENABLED : 0, RENDER_CACHE_ENABLED);
+    }
+
+    /**
+     * <p>Indicates whether the rendering cache is enabled for this view.</p>
+     *
+     * @return true if the rendering cache is enabled
+     *
+     * @see #setRenderCacheEnabled(boolean)
+     * @see #getRenderingCache()
+     */
+    public boolean isRenderCacheEnabled() {
+        return (mViewFlags & RENDER_CACHE_ENABLED) == RENDER_CACHE_ENABLED;
     }
 
     /**

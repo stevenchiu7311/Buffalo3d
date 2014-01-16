@@ -28,9 +28,9 @@ public class ExampleSubsetOfFaces extends RendererActivity
 		_cylinder.doubleSidedEnabled(true);
 		scene.addChild(_cylinder);
 		
-		_cylinder.faces().renderSubsetEnabled(true);
+		_cylinder.getFaces().renderSubsetEnabled(true);
 
-		_numFaces = _cylinder.faces().size();
+		_numFaces = _cylinder.getFaces().size();
 		_faceIndexStart = 0;
 		_faceIndexLength = 0;
 		_incrementer = +2;		
@@ -40,8 +40,8 @@ public class ExampleSubsetOfFaces extends RendererActivity
 	public void updateScene() 
 	{
 		// Update the parameters for rendering subset of cylinder's faces
-		_cylinder.faces().renderSubsetStartIndex(_faceIndexStart);
-		_cylinder.faces().renderSubsetLength(_faceIndexLength);
+		_cylinder.getFaces().renderSubsetStartIndex(_faceIndexStart);
+		_cylinder.getFaces().renderSubsetLength(_faceIndexLength);
 		_faceIndexLength += _incrementer;
 
 		if (_faceIndexLength >= _numFaces-1) _incrementer = -2;

@@ -33,7 +33,7 @@ public class Rectangle extends Object3dContainer
 		{
 			for (col = 0; col <= $segsW; col++)
 			{
-				this.vertices().addVertex(
+				this.getVertices().addVertex(
 					(float)col*w - width5, (float)row*h - height5,0f,	
 					(float)col/(float)$segsW, 1 - (float)row/(float)$segsH,	
 					0,0,1f,	

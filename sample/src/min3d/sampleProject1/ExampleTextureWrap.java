@@ -32,7 +32,7 @@ public class ExampleTextureWrap extends RendererActivity
 		
 		_texture = new TextureVo("texture");
 		
-		_object.textures().add(_texture);
+		_object.getTextures().add(_texture);
 		
 		_counter = 0;
 	}

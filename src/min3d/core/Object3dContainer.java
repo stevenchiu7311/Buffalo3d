@@ -1,13 +1,23 @@
 package min3d.core;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
 import min3d.interfaces.IObject3dContainer;
 import min3d.interfaces.IObject3dParent;
+import min3d.vos.CameraVo;
+import min3d.vos.Color4;
+import min3d.vos.Face;
+import min3d.vos.Number3d;
 import min3d.vos.Ray;
+import min3d.vos.TextureVo;
+import min3d.vos.Uv;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +31,8 @@ import java.util.Comparator;
 public class Object3dContainer extends Object3d implements IObject3dContainer, IObject3dParent
 {
     private static final boolean DBG = false;
+
+    private static final String PREFIX_BACKGROUND = "container_background_";
 
     /**
      * When set, this group will go through its list of children to notify them of
@@ -223,10 +235,10 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
 	
 	public Object3dContainer clone()
 	{
-		Vertices v = _vertices.clone();
-		FacesBufferedList f = _faces.clone();
+		Vertices v = mVertices.clone();
+		FacesBufferedList f = mFaces.clone();
 
-		Object3dContainer clone = new Object3dContainer(mGContext, v, f, _textures);
+		Object3dContainer clone = new Object3dContainer(mGContext, v, f, mTextures);
 		
 		clone.position().x = position().x;
 		clone.position().y = position().y;
@@ -951,6 +963,136 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
         final int count = numChildren();
         for (int i = 0; i < count; i++) {
             children[i].setPressed(pressed);
+        }
+    }
+
+    public void buildRenderingCache() {
+        Vertices vertices = getVertices();
+        FacesBufferedList faces = getFaces();
+
+        buildRenderingCache(vertices, faces, this);
+    }
+
+    void buildRenderingCache(Vertices vertices, FacesBufferedList faces, Object3dContainer parent) {
+        for (int i = 0; i < parent.numChildren(); i++) {
+            Object3d obj = parent.getChildAt(i);
+            for (int j = 0; j < obj.getVertices().size(); j++) {
+                Number3d point = obj.getVertices().getPoints().getAsNumber3d(j).clone();
+                Number3d.add(point, obj.position(), point);
+                Uv uv = obj.getVertices().getUvs().getAsUv(j).clone();
+                uv.v = uv.v / parent.numChildren() + i * (1f / parent.numChildren());
+                Number3d normal = obj.getVertices().getNormals().getAsNumber3d(j).clone();
+                Color4 color = obj.getVertices().getColors().getAsColor4(j);
+
+                vertices.addVertex(point, uv, normal, color);
+            }
+            for (int j = 0; j < obj.getFaces().size(); j++) {
+                Face face = obj.getFaces().get(j);
+                face.a = (short) (face.a + i * 4);
+                face.b = (short) (face.b + i * 4);
+                face.c = (short) (face.c + i * 4);
+                faces.add(face);
+            }
+
+            if (obj instanceof Object3dContainer) {
+                buildRenderingCache(vertices, faces, (Object3dContainer) obj);
+            }
+        }
+    }
+
+    void computeTextureSize(Object3dContainer parent, Rect rect) {
+        for (int i = 0; i < parent.numChildren(); i++) {
+            Object3d obj = parent.getChildAt(i);
+            BitmapDrawable current = (BitmapDrawable) obj.getBackground().getCurrent();
+            Bitmap bitmap = current.getBitmap();
+            if (bitmap != null) {
+                rect.right = bitmap.getWidth();
+                rect.bottom += bitmap.getHeight();
+            }
+            if (obj instanceof Object3dContainer) {
+                computeTextureSize((Object3dContainer) obj, rect);
+            }
+        }
+    }
+
+    void drawTextureMap(Object3dContainer parent, Canvas canvas, int offset) {
+        for (int i = 0; i < parent.numChildren(); i++) {
+            Object3d obj = parent.getChildAt(i);
+            BitmapDrawable current = (BitmapDrawable) obj.getBackground().getCurrent();
+            Bitmap bitmap = current.getBitmap();
+            if (bitmap != null) {
+                canvas.drawBitmap(bitmap, 0, 0 + offset, new Paint());
+                offset += bitmap.getHeight();
+            }
+        }
+    }
+
+    protected void onManageLayerTexture() {
+        super.onManageLayerTexture();
+
+        if (!isRenderCacheEnabled()) return;
+
+        String backgroundTexId = PREFIX_BACKGROUND+this;
+        String replaced = null;
+        for (String id:getTextures().getIds()) {
+            if (id.contains(PREFIX_BACKGROUND) && !id.equals(PREFIX_BACKGROUND)) {
+                if (id.equals(backgroundTexId)) {
+                    return;
+                } else {
+                    replaced = id;
+                }
+                break;
+            }
+        }
+
+        if (replaced != null) {
+            getGContext().getTexureManager().deleteTexture(replaced);
+            getTextures().removeById(replaced);
+        }
+
+        buildRenderingCache();
+
+        Rect rect = new Rect();
+        computeTextureSize(this, rect);
+        Bitmap container = createTextureBitmap(rect.width(), rect.height(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(container);
+        drawTextureMap(this, canvas, 0);
+
+        if (!getGContext().getTexureManager().contains(backgroundTexId)) {
+            if (container != null) {
+                getGContext().getTexureManager().addTextureId(container, backgroundTexId, false);
+            }
+        }
+
+        if (container != null && !container.isRecycled()) {
+            container.recycle();
+        }
+
+        TextureVo textureVo = new TextureVo(backgroundTexId);
+        textureVo.repeatU = false;
+        textureVo.repeatV = false;
+        getTextures().add(0, textureVo);
+    }
+
+    protected Bitmap createTextureBitmap(int width, int height, Bitmap.Config config) {
+        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    }
+
+    protected void prepareRenderingShader(CameraVo camera) {
+        if (getVisibility() == Object3d.VISIBLE) {
+            super.prepareRenderingShader(camera);
+        }
+    }
+
+    protected void prepareRenderingBuffer() {
+        if (getVisibility() == Object3d.VISIBLE) {
+            super.prepareRenderingBuffer();
+        }
+    }
+
+    protected void doRenderingTask(float[] vMatrix) {
+        if (getVisibility() == Object3d.VISIBLE) {
+            super.doRenderingTask(vMatrix);
         }
     }
 }

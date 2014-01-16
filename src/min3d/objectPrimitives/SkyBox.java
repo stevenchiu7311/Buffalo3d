@@ -120,12 +120,12 @@ public class SkyBox extends Object3dContainer {
 		{
 			for(int i=0; i<6; i++)
 			{
-				faces[i].textures().addById(id);
+				faces[i].getTextures().addById(id);
 			}
 		}
 		else
 		{
-			faces[face.ordinal()].textures().addById(id);
+			faces[face.ordinal()].getTextures().addById(id);
 		}
 	}
 }

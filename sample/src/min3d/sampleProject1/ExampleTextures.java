@@ -45,7 +45,7 @@ public class ExampleTextures extends RendererActivity
 		// Add it to the TexturesList held by the Object3d, 
 		// and it will be duly rendered.
 
-		_cube.textures().add(texture);
+		_cube.getTextures().add(texture);
 	}
 	
 	@Override 

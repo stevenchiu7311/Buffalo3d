@@ -100,16 +100,16 @@ public class ParseObjectData {
 					newUv.u = ba.uOffset + newUv.u * ba.uScale;
 					newUv.v = ba.vOffset + newUv.v * ba.vScale;
 				}
-				obj.vertices().addVertex(newVertex, newUv, newNormal, newColor);
+				obj.getVertices().addVertex(newVertex, newUv, newNormal, newColor);
 			}
 
 			if (face.faceLength == 3) {
-				obj.faces().add(
+				obj.getFaces().add(
 						new Face(faceIndex, faceIndex + 1, faceIndex + 2));
 			} else if (face.faceLength == 4) {
-				obj.faces().add(
+				obj.getFaces().add(
 						new Face(faceIndex, faceIndex + 1, faceIndex + 3));
-				obj.faces().add(
+				obj.getFaces().add(
 						new Face(faceIndex + 1, faceIndex + 2, faceIndex + 3));
 			}
 
@@ -123,7 +123,7 @@ public class ParseObjectData {
             TextureVo t = new TextureVo(textureAtlas.getId());
             t.repeatU = false;
             t.repeatV = false;
-            obj.textures().add(t);
+            obj.getTextures().add(t);
         }
 		cleanup();
 	}

@@ -65,8 +65,8 @@ public class Utils
 	 */
 	public static void addQuad(Object3d $o, int $upperLeft, int $upperRight, int $lowerRight, int $lowerLeft)
 	{
-		$o.faces().add((short)$upperLeft, (short)$lowerRight, (short)$upperRight);
-		$o.faces().add((short)$upperLeft, (short)$lowerLeft, (short)$lowerRight);
+		$o.getFaces().add((short)$upperLeft, (short)$lowerRight, (short)$upperRight);
+		$o.getFaces().add((short)$upperLeft, (short)$lowerLeft, (short)$lowerRight);
 	}
 	
 	public static FloatBuffer makeFloatBuffer3(float $a, float $b, float $c)

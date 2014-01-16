@@ -57,7 +57,7 @@ public class ExampleVerticesVariations extends RendererActivity
 		
 		_cube2 = new Box(getGContext(),.6f,.6f,.6f, colors,  true,false,false);
 		_cube2.position().y = .4f;
-		_cube2.textures().addById("uglysquares");
+		_cube2.getTextures().addById("uglysquares");
 		
 		// _cube3's verticies contain uv and normal data, but not color data  
 		// The result is an shaded box with a texture on each side.
@@ -65,7 +65,7 @@ public class ExampleVerticesVariations extends RendererActivity
 		
 		_cube3 = new Box(getGContext(),.6f,.6f,.6f, null,  true,true,false);
 		_cube3.position().y = -.4f;
-		_cube3.textures().addById("uglysquares");
+		_cube3.getTextures().addById("uglysquares");
 		
 		// _cube4's verticies contain neither uv, normal, or color data (in other words, just position data) 
 		// Since it does not use per-vertex color data, the Object3's defaultColor property

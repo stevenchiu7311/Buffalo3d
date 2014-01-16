@@ -52,7 +52,7 @@ public class ExampleAnimatedTexture extends RendererActivity
 		b.recycle();
 		
 		// Add textures to sphere
-		_cube.textures().addById("jupiter");
+		_cube.getTextures().addById("jupiter");
 	}
 	
 	@Override 

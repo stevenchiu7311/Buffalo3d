@@ -45,8 +45,8 @@ public class ExampleMipMap extends RendererActivity
 		getGContext().getTexureManager().addTextureId(b, "checkerboard_with_mipmap", true);
 		getGContext().getTexureManager().addTextureId(b, "checkerboard_without_mipmap", false);
 
-		_cubeWithMipMap.textures().addById("checkerboard_with_mipmap");
-		_cubeWithoutMipMap.textures().addById("checkerboard_without_mipmap");
+		_cubeWithMipMap.getTextures().addById("checkerboard_with_mipmap");
+		_cubeWithoutMipMap.getTextures().addById("checkerboard_without_mipmap");
 
 		b.recycle();
 	}

@@ -78,13 +78,13 @@ public class Torus extends Object3dContainer {
 				float uy0 = s2/steps2;
 				float uy1 = (s2+1)/steps2;
 
-				vertices().addVertex(v0.position, new Uv(1-ux1, uy0), v0.normal, defaultColor());
-				vertices().addVertex(v1.position, new Uv(1-ux0, uy0), v1.normal, defaultColor());
-				vertices().addVertex(v2.position, new Uv(1-ux0, uy1), v2.normal, defaultColor());
-				vertices().addVertex(v3.position, new Uv(1-ux1, uy1), v3.normal, defaultColor());
+				getVertices().addVertex(v0.position, new Uv(1-ux1, uy0), v0.normal, defaultColor());
+				getVertices().addVertex(v1.position, new Uv(1-ux0, uy0), v1.normal, defaultColor());
+				getVertices().addVertex(v2.position, new Uv(1-ux0, uy1), v2.normal, defaultColor());
+				getVertices().addVertex(v3.position, new Uv(1-ux1, uy1), v3.normal, defaultColor());
 				
-				faces().add(vcount, vcount+1, vcount+2);
-				faces().add(vcount, vcount+2, vcount+3);
+				getFaces().add(vcount, vcount+1, vcount+2);
+				getFaces().add(vcount, vcount+2, vcount+3);
 				
 				vcount += 4;
 			}

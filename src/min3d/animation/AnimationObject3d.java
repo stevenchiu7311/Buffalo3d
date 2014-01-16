@@ -122,8 +122,8 @@ public class AnimationObject3d extends Object3d {
 
 		interpolation += fps * (currentTime - startTime) / 1000;
 		
-		vertices().overwriteNormals(interPolatedNormals);
-		vertices().overwriteVerts(interPolatedVerts);
+		getVertices().overwriteNormals(interPolatedNormals);
+		getVertices().overwriteVerts(interPolatedVerts);
 	
 		if (interpolation > 1) {
 			interpolation = 0;
@@ -146,11 +146,11 @@ public class AnimationObject3d extends Object3d {
 	
 	public Object3d clone(boolean cloneData)
 	{
-		Vertices v = cloneData ? _vertices.clone() : _vertices;
-		FacesBufferedList f = cloneData ? _faces.clone() : _faces;
+		Vertices v = cloneData ? mVertices.clone() : mVertices;
+		FacesBufferedList f = cloneData ? mFaces.clone() : mFaces;
 		//KeyFrame[] fr = cloneData ? getClonedFrames() : frames;
 		
-		AnimationObject3d clone = new AnimationObject3d(mGContext, v, f, _textures, frames);
+		AnimationObject3d clone = new AnimationObject3d(mGContext, v, f, mTextures, frames);
 		clone.position().x = position().x;
 		clone.position().y = position().y;
 		clone.position().z = position().z;

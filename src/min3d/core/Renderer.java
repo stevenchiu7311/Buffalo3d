@@ -387,7 +387,7 @@ public class Renderer implements GLSurfaceView.Renderer
         }
 
         int visibility = $o.getVisibility() & Object3d.VISIBILITY_MASK;
-        if (visibility == Object3d.INVISIBLE || visibility == Object3d.GONE) return;
+        if (visibility == Object3d.GONE) return;
 
         $o.onRender();
 
@@ -405,8 +405,8 @@ public class Renderer implements GLSurfaceView.Renderer
                 GLES11.glBindBuffer(GL11.GL_ARRAY_BUFFER, $o.mBuffers[VBO_ID.NORMAL.ordinal()]);
                 GLES11.glNormalPointer(GL10.GL_FLOAT, 0, 0);
             } else {
-                $o.vertices().normals().buffer().position(0);
-                _gl.glNormalPointer(GL10.GL_FLOAT, 0, $o.vertices().normals().buffer());
+                $o.getVertices().getNormals().buffer().position(0);
+                _gl.glNormalPointer(GL10.GL_FLOAT, 0, $o.getVertices().getNormals().buffer());
             }
             _gl.glEnableClientState(GL10.GL_NORMAL_ARRAY);
         }
@@ -451,8 +451,8 @@ public class Renderer implements GLSurfaceView.Renderer
                 GLES11.glBindBuffer(GL11.GL_ARRAY_BUFFER, $o.mBuffers[VBO_ID.COLOR.ordinal()]);
                 GLES11.glColorPointer(4, GL10.GL_UNSIGNED_BYTE, 0, 0);
             } else {
-                $o.vertices().colors().buffer().position(0);
-                _gl.glColorPointer(4, GL10.GL_UNSIGNED_BYTE, 0, $o.vertices().colors().buffer());
+                $o.getVertices().getColors().buffer().position(0);
+                _gl.glColorPointer(4, GL10.GL_UNSIGNED_BYTE, 0, $o.getVertices().getColors().buffer());
             }
             _gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
         }
@@ -532,21 +532,21 @@ public class Renderer implements GLSurfaceView.Renderer
             GLES11.glBindBuffer(GL11.GL_ARRAY_BUFFER, $o.mBuffers[VBO_ID.POINT.ordinal()]);
             GLES11.glVertexPointer(3, GL10.GL_FLOAT, 0, 0);
         } else {
-            $o.vertices().points().buffer().position(0);
-            _gl.glVertexPointer(3, GL10.GL_FLOAT, 0, $o.vertices().points().buffer());
+            $o.getVertices().getPoints().buffer().position(0);
+            _gl.glVertexPointer(3, GL10.GL_FLOAT, 0, $o.getVertices().getPoints().buffer());
         }
 
         if (! $o.ignoreFaces())
         {
             int pos, len;
 
-            if (! $o.faces().renderSubsetEnabled()) {
+            if (! $o.getFaces().renderSubsetEnabled()) {
                 pos = 0;
-                len = $o.faces().size();
+                len = $o.getFaces().size();
             }
             else {
-                pos = $o.faces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
-                len = $o.faces().renderSubsetLength();
+                pos = $o.getFaces().renderSubsetStartIndex() * FacesBufferedList.PROPERTIES_PER_ELEMENT;
+                len = $o.getFaces().renderSubsetLength();
             }
 
             if ($o.mVertexBufferObject) {
@@ -557,17 +557,17 @@ public class Renderer implements GLSurfaceView.Renderer
                         GL10.GL_UNSIGNED_SHORT,
                         pos);
             } else {
-                $o.faces().buffer().position(pos);
+                $o.getFaces().buffer().position(pos);
                 _gl.glDrawElements(
                         $o.renderType().glValue(),
                         len * FacesBufferedList.PROPERTIES_PER_ELEMENT,
                         GL10.GL_UNSIGNED_SHORT,
-                        $o.faces().buffer());
+                        $o.getFaces().buffer());
             }
         }
         else
         {
-            _gl.glDrawArrays($o.renderType().glValue(), 0, $o.vertices().size());
+            _gl.glDrawArrays($o.renderType().glValue(), 0, $o.getVertices().size());
         }
 
 		GLES11.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
@@ -607,12 +607,12 @@ public class Renderer implements GLSurfaceView.Renderer
                     GLES11.glBindBuffer(GL11.GL_ARRAY_BUFFER, $o.mBuffers[VBO_ID.UV.ordinal()]);
                     GLES11.glTexCoordPointer(2, GL10.GL_FLOAT, 0, 0);
                 } else {
-                    $o.vertices().uvs().buffer().position(0);
-                    _gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, $o.vertices().uvs().buffer());
+                    $o.getVertices().getUvs().buffer().position(0);
+                    _gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, $o.getVertices().getUvs().buffer());
                 }
 
 
-				TextureVo textureVo = ((i < $o.textures().size())) ? textureVo = $o.textures().get(i) : null;
+				TextureVo textureVo = ((i < $o.getTextures().size())) ? textureVo = $o.getTextures().get(i) : null;
 
 				if (textureVo != null)
 				{

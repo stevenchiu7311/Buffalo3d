@@ -13,12 +13,12 @@ public abstract class ComponentBase extends Object3d {
     }
 
     public void setShape(Vertices vertices, FacesBufferedList faces) {
-        _vertices = vertices;
-        _faces = faces;
+        mVertices = vertices;
+        mFaces = faces;
     }
 
     public void setShape(Object3d object3d) {
-        _vertices = object3d.vertices();
-        _faces = object3d.faces();
+        mVertices = object3d.getVertices();
+        mFaces = object3d.getFaces();
     }
 }

@@ -73,9 +73,9 @@ public class ExampleRegisterClickListener extends RendererActivity {
         b.recycle();
 
         // Add textures to objects based on on the id's we assigned the textures in the texture manager
-        _jupiter.textures().addById("jupiter");
-        _earth.textures().addById("earth");
-        _moon.textures().addById("moon");
+        _jupiter.getTextures().addById("jupiter");
+        _earth.getTextures().addById("earth");
+        _moon.getTextures().addById("moon");
 
         _count = 0;
     }

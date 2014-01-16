@@ -113,8 +113,8 @@ public class OpenGLESV1Material extends AMaterial {
                    : GLES20.GL_TEXTURE_2D;
 
            if ($o.hasUvs() && $o.texturesEnabled()) {
-               TextureVo textureVo = ((i < $o.textures().size())) ? textureVo = $o
-                       .textures().get(i) : null;
+               TextureVo textureVo = ((i < $o.getTextures().size())) ? textureVo = $o
+                       .getTextures().get(i) : null;
 
                if (textureVo != null) {
                    // activate texture
