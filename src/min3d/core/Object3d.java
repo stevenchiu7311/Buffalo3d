@@ -468,6 +468,8 @@ public class Object3d implements Callback
 
     AttachInfo mAttachInfo;
 
+    private Bitmap mRenderingCache;
+
     /* Background setting */
     private Drawable mBGDrawable;
     private int mBackgroundResource;
@@ -1468,7 +1470,9 @@ public class Object3d implements Callback
                 }
             }
 
-            if (bitmapNeedRecycled != null && !bitmapNeedRecycled.isRecycled()) {
+            if (isRenderCacheEnabled()) {
+                mRenderingCache = bitmap;
+            } else if (bitmapNeedRecycled != null && !bitmapNeedRecycled.isRecycled()) {
                 bitmapNeedRecycled.recycle();
             }
 
@@ -3533,6 +3537,21 @@ public class Object3d implements Callback
      */
     public boolean isRenderCacheEnabled() {
         return (mViewFlags & RENDER_CACHE_ENABLED) == RENDER_CACHE_ENABLED;
+    }
+
+    public void setRenderingCache(Bitmap bitmap) {
+        mRenderingCache = bitmap;
+    }
+
+    /**
+     * <p>Calling this method is equivalent to calling <code>getRenderingCache(false)</code>.</p>
+     *
+     * @return A non-scaled bitmap representing this view or null if cache is disabled.
+     *
+     * @see #getRenderingCache(boolean)
+     */
+    public Bitmap getRenderingCache() {
+        return mRenderingCache;
     }
 
     /**

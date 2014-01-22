@@ -184,4 +184,11 @@ public class Vertices
     public void setUv(int x, float u, float v) {
         mUvs.set(x,u,v);
     }
+
+    public void clear() {
+        mPoints.clear();
+        mUvs.clear();
+        mNormals.clear();
+        mColors.clear();
+    }
 }

@@ -57,6 +57,7 @@ public class FacesBufferedList
 	 */
 	public void clear()
 	{
+        _numElements = 0;
 		_b.clear();
 	}
 

@@ -55,6 +55,7 @@ public class UvBufferList
 	 */
 	public void clear()
 	{
+	    _numElements = 0;
 		_b.clear();
 	}
 	

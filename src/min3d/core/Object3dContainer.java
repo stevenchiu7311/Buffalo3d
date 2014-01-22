@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +21,7 @@ import min3d.vos.Uv;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 
 /**
  * A Object3dContainer is a special object3d that can contain other object3d
@@ -30,6 +30,8 @@ import java.util.Comparator;
  */
 public class Object3dContainer extends Object3d implements IObject3dContainer, IObject3dParent
 {
+    private final static String TAG = "Object3dContainer";
+
     private static final boolean DBG = false;
 
     private static final String PREFIX_BACKGROUND = "container_background_";
@@ -966,36 +968,45 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
         }
     }
 
-    public void buildRenderingCache() {
+    public void buildRenderingCache(HashMap<Object3d, Integer> map, Rect rect) {
         Vertices vertices = getVertices();
+        vertices.clear();
         FacesBufferedList faces = getFaces();
+        faces.clear();
 
-        buildRenderingCache(vertices, faces, this);
+        buildRenderingCache(vertices, faces, this, new Number3d(0f, 0f, 0f), map, rect);
     }
 
-    void buildRenderingCache(Vertices vertices, FacesBufferedList faces, Object3dContainer parent) {
+    void buildRenderingCache(Vertices vertices, FacesBufferedList faces, Object3dContainer parent, Number3d offset, HashMap<Object3d, Integer> map, Rect rect) {
+        int index = 0; // Index not equal loop index i.
         for (int i = 0; i < parent.numChildren(); i++) {
             Object3d obj = parent.getChildAt(i);
-            for (int j = 0; j < obj.getVertices().size(); j++) {
-                Number3d point = obj.getVertices().getPoints().getAsNumber3d(j).clone();
-                Number3d.add(point, obj.position(), point);
-                Uv uv = obj.getVertices().getUvs().getAsUv(j).clone();
-                uv.v = uv.v / parent.numChildren() + i * (1f / parent.numChildren());
-                Number3d normal = obj.getVertices().getNormals().getAsNumber3d(j).clone();
-                Color4 color = obj.getVertices().getColors().getAsColor4(j);
+            Number3d newOffset = new Number3d();
+            Number3d.add(newOffset, offset, obj.position());
+            if (obj.isRenderCacheEnabled()) {
+                for (int j = 0; j < obj.getVertices().size(); j++) {
+                    Number3d point = obj.getVertices().getPoints().getAsNumber3d(j).clone();
+                    Number3d.add(point, newOffset, point);
+                    Uv uv = obj.getVertices().getUvs().getAsUv(j).clone();
+                    uv.v = uv.v / map.size() + (float)map.get(obj) / rect.height();
+                    Number3d normal = obj.getVertices().getNormals().getAsNumber3d(j).clone();
+                    Color4 color = obj.getVertices().getColors().getAsColor4(j);
+                    color.a = 255;
 
-                vertices.addVertex(point, uv, normal, color);
-            }
-            for (int j = 0; j < obj.getFaces().size(); j++) {
-                Face face = obj.getFaces().get(j);
-                face.a = (short) (face.a + i * 4);
-                face.b = (short) (face.b + i * 4);
-                face.c = (short) (face.c + i * 4);
-                faces.add(face);
+                    vertices.addVertex(point, uv, normal, color);
+                }
+                for (int j = 0; j < obj.getFaces().size(); j++) {
+                    Face face = obj.getFaces().get(j);
+                    face.a = (short) (face.a + index * 4);
+                    face.b = (short) (face.b + index * 4);
+                    face.c = (short) (face.c + index * 4);
+                    faces.add(face);
+                }
+                index++;
             }
 
             if (obj instanceof Object3dContainer) {
-                buildRenderingCache(vertices, faces, (Object3dContainer) obj);
+                buildRenderingCache(vertices, faces, (Object3dContainer) obj, newOffset, map, rect);
             }
         }
     }
@@ -1003,11 +1014,12 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
     void computeTextureSize(Object3dContainer parent, Rect rect) {
         for (int i = 0; i < parent.numChildren(); i++) {
             Object3d obj = parent.getChildAt(i);
-            BitmapDrawable current = (BitmapDrawable) obj.getBackground().getCurrent();
-            Bitmap bitmap = current.getBitmap();
-            if (bitmap != null) {
-                rect.right = bitmap.getWidth();
-                rect.bottom += bitmap.getHeight();
+            if (obj.isRenderCacheEnabled()) {
+                Bitmap bitmap = obj.getRenderingCache();
+                if (bitmap != null) {
+                    rect.right = bitmap.getWidth();
+                    rect.bottom += bitmap.getHeight();
+                }
             }
             if (obj instanceof Object3dContainer) {
                 computeTextureSize((Object3dContainer) obj, rect);
@@ -1015,14 +1027,19 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
         }
     }
 
-    void drawTextureMap(Object3dContainer parent, Canvas canvas, int offset) {
+    void drawTextureMap(Object3dContainer parent, Canvas canvas, Paint paint, int[] offset, HashMap<Object3d, Integer> map) {
         for (int i = 0; i < parent.numChildren(); i++) {
             Object3d obj = parent.getChildAt(i);
-            BitmapDrawable current = (BitmapDrawable) obj.getBackground().getCurrent();
-            Bitmap bitmap = current.getBitmap();
-            if (bitmap != null) {
-                canvas.drawBitmap(bitmap, 0, 0 + offset, new Paint());
-                offset += bitmap.getHeight();
+            if (obj.isRenderCacheEnabled()) {
+                Bitmap bitmap = obj.getRenderingCache();
+                if (bitmap != null) {
+                    canvas.drawBitmap(bitmap, 0, 0 + offset[0], paint);
+                    map.put(obj, new Integer(offset[0]));
+                    offset[0] += bitmap.getHeight();
+                }
+            }
+            if (obj instanceof Object3dContainer) {
+                drawTextureMap((Object3dContainer) obj, canvas, paint, offset, map);
             }
         }
     }
@@ -1030,7 +1047,14 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
 
+        if (numChildren() == 0) return;
+
         if (!isRenderCacheEnabled()) return;
+
+        for (int i = 0; i < numChildren(); i++) {
+            Object3d obj = getChildAt(i);
+            obj.onManageLayerTexture();
+        }
 
         String backgroundTexId = PREFIX_BACKGROUND+this;
         String replaced = null;
@@ -1046,17 +1070,21 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
         }
 
         if (replaced != null) {
-            getGContext().getTexureManager().deleteTexture(replaced);
-            getTextures().removeById(replaced);
+            getGContext().getTexureManager().deleteTexture(backgroundTexId);
+            getTextures().removeById(backgroundTexId);
         }
-
-        buildRenderingCache();
 
         Rect rect = new Rect();
         computeTextureSize(this, rect);
+
+        if (rect.width() == 0 || rect.height() == 0) return;
         Bitmap container = createTextureBitmap(rect.width(), rect.height(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(container);
-        drawTextureMap(this, canvas, 0);
+        HashMap<Object3d, Integer> map = new HashMap<Object3d, Integer>();
+        drawTextureMap(this, canvas, new Paint(), new int[1], map);
+
+        buildRenderingCache(map, rect);
+        map.clear();
 
         if (!getGContext().getTexureManager().contains(backgroundTexId)) {
             if (container != null) {

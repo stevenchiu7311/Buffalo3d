@@ -54,6 +54,7 @@ public class Number3dBufferList
 	 */
 	public void clear()
 	{
+        _numElements = 0;
 		_b.clear();
 	}
 	

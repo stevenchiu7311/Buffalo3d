@@ -51,6 +51,7 @@ public class Color4BufferList
 	 */
 	public void clear()
 	{
+        _numElements = 0;
 		_b.clear();
 	}
 
