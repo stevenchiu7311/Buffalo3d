@@ -1047,8 +1047,10 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
 
-        if (getVisibility() != Object3d.VISIBLE || numChildren() == 0
-                || !isRenderCacheEnabled()) {
+        // Following are only for render cache.
+        // Condition on visibility for this have already handled in Object3d render
+        // onManageLayerTexture entrance.
+        if (numChildren() == 0 || !isRenderCacheEnabled()) {
             return;
         }
 

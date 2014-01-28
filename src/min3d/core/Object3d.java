@@ -1209,13 +1209,14 @@ public class Object3d implements Callback
     }
 
     protected void render(CameraVo camera, float[] projMatrix, float[] vMatrix, final float[] parentMatrix) {
-        if(isLayerTextureDirty()) {
-            onManageLayerTexture();
+        int visibility = getVisibility() & VISIBILITY_MASK;
+        if (visibility == Object3d.GONE || scene() == null) {
+            return;
         }
 
-        int visibility = getVisibility() & VISIBILITY_MASK;
-
-        if (visibility == GONE || scene() == null) return;
+        if(isLayerTextureDirty() && visibility == Object3d.VISIBLE) {
+            onManageLayerTexture();
+        }
 
         onRender();
 
