@@ -1047,9 +1047,10 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
 
-        if (numChildren() == 0) return;
-
-        if (!isRenderCacheEnabled()) return;
+        if (getVisibility() != Object3d.VISIBLE || numChildren() == 0
+                || !isRenderCacheEnabled()) {
+            return;
+        }
 
         for (int i = 0; i < numChildren(); i++) {
             Object3d obj = getChildAt(i);
@@ -1107,19 +1108,19 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
     }
 
     protected void prepareRenderingShader(CameraVo camera) {
-        if (getVisibility() == Object3d.VISIBLE) {
+        if (getVertices() != null && getVertices().size() > 0) {
             super.prepareRenderingShader(camera);
         }
     }
 
     protected void prepareRenderingBuffer() {
-        if (getVisibility() == Object3d.VISIBLE) {
+        if (getVertices() != null && getVertices().size() > 0) {
             super.prepareRenderingBuffer();
         }
     }
 
     protected void doRenderingTask(float[] vMatrix) {
-        if (getVisibility() == Object3d.VISIBLE) {
+        if (getVertices() != null && getVertices().size() > 0) {
             super.doRenderingTask(vMatrix);
         }
     }

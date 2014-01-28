@@ -1221,16 +1221,10 @@ public class Object3d implements Callback
 
         mProjMatrix = projMatrix;
 
-        if (getVertices() != null && getVertices().size() > 0) {
-            prepareRenderingShader(camera);
-            prepareRenderingBuffer();
-        }
-
+        prepareRenderingShader(camera);
+        prepareRenderingBuffer();
         computeRenderingMatrix(projMatrix, vMatrix, parentMatrix);
-
-        if (getVertices() != null && getVertices().size() > 0) {
-            doRenderingTask(vMatrix);
-        }
+        doRenderingTask(vMatrix);
 
         if (this instanceof Object3dContainer) {
             Object3dContainer container = (Object3dContainer)this;
@@ -1243,6 +1237,12 @@ public class Object3d implements Callback
     }
 
     protected void prepareRenderingShader(CameraVo camera) {
+        int visibility = getVisibility() & VISIBILITY_MASK;
+        if (getVertices() == null || getVertices().size() == 0
+                || visibility == INVISIBLE) {
+            return;
+        }
+
         mMaterial = scene().getDefaultMaterial(mGContext);
         mMaterial.setLightEnabled(scene().lightingEnabled() && hasNormals() && normalsEnabled() && lightingEnabled());
         mMaterial.useProgram();
@@ -1272,6 +1272,12 @@ public class Object3d implements Callback
     }
 
     protected void prepareRenderingBuffer() {
+        int visibility = getVisibility() & VISIBILITY_MASK;
+        if (getVertices() == null || getVertices().size() == 0
+                || visibility == INVISIBLE) {
+            return;
+        }
+
         if (!mBuffered) {
             makeVertextBufferObject();
             mBuffered = true;
@@ -1349,6 +1355,12 @@ public class Object3d implements Callback
     }
 
     protected void doRenderingTask(float[] vMatrix) {
+        int visibility = getVisibility() & VISIBILITY_MASK;
+        if (getVertices() == null || getVertices().size() == 0
+                || visibility == INVISIBLE) {
+            return;
+        }
+
         mMaterial.setMVPMatrix(mMVPMatrix);
         mMaterial.setModelMatrix(mMMatrix);
         mMaterial.setViewMatrix(vMatrix);
