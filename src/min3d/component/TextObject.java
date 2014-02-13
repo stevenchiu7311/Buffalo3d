@@ -128,9 +128,16 @@ public class TextObject extends ComponentBase {
         String textTexId = (mTextView != null)?PREFIX_TEXT + mTextView.toString():PREFIX_TEXT;
         destroyLastTextRes();
         if (mTextView != null) {
-            Bitmap bitmap = loadBitmapFromView(mTextView, measuredWidth, measuredHeight);
-            mGContext.getTexureManager().addTextureId(bitmap, textTexId, false);
-            recycleTextBitmap(bitmap);
+            if (measuredWidth > 0 && measuredHeight > 0) {
+                Bitmap bitmap = loadBitmapFromView(mTextView, measuredWidth, measuredHeight);
+                mGContext.getTexureManager().addTextureId(bitmap, textTexId, false);
+                recycleTextBitmap(bitmap);
+            } else {
+                Log.e(TAG, "Cannot allocate invalid bitmap for text("
+                        + mTextView.getText() + ") with measured width("
+                        + measuredWidth + ") and measured height("
+                        + measuredHeight + ").");
+            }
 
             TextureVo textureText = new TextureVo(textTexId);
             // Texture env should be not used if text object background is transparent.
