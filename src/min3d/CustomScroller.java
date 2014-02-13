@@ -18,7 +18,7 @@ public class CustomScroller {
     public enum Mode{X,Y};
 
     private final static int FLING_HANDLER_ACTION = 0;
-    private final static int FLING_HANDLER_INTERVEL = 15; // Should be shorter than 1000 / 60
+    private final static int FLING_HANDLER_INTERVEL = 10; // Should be shorter than 1000 / 60
     public final static float FLING_DECELERATION_INTERPOLATOR = 1.5f;
 
     private final static int CURRENT_VELOCITY_UNIT = 750;
