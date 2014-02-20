@@ -1095,9 +1095,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
             }
         }
 
-        if (container != null && !container.isRecycled()) {
-            container.recycle();
-        }
+        releaseTextureBitmap(container);
 
         TextureVo textureVo = new TextureVo(backgroundTexId);
         textureVo.repeatU = false;
@@ -1107,6 +1105,12 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
 
     protected Bitmap createTextureBitmap(int width, int height, Bitmap.Config config) {
         return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    }
+
+    protected void releaseTextureBitmap(Bitmap bitmap) {
+        if (bitmap != null && !bitmap.isRecycled()) {
+            bitmap.recycle();
+        }
     }
 
     protected void prepareRenderingShader(CameraVo camera) {
