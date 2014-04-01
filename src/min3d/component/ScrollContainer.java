@@ -115,7 +115,7 @@ public class ScrollContainer extends Object3dContainer {
     }
 
     public void addMotionEvent(MotionEvent event) {
-        if (mScroller != null && isEnabled()) {
+        if (mScroller != null) {
             mScroller.processScroll(event);
         }
     }
