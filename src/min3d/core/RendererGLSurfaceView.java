@@ -7,6 +7,7 @@ import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.util.AttributeSet;
 
+import min3d.GLConfiguration;
 import min3d.interfaces.IRendererGLSurfaceViewConfig;
 import min3d.interfaces.ISceneController;
 
@@ -44,6 +45,10 @@ public class RendererGLSurfaceView extends RendererGLSurfaceViewProxy implements
         onConfigSetting();
         mGContext = new GContext(context);
         mGContext.setGLSurfaceView(this);
+        GLConfiguration newGLConfig = new GLConfiguration();
+        newGLConfig.mConfiguration = getResources().getConfiguration();
+        newGLConfig.mOrientation = newGLConfig.mConfiguration.orientation;
+        mGContext.setGLConfiguration(newGLConfig);
         min3d.core.Renderer r = new min3d.core.Renderer(mGContext);
         setGContext(mGContext);
         scene = new Scene(mGContext, this);

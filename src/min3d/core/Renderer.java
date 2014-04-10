@@ -11,6 +11,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
+import min3d.GLConfiguration;
 import min3d.Min3d;
 import min3d.animation.AnimationObject3d;
 import min3d.core.Object3d.VBO_ID;
@@ -41,6 +42,8 @@ import android.util.Log;
 public class Renderer implements GLSurfaceView.Renderer
 {
 	public static final int NUM_GLLIGHTS = 8;
+
+    private GContext mGContext;
 
 	private GL10 _gl;
 	private Scene _scene;
@@ -79,6 +82,7 @@ public class Renderer implements GLSurfaceView.Renderer
 
 	public Renderer(GContext context)
 	{
+        mGContext = context;
 		_scratchIntBuffer = IntBuffer.allocate(4);
 		_scratchFloatBuffer = FloatBuffer.allocate(4);
 		
@@ -123,6 +127,11 @@ public class Renderer implements GLSurfaceView.Renderer
 
         mSurfaceWidth = w;
         mSurfaceHeight = h;
+
+        GLConfiguration newGLConfig = new GLConfiguration();
+        newGLConfig.mConfiguration = mGContext.getGLConfiguration().mConfiguration;
+        newGLConfig.mOrientation = mGContext.getGLConfiguration().mConfiguration.orientation;
+        _scene.requestUpdateConfiguration(newGLConfig);
 	}
 	
 	public void onDrawFrame(GL10 gl)

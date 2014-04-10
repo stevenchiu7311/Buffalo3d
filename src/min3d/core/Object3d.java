@@ -19,6 +19,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import min3d.GLConfiguration;
 import min3d.GLHandler;
 import min3d.interfaces.IObject3dContainer;
 import min3d.interfaces.IObject3dParent;
@@ -3565,6 +3566,30 @@ public class Object3d implements Callback
      */
     public Bitmap getRenderingCache() {
         return mRenderingCache;
+    }
+
+    /**
+     * Dispatch a notification about a resource configuration change down
+     * the view hierarchy.
+     * Object3dContainer should override to route to their children.
+     *
+     * @param newConfig The GL configuration.
+     */
+    public void dispatchConfigurationChanged(GLConfiguration newConfig) {
+        onConfigurationChanged(newConfig);
+    }
+
+    /**
+     * Called when the current configuration of the resources being used
+     * by the application have changed.  You can use this to decide when
+     * to reload resources that can changed based on orientation and other
+     * configuration characterstics.  You only need to use this if you are
+     * not relying on the normal {@link android.app.Activity} mechanism of
+     * recreating the activity instance upon a configuration change.
+     *
+     * @param newConfig The GL configuration.
+     */
+    protected void onConfigurationChanged(GLConfiguration newConfig) {
     }
 
     /**

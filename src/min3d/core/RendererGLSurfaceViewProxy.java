@@ -1,6 +1,7 @@
 package min3d.core;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
@@ -8,6 +9,8 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+
+import min3d.GLConfiguration;
 
 public class RendererGLSurfaceViewProxy extends GLSurfaceView {
     public static final String TAG = "RendererGLSurfaceViewProxy";
@@ -73,17 +76,18 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent e) {
-        final Scene scene = mGContext.getRenderer().getScene();
-        final MotionEvent event = MotionEvent.obtain(e);
-        queueEvent(new Runnable() {
-            // This method will be called on the rendering
-            // thread:
-            public void run() {
-                scene.dispatchTouchEventToChild(event);
-                event.recycle();
-            }
-        });
+    public void onConfigurationChanged(Configuration newConfig) {
+        GLConfiguration newGLConfig = new GLConfiguration();
+        newGLConfig.mConfiguration = newConfig;
+        newGLConfig.mOrientation = mGContext.getGLConfiguration().mOrientation;
+        Scene scene = mGContext.getRenderer().getScene();
+        scene.requestUpdateConfiguration(newGLConfig);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Scene scene = mGContext.getRenderer().getScene();
+        scene.dispatchInputEvent(event);
         return true;
     }
 

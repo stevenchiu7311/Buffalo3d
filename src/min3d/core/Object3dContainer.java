@@ -8,6 +8,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import min3d.GLConfiguration;
 import min3d.interfaces.IObject3dContainer;
 import min3d.interfaces.IObject3dParent;
 import min3d.vos.CameraVo;
@@ -925,6 +926,19 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
             }
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void dispatchConfigurationChanged(GLConfiguration newConfig) {
+        super.dispatchConfigurationChanged(newConfig);
+        final int count = numChildren();
+        final Object3d[] children = (Object3d[]) mChildren.toArray(new Object3d[1]);
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchConfigurationChanged(newConfig);
+        }
     }
 
     /**

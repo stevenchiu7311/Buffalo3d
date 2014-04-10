@@ -1,7 +1,14 @@
 package min3d.core;
 
-import java.util.ArrayList;
+import android.opengl.GLSurfaceView;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 
+import min3d.GLConfiguration;
 import min3d.GLHandler;
 import min3d.Min3d;
 import min3d.interfaces.IDirtyParent;
@@ -18,11 +25,7 @@ import min3d.vos.FogType;
 import min3d.vos.LightType;
 import min3d.vos.Ray;
 
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.util.Log;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
+import java.util.ArrayList;
 
 /**
  * The top of a object3d hierarchy, storing all the needed configurations of GL
@@ -34,6 +37,9 @@ public class Scene implements IObject3dContainer, IDirtyParent
     private final static String TAG = "Scene";
 
     private static final boolean DBG = true;
+
+    private final static int MSG_DISPATCH_INPUT_EVENT = 7;
+    private final static int MSG_UPDATE_CONFIGURATION = 18;
 
 	private ManagedLightList _lights;
 	private CameraVo _camera;
@@ -70,6 +76,8 @@ public class Scene implements IObject3dContainer, IDirtyParent
 
     ArrayList<Object3d> mDownHitList = null;
 
+    private final SceneHandler mHandler;
+
 	public Scene(GContext context, ISceneController $sceneController)
 	{
 	    mGContext = context;
@@ -90,6 +98,8 @@ public class Scene implements IObject3dContainer, IDirtyParent
         GLHandler handler = new GLHandler(ht.getLooper(), context.getGLSurfaceView());
 
         mAttachInfo = new Object3d.AttachInfo(handler);
+
+        mHandler = new SceneHandler(handler.getLooper(), context.getGLSurfaceView());
 	}
 
     /**
@@ -891,5 +901,55 @@ public class Scene implements IObject3dContainer, IDirtyParent
 
         final IObject3dContainer theParent = child.parent();
         return (theParent instanceof Object3dContainer) && isObjectDescendantOf((Object3d) theParent, parent);
+    }
+
+    void updateConfiguration(GLConfiguration config, boolean force) {
+        if (mObject3dContainer != null) {
+            mObject3dContainer.dispatchConfigurationChanged(config);
+        }
+    }
+
+    public void requestUpdateConfiguration(GLConfiguration config) {
+        mGContext.setGLConfiguration(config);
+        Message msg = mHandler.obtainMessage(MSG_UPDATE_CONFIGURATION, config);
+        mHandler.sendMessage(msg);
+    }
+
+    public void dispatchInputEvent(MotionEvent event) {
+        MotionEvent copy = MotionEvent.obtain(event);
+        Message msg = mHandler.obtainMessage(MSG_DISPATCH_INPUT_EVENT, copy);
+        mHandler.sendMessage(msg);
+    }
+
+    final class SceneHandler extends GLHandler {
+        public SceneHandler(Looper looper, GLSurfaceView proxy) {
+            super(looper, proxy);
+        }
+
+        @Override
+        public String getMessageName(Message msg) {
+            switch (msg.what) {
+                case MSG_DISPATCH_INPUT_EVENT:
+                    return "MSG_DISPATCH_INPUT_EVENT";
+                case MSG_UPDATE_CONFIGURATION:
+                    return "MSG_UPDATE_CONFIGURATION";
+            }
+            return super.getMessageName(msg);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+            case MSG_DISPATCH_INPUT_EVENT:
+                MotionEvent event = (MotionEvent)msg.obj;
+                dispatchTouchEventToChild(event);
+                event.recycle();
+                break;
+            case MSG_UPDATE_CONFIGURATION:
+                GLConfiguration config = (GLConfiguration)msg.obj;
+                updateConfiguration(config, false);
+                break;
+            }
+        }
     }
 }
