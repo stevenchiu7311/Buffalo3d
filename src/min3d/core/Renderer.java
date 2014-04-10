@@ -110,6 +110,8 @@ public class Renderer implements GLSurfaceView.Renderer
 	
 	public void onSurfaceChanged(GL10 gl, int w, int h) 
 	{
+        boolean sizeChanged = false;
+
         Log.i(Min3d.TAG, "Renderer.onSurfaceChanged()");
 
         setGl(gl);
@@ -125,13 +127,19 @@ public class Renderer implements GLSurfaceView.Renderer
 
         updateViewFrustrum();
 
+        if (mSurfaceWidth != w || mSurfaceHeight != h) {
+            sizeChanged = true;
+        }
+
         mSurfaceWidth = w;
         mSurfaceHeight = h;
 
-        GLConfiguration newGLConfig = new GLConfiguration();
-        newGLConfig.mConfiguration = mGContext.getGLConfiguration().mConfiguration;
-        newGLConfig.mOrientation = mGContext.getGLConfiguration().mConfiguration.orientation;
-        _scene.requestUpdateConfiguration(newGLConfig);
+        if (sizeChanged) {
+            GLConfiguration newGLConfig = new GLConfiguration();
+            newGLConfig.mConfiguration = mGContext.getGLConfiguration().mConfiguration;
+            newGLConfig.mOrientation = mGContext.getGLConfiguration().mConfiguration.orientation;
+            _scene.requestUpdateConfiguration(newGLConfig);
+        }
 	}
 	
 	public void onDrawFrame(GL10 gl)
