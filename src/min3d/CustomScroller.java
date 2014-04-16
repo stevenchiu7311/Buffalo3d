@@ -189,8 +189,8 @@ public class CustomScroller {
 
     public void scrollWithAlign(float velocity, int duration) {
         int scroll = ((mMode == Mode.X)?mScroller.getCurrX():mScroller.getCurrY());
-        int delta = (int) (((scroll - mPadding) % mItemSize > mItemSize / 2) ? ((int)(((float)scroll / mItemSize) + 1)
-                * mItemSize - scroll) - (mItemSize - mPadding)
+        int delta = (int) (((scroll - mPadding) % mItemSize > mItemSize / 2) ? ((int)(((float)(scroll - mPadding) / mItemSize) + 1)
+                * mItemSize - (scroll - mPadding))
                 : -((scroll - mPadding) % mItemSize));
 
         if (mMode == Mode.X) {

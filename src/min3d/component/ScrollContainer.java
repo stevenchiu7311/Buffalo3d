@@ -447,18 +447,18 @@ public class ScrollContainer extends Object3dContainer {
         float delta;
         float scroll = ((mMode == Mode.X)?mScroller.getCurrX():mScroller.getCurrY());
         if (velocity > 0) {
-            float dyForward = (int)(ry - ry % mItemSize) - (scroll - mPadding) % mItemSize;
+            float dyForward = (ry - ry % mItemSize) - (scroll - mPadding) % mItemSize;
             if (scroll + dyForward > forwardLimit) {
                 dyForward -= dyForward - forwardLimit;
             }
-            delta = (int) dyForward;
+            delta = dyForward;
         } else {
             float dyBackward = -(mItemSize - (scroll - mPadding) % mItemSize)
                     - (ry - ry % mItemSize);
             if (scroll + dyBackward < backwardLimit) {
                 dyBackward -= backwardLimit - dyBackward;
             }
-            delta = (int) -dyBackward;
+            delta = -dyBackward;
         }
         if (mMode == Mode.X) {
             mScroller.startScroll(scroll, 0, delta, 0, duration);
@@ -470,9 +470,9 @@ public class ScrollContainer extends Object3dContainer {
 
     public void scrollWithAlign(float velocity, int duration) {
         float scroll = ((mMode == Mode.X)?mScroller.getCurrX():mScroller.getCurrY());
-        float delta = (int) (((scroll - mPadding) % mItemSize > mItemSize / 2) ? ((int)(((float)scroll / mItemSize) + 1)
-                * mItemSize - scroll) - (mItemSize - mPadding)
-                : -((scroll - mPadding) % mItemSize));
+        float delta = ((scroll - mPadding) % mItemSize > mItemSize / 2) ? (((int)((scroll - mPadding) / mItemSize) + 1)
+                * mItemSize - (scroll - mPadding))
+                : -((scroll - mPadding) % mItemSize);
 
         if (mMode == Mode.X) {
             mScroller.startScroll(scroll, 0, delta, 0, duration);
@@ -564,8 +564,8 @@ public class ScrollContainer extends Object3dContainer {
                 velocityTracker.computeCurrentVelocity(CURRENT_VELOCITY_UNIT, mMaximumVelocity);
 
 
-                float initialVelocity = (mMode == Mode.X) ? (int) velocityTracker
-                        .getXVelocity(pointerId) : (int) velocityTracker
+                float initialVelocity = (mMode == Mode.X) ? velocityTracker
+                        .getXVelocity(pointerId) : velocityTracker
                         .getYVelocity(pointerId);
                 float scroll = ((mMode == Mode.X) ? mScroller.getCurrX() : mScroller.getCurrY());
                 float length = ((mMode == Mode.X) ? mContentWidth : mContentHeight);
