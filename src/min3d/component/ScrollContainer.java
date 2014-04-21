@@ -470,8 +470,7 @@ public class ScrollContainer extends Object3dContainer {
 
     public void scrollWithAlign(float velocity, int duration) {
         float scroll = ((mMode == Mode.X)?mScroller.getCurrX():mScroller.getCurrY());
-        float delta = ((scroll - mPadding) % mItemSize > mItemSize / 2) ? (((int)((scroll - mPadding) / mItemSize) + 1)
-                * mItemSize - (scroll - mPadding))
+        float delta = ((scroll - mPadding) % mItemSize > mItemSize / 2) ? mItemSize - (scroll - mPadding) % mItemSize
                 : -((scroll - mPadding) % mItemSize);
 
         if (mMode == Mode.X) {
