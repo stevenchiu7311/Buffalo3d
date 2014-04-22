@@ -572,7 +572,7 @@ public class FloatOverScroller {
         private int mSplineDuration;
 
         // Distance to travel along spline animation
-        private int mSplineDistance;
+        private float mSplineDistance;
 
         // Whether the animation is currently in progress
         private boolean mFinished;
@@ -772,7 +772,7 @@ public class FloatOverScroller {
                 totalDistance = getSplineFlingDistance(velocity);
             }
 
-            mSplineDistance = (int) (totalDistance * Math.signum(velocity));
+            mSplineDistance = (float) (totalDistance * Math.signum(velocity));
             mFinal = start + mSplineDistance;
 
             // Clamp to a valid final position

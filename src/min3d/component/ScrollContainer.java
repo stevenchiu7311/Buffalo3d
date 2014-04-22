@@ -34,7 +34,6 @@ public class ScrollContainer extends Object3dContainer {
     public final static float FLING_DECELERATION_INTERPOLATOR = 1.5f;
 
     private final static int CURRENT_VELOCITY_UNIT = 30;
-    private final static int FLING_MIN_VELOCITY_VALUE = 100;
     private final static int MAX_DURATION_VALUE = 2000;
 
     private final static int BASE_PARAMETER_FLING = 9000;
@@ -568,14 +567,15 @@ public class ScrollContainer extends Object3dContainer {
                         .getYVelocity(pointerId);
                 float scroll = ((mMode == Mode.X) ? mScroller.getCurrX() : mScroller.getCurrY());
                 float length = ((mMode == Mode.X) ? mContentWidth : mContentHeight);
-                if (Math.abs(initialVelocity) > FLING_MIN_VELOCITY_VALUE
-                        && (scroll >= mPadding && scroll <= (length + mPadding))) {
-                    if (mItemSize != 0) {
-                        int preDuration = (int)((float)Math.abs(initialVelocity) / BASE_PARAMETER_FLING * 1000);
-                        int duration = (int)(preDuration * (Math.sqrt(0.4 * (MAX_DURATION_VALUE / preDuration))));
-                        flingWithAlign(-initialVelocity, duration);
-                    } else {
-                        fling(-initialVelocity);
+                if (scroll >= mPadding && scroll <= (length + mPadding)) {
+                    if (mScrolling) {
+                        if (mItemSize != 0) {
+                            int preDuration = (int)((float)Math.abs(initialVelocity) / BASE_PARAMETER_FLING * 1000);
+                            int duration = (int)(preDuration * (Math.sqrt(0.4 * (MAX_DURATION_VALUE / preDuration))));
+                            flingWithAlign(-initialVelocity, duration);
+                        } else {
+                            fling(-initialVelocity);
+                        }
                     }
                 } else {
                     float [] feedback = isNeedRebounding((mMode == Mode.X)?mScrollX:mScrollY);
