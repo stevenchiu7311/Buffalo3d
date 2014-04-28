@@ -998,25 +998,28 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
             Number3d newOffset = new Number3d();
             Number3d.add(newOffset, offset, obj.position());
             if (obj.isRenderCacheEnabled()) {
-                for (int j = 0; j < obj.getVertices().size(); j++) {
-                    Number3d point = obj.getVertices().getPoints().getAsNumber3d(j).clone();
-                    Number3d.add(point, newOffset, point);
-                    Uv uv = obj.getVertices().getUvs().getAsUv(j).clone();
-                    uv.v = uv.v / map.size() + (float)map.get(obj) / rect.height();
-                    Number3d normal = obj.getVertices().getNormals().getAsNumber3d(j).clone();
-                    Color4 color = obj.getVertices().getColors().getAsColor4(j);
-                    color.a = 255;
+                Bitmap bitmap = obj.getRenderingCache();
+                if (bitmap != null) {
+                    for (int j = 0; j < obj.getVertices().size(); j++) {
+                        Number3d point = obj.getVertices().getPoints().getAsNumber3d(j).clone();
+                        Number3d.add(point, newOffset, point);
+                        Uv uv = obj.getVertices().getUvs().getAsUv(j).clone();
+                        uv.v = uv.v / map.size() + (float)map.get(obj) / rect.height();
+                        Number3d normal = obj.getVertices().getNormals().getAsNumber3d(j).clone();
+                        Color4 color = obj.getVertices().getColors().getAsColor4(j);
+                        color.a = 255;
 
-                    vertices.addVertex(point, uv, normal, color);
+                        vertices.addVertex(point, uv, normal, color);
+                    }
+                    for (int j = 0; j < obj.getFaces().size(); j++) {
+                        Face face = obj.getFaces().get(j);
+                        face.a = (short) (face.a + index * 4);
+                        face.b = (short) (face.b + index * 4);
+                        face.c = (short) (face.c + index * 4);
+                        faces.add(face);
+                    }
+                    index++;
                 }
-                for (int j = 0; j < obj.getFaces().size(); j++) {
-                    Face face = obj.getFaces().get(j);
-                    face.a = (short) (face.a + index * 4);
-                    face.b = (short) (face.b + index * 4);
-                    face.c = (short) (face.c + index * 4);
-                    faces.add(face);
-                }
-                index++;
             }
 
             if (obj instanceof Object3dContainer) {
