@@ -23,11 +23,17 @@ uniform mat4 u_texture1Matrix;
 
 void calcTextureCoordinates()
 {
-    for (int i= c_zero; i <NUM_TEXTURES; i++) {
-        if (textureEnabled[i]) {
-            v_texCoord[i] = (u_textureMatrix[i] * vec4(aTextureCoord,c_onef,c_onef)).st;
-        }
+#if defined(MULTIPLE_TEXTURE)
+    if (textureEnabled[0]) {
+        v_texCoord[0] = (u_textureMatrix[0] * vec4(aTextureCoord,c_onef,c_onef)).st;
     }
+    if (textureEnabled[1]) {
+        v_texCoord[1] = (u_textureMatrix[1] * vec4(aTextureCoord,c_onef,c_onef)).st;
+    }
+#else
+    v_texCoord[0] = (u_textureMatrix[0] * vec4(aTextureCoord,c_onef,c_onef)).st;
+#endif
+
 }
 
 // Structs

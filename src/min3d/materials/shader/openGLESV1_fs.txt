@@ -31,6 +31,7 @@ void calcTextureColorContribution(inout vec4 color)
 
 void calcTextureEnvironment(inout vec4 color, int i)
 {
+#if defined(MULTIPLE_TEXTURE)
     if (u_lightingEnabled){
         if (textureEnvMode[i] == DECAL) {
             color.rgb = mix(color.rgb, textureColor[i].rgb, textureColor[i].a);
@@ -46,4 +47,5 @@ void calcTextureEnvironment(inout vec4 color, int i)
         color = textureColor[i];
     }
     color = clamp(color, c_zerof, c_onef);
+#endif
 }

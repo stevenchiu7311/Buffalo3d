@@ -15,7 +15,7 @@ import android.util.Log;
 
 
 public class OpenGLESV1Material extends AMaterial {
-    private static final String TAG = "PhongMaterial";
+    private static final String TAG = "OpenGLESV1Material";
     private static final String VERTEX_SHADER__FILE = "shader/openGLESV1_vs.txt";
     private static final String FRAGMENT_SHADER_FILE = "shader/openGLESV1_fs.txt";
 
@@ -106,68 +106,70 @@ public class OpenGLESV1Material extends AMaterial {
     }
 
     protected void drawObject_textures(Object3d $o) {
-       // iterate thru object's textures
-       for (int i = 0; i < 2; i++) {
-           GLES20.glActiveTexture(GL10.GL_TEXTURE0 + i);
-           int type = usesCubeMap ? GLES20.GL_TEXTURE_CUBE_MAP
-                   : GLES20.GL_TEXTURE_2D;
-
-           if ($o.hasUvs() && $o.texturesEnabled()) {
-               TextureVo textureVo = ((i < $o.getTextures().size())) ? textureVo = $o
-                       .getTextures().get(i) : null;
-
-               if (textureVo != null) {
-                   // activate texture
-                   int glId = mGContext.getTexureManager()
-                           .getGlTextureId(textureVo.textureId);
-                   GLES20.glBindTexture(type, glId);
-                   GLES20.glEnable(type);
+        // iterate thru object's textures
+        for (int i = 0; i < 2; i++) {
+            GLES20.glActiveTexture(GL10.GL_TEXTURE0 + i);
+            int type = usesCubeMap ? GLES20.GL_TEXTURE_CUBE_MAP
+                    : GLES20.GL_TEXTURE_2D;
+            if ($o.hasUvs() && $o.texturesEnabled()) {
+                TextureVo textureVo = ((i < $o.getTextures().size())) ? textureVo = $o
+                        .getTextures().get(i) : null;
+                if (textureVo != null) {
+                    // activate texture
+                    int glId = mGContext.getTexureManager()
+                            .getGlTextureId(textureVo.textureId);
+                    GLES20.glBindTexture(type, glId);
+                    GLES20.glEnable(type);
 
                     int minFilterType = mGContext.getTexureManager()
                             .hasMipMap(textureVo.textureId) ? GLES20.GL_LINEAR_MIPMAP_NEAREST
                             : GLES20.GL_NEAREST;
-                   GLES20.glTexParameterf(type,
-                           GLES20.GL_TEXTURE_MIN_FILTER,
-                           minFilterType);
-                   GLES20.glTexParameterf(type,
-                           GLES20.GL_TEXTURE_MAG_FILTER,
-                           GLES20.GL_LINEAR); // (OpenGL default)
-                   GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
-                           GLES20.GL_TEXTURE_WRAP_S,
-                           (textureVo.repeatU ? GLES20.GL_REPEAT : GLES20.GL_CLAMP_TO_EDGE));
-                   GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
-                           GLES20.GL_TEXTURE_WRAP_T,
-                           (textureVo.repeatU ? GLES20.GL_REPEAT : GLES20.GL_CLAMP_TO_EDGE));
+                    GLES20.glTexParameterf(type,
+                            GLES20.GL_TEXTURE_MIN_FILTER,
+                            minFilterType);
+                    GLES20.glTexParameterf(type,
+                            GLES20.GL_TEXTURE_MAG_FILTER,
+                            GLES20.GL_LINEAR); // (OpenGL default)
+                    GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+                            GLES20.GL_TEXTURE_WRAP_S,
+                            (textureVo.repeatU ? GLES20.GL_REPEAT : GLES20.GL_CLAMP_TO_EDGE));
+                    GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+                            GLES20.GL_TEXTURE_WRAP_T,
+                            (textureVo.repeatU ? GLES20.GL_REPEAT : GLES20.GL_CLAMP_TO_EDGE));
 
-                   if (minFilterType == GLES20.GL_LINEAR_MIPMAP_NEAREST) {
-                       GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
-                   }
+                    if (minFilterType == GLES20.GL_LINEAR_MIPMAP_NEAREST) {
+                        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
+                    }
 
-                   Matrix.setIdentityM(mMMatrix, 0);
-                   Matrix.translateM(mMMatrix, 0, textureVo.offsetU, textureVo.offsetV,0);
-                   switch (i) {
-                   case 0: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0,i);
-                           setUniformMatrix(Uniforms.UNIFORM_LIST_ID.TEXTURE0_MATRIX, mMMatrix);
-                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENV_MODE, textureVo.textureEnvs.get(0).param);
-                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 1);
-                           break;
-                   case 1: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1,i);
-                           setUniformMatrix(Uniforms.UNIFORM_LIST_ID.TEXTURE1_MATRIX, mMMatrix);
-                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENV_MODE, textureVo.textureEnvs.get(0).param);
-                           setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENABLED, 1);
-                           break;
-                   }
-               }
-           } else {
-               switch (i) {
-               case 0: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 0);
-                       break;
-               case 1: setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENABLED, 0);
-                       break;
-               }
-               GLES20.glBindTexture(type, 0);
-               GLES20.glDisable(type);
-           }
+                    Matrix.setIdentityM(mMMatrix, 0);
+                    Matrix.translateM(mMMatrix, 0, textureVo.offsetU, textureVo.offsetV, 0);
+                    switch (i) {
+                        case 0:
+                            setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0, i);
+                            setUniformMatrix(Uniforms.UNIFORM_LIST_ID.TEXTURE0_MATRIX, mMMatrix);
+                            setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENV_MODE, textureVo.textureEnvs.get(0).param);
+                            setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 1);
+                            break;
+                        case 1:
+                            setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1, i);
+                            setUniformMatrix(Uniforms.UNIFORM_LIST_ID.TEXTURE1_MATRIX, mMMatrix);
+                            setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENV_MODE, textureVo.textureEnvs.get(0).param);
+                            setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENABLED, 1);
+                            break;
+                    }
+                }
+            } else {
+                switch (i) {
+                    case 0:
+                        setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE0_ENABLED, 0);
+                        break;
+                    case 1:
+                        setUniformData(Uniforms.UNIFORM_LIST_ID.TEXTURE1_ENABLED, 0);
+                        break;
+                }
+                GLES20.glBindTexture(type, 0);
+                GLES20.glDisable(type);
+            }
        }
    }
 
