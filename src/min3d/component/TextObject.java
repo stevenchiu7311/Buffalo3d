@@ -55,6 +55,8 @@ public class TextObject extends ComponentBase {
         mDepth = depth;
 
         mTextView = new TextView(context.getContext());
+        // Force text view to configure its size.
+        mTextView.setTextSize(mTextView.getTextSize());
     }
 
     public TextObject(GContext context, float width, float height, float depth,
@@ -107,10 +109,8 @@ public class TextObject extends ComponentBase {
     @Override
     protected void onManageLayerTexture() {
         super.onManageLayerTexture();
-        if (mRatio == 0f) {
-            float x = getGContext().getRenderer().getWorldPlaneSize(position().z).x;
-            mRatio = getGContext().getRenderer().getWidth() / x;
-        }
+        float x = getGContext().getRenderer().getWorldPlaneSize(position().z).x;
+        mRatio = getGContext().getRenderer().getWidth() / x;
 
         int layoutWidth = (int) ((getWidth() > 0) ? (int) (getWidth() * mRatio) : getWidth());
         int layoutHeight = (int) ((getHeight() > 0) ? (int) (getHeight() * mRatio) : getHeight());
