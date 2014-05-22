@@ -939,7 +939,8 @@ public class Renderer implements GLSurfaceView.Renderer
      */
     public Number3d getWorldPlaneSize(float depth) {
         Number3d coord = getWorldCoord(mSurfaceWidth,mSurfaceHeight,depth);
-        return new Number3d(Math.abs(coord.x * 2),Math.abs(coord.y * 2),coord.z);
+        return new Number3d(Math.abs((coord.x - _scene.camera().position.x) * 2),
+                Math.abs((coord.y - _scene.camera().position.y) * 2), coord.z);
     }
 
     /**
@@ -949,7 +950,7 @@ public class Renderer implements GLSurfaceView.Renderer
      */
     public float getProjRatio(float depth) {
         Number3d coord = getWorldCoord(mSurfaceWidth, mSurfaceHeight, depth);
-        return Math.abs(coord.x * 2) / mSurfaceWidth;
+        return Math.abs((coord.x - _scene.camera().position.x) * 2) / mSurfaceWidth;
     }
 
     /**
