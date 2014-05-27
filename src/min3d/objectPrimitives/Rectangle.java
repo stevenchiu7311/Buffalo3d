@@ -1,61 +1,74 @@
 package min3d.objectPrimitives;
 
-import min3d.Utils;
 import min3d.core.GContext;
 import min3d.core.Object3dContainer;
 import min3d.vos.Color4;
 
-public class Rectangle extends Object3dContainer
-{
-	public Rectangle(GContext context, float $width, float $height, int $segsW, int $segsH)
-	{
-		this(context, $width, $height, $segsW, $segsH, new Color4());
-	}
+public class Rectangle extends Object3dContainer {
+    int mSegNumW, mSegNumH;
+    Color4 mColor4;
 
-	public Rectangle(GContext context, float $width, float $height, int $segsW, int $segsH, Color4 color)
-	{
-		super(context, 4 * $segsW * $segsH, 2 * $segsW * $segsH);
+    public Rectangle(GContext context, float width, float height, int segNumW, int segNumH) {
+        this(context, width, height, segNumW, segNumH, new Color4());
+    }
 
-		setWidth($width);
-        setHeight($height);
+    public Rectangle(GContext context, float width, float height, int segNumW, int segNumH,
+            Color4 color) {
+        super(context, 4 * segNumW * segNumH, 2 * segNumW * segNumH);
 
-		int row, col;
+        mSegNumW = segNumW;
+        mSegNumH = segNumH;
+        mColor4 = color;
+        layout(width, height);
 
-		float w = $width / $segsW;
-		float h = $height / $segsH;
+        int row, col;
 
-		float width5 = $width/2f;
-		float height5 = $height/2f;
-		
-		// Add vertices
-		
-		for (row = 0; row <= $segsH; row++)
-		{
-			for (col = 0; col <= $segsW; col++)
-			{
-				this.getVertices().addVertex(
-					(float)col*w - width5, (float)row*h - height5,0f,	
-					(float)col/(float)$segsW, 1 - (float)row/(float)$segsH,	
-					0,0,1f,	
-					color.r, color.g, color.b, color.a
-				);
-			}
-		}
-		
-		// Add faces
-		
-		int colspan = $segsW + 1;
-		
-		for (row = 1; row <= $segsH; row++)
-		{
-			for (col = 1; col <= $segsW; col++)
-			{
-				int lr = row * colspan + col;
-				int ll = lr - 1;
-				int ur = lr - colspan;
-				int ul = ur - 1;
-				Utils.addQuad(this, ul,ur,lr,ll);
-			}
-		}
-	}
+        // Add faces
+        getFaces().clear();
+        int colspan = mSegNumW + 1;
+        for (row = 1; row <= mSegNumH; row++) {
+            for (col = 1; col <= mSegNumW; col++) {
+                int lr = row * colspan + col;
+                int ll = lr - 1;
+                int ur = lr - colspan;
+                int ul = ur - 1;
+                getFaces().add((short) ul, (short) lr, (short) ur);
+                getFaces().add((short) ul, (short) ll, (short) lr);
+            }
+        }
+    }
+
+    public void defaultColor(Color4 color) {
+        super.defaultColor(color);
+        mColor4 = color;
+    }
+
+    public void layout(float w, float h) {
+        float oldW = getWidth();
+        float oldH = getHeight();
+        if (w != oldW || h != oldH) {
+            setWidth(w);
+            setHeight(h);
+
+            int row, col;
+
+            float segW = w / mSegNumW;
+            float segH = h / mSegNumH;
+
+            float halfW = w / 2f;
+            float halfH = h / 2f;
+
+            // Add vertices
+            getVertices().clear();
+            for (row = 0; row <= mSegNumH; row++) {
+                for (col = 0; col <= mSegNumW; col++) {
+                    getVertices().addVertex(
+                            (float) col * segW - halfW, (float) row * segH - halfH, 0f,
+                            (float) col / (float) mSegNumW, 1 - (float) row / (float) mSegNumH,
+                            0, 0, 1f,
+                            mColor4.r, mColor4.g, mColor4.b, mColor4.a);
+                }
+            }
+        }
+    }
 }

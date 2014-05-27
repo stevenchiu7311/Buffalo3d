@@ -3483,7 +3483,7 @@ public class Object3d implements Callback
         return (mPrivateFlags & FORCE_LAYOUT) == FORCE_LAYOUT;
     }
 
-    public void layout(/*int l, int t, int r, int b*/) {
+    public void layout(float w, float h) {
 /*        int oldL = mLeft;
         int oldT = mTop;
         int oldB = mBottom;
