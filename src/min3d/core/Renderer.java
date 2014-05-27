@@ -24,6 +24,7 @@ import min3d.vos.TextureVo;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.opengl.ETC1Util;
@@ -137,7 +138,8 @@ public class Renderer implements GLSurfaceView.Renderer
         if (sizeChanged) {
             GLConfiguration newGLConfig = new GLConfiguration();
             newGLConfig.mConfiguration = mGContext.getGLConfiguration().mConfiguration;
-            newGLConfig.mOrientation = mGContext.getGLConfiguration().mConfiguration.orientation;
+            newGLConfig.mOrientation = (mSurfaceWidth <= mSurfaceHeight) ? Configuration.ORIENTATION_PORTRAIT
+                    : Configuration.ORIENTATION_LANDSCAPE;
             _scene.requestUpdateConfiguration(newGLConfig);
         }
 	}

@@ -77,11 +77,27 @@ public class RendererGLSurfaceViewProxy extends GLSurfaceView {
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        GLConfiguration newGLConfig = new GLConfiguration();
-        newGLConfig.mConfiguration = newConfig;
-        newGLConfig.mOrientation = mGContext.getGLConfiguration().mOrientation;
-        Scene scene = mGContext.getRenderer().getScene();
-        scene.requestUpdateConfiguration(newGLConfig);
+        final Scene scene = mGContext.getRenderer().getScene();
+        scene.getGLHandler().post(new ConfigurationChangedHandler(newConfig) {
+            @Override
+            public void run() {
+                GLConfiguration newGLConfig = new GLConfiguration();
+                newGLConfig.mConfiguration = mConfig;
+                newGLConfig.mOrientation = mGContext.getGLConfiguration().mOrientation;
+
+                scene.requestUpdateConfiguration(newGLConfig);
+            }
+        });
+    }
+
+    private class ConfigurationChangedHandler implements Runnable {
+        Configuration mConfig;
+        public ConfigurationChangedHandler(Configuration config) {
+            mConfig = config;
+        }
+
+        @Override
+        public void run() {}
     }
 
     @Override
