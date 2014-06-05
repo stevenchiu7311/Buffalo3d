@@ -1,6 +1,7 @@
 package min3d.sampleProject1;
 
 import android.graphics.Bitmap;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,6 +28,7 @@ public class ExampleRegisterClickListener extends RendererActivity {
     Object3dContainer _earth;
     Object3dContainer _moon;
     int _count;
+    Handler mHandler;
 
     public void initScene() {
         Light light = new Light();
@@ -78,6 +80,8 @@ public class ExampleRegisterClickListener extends RendererActivity {
         _moon.getTextures().addById("moon");
 
         _count = 0;
+
+        mHandler = new Handler(getGlSurfaceView().getHandler().getLooper());
     }
 
     @Override
@@ -104,7 +108,13 @@ public class ExampleRegisterClickListener extends RendererActivity {
         public void onClick(Object3d v, List<Object3d> list,
                 Number3d coordinates) {
             Log.i("ExampleTouchHandler", "OnClickListener:" + v.name());
-            Toast.makeText(getBaseContext(), "Click: " + v.name(), 1000).show();
+            final Object3d obj = v;
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getBaseContext(), "Click: " + obj.name(), 1000).show();
+                }
+            });
         }
     };
 
@@ -112,8 +122,13 @@ public class ExampleRegisterClickListener extends RendererActivity {
         public boolean onLongClick(Object3d v, List<Object3d> list,
                 Number3d coordinates) {
             Log.i("ExampleTouchHandler", "OnLongClickListener:" + v.name());
-            Toast.makeText(getBaseContext(), "Long Click: " + v.name(), 1000)
-                    .show();
+            final Object3d obj = v;
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getBaseContext(), "Long Click: " + obj.name(), 1000).show();
+                }
+            });
             return true;
         }
     };

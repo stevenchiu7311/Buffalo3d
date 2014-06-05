@@ -3,7 +3,6 @@ package min3d.sampleProject1;
 import android.os.Bundle;
 import android.view.MotionEvent;
 
-import min3d.CustomScroller;
 import min3d.component.ImageObject;
 import min3d.component.ScrollContainer;
 import min3d.component.ScrollContainer.ScrollContainerListener;
@@ -54,7 +53,7 @@ public class ExampleScrollContainer extends RendererActivity {
     protected void onCreate(Bundle savedInstanceState) {
         RendererGLSurfaceView.setGlesVersion(RendererGLSurfaceView.GLES20);
         super.onCreate(savedInstanceState);
-        mScrollView = new ScrollContainer(getGContext(),(IS_VERTICAL_SCROLL_SAMPLE)?CustomScroller.Mode.Y:CustomScroller.Mode.X);
+        mScrollView = new ScrollContainer(getGContext(),(IS_VERTICAL_SCROLL_SAMPLE)?ScrollContainer.Mode.Y:ScrollContainer.Mode.X);
         mScrollView.setOverScrollRange(1 * ITEM_SIZE);
         mScrollView.setScrollRange(ITEM_NUM * ITEM_SIZE);
         mScrollView.setScrollContainerListener(new ScrollContainerListener() {
@@ -70,16 +69,11 @@ public class ExampleScrollContainer extends RendererActivity {
             }
 
             @Override
-            public void onScrollChanged(float scrollX, float scrollY,
-                    int nativeScrollX, int nativeScrollY) {
+            public void onScrollChanged(float scrollX, float scrollY) {
             }
 
             @Override
             public void onScrollFinished() {
-            }
-
-            @Override
-            public void onScrollerReady() {
             }
         });
     }
