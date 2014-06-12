@@ -190,10 +190,16 @@ public class Object3d implements Callback
     static final int CLICKABLE = 0x00004000;
 
     /**
-     * <p>Indicates this view is caching its drawing into a bitmap.</p>
+     * <p>Indicates this view will be applied to build cache.</p>
      * {@hide}
      */
     static final int RENDER_CACHE_ENABLED = 0x00008000;
+
+    /**
+     * <p>Indicates this view is a container to build its child's cache.</p>
+     * {@hide}
+     */
+    static final int RENDER_CACHE_BUILDER = 0x00010000;
 
     /**
      * <p>
@@ -3551,6 +3557,14 @@ public class Object3d implements Callback
      */
     public boolean isRenderCacheEnabled() {
         return (mViewFlags & RENDER_CACHE_ENABLED) == RENDER_CACHE_ENABLED;
+    }
+
+    public void enableRenderCacheBuilder(boolean enabled) {
+        setFlags(enabled ? RENDER_CACHE_BUILDER : 0, RENDER_CACHE_BUILDER);
+    }
+
+    public boolean checkRenderCacheBuilder() {
+        return (mViewFlags & RENDER_CACHE_BUILDER) == RENDER_CACHE_BUILDER;
     }
 
     public void setRenderingCache(Bitmap bitmap) {

@@ -991,49 +991,48 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
         buildRenderingCache(vertices, faces, this, new Number3d(0f, 0f, 0f), map, rect);
     }
 
-    void buildRenderingCache(Vertices vertices, FacesBufferedList faces, Object3dContainer parent, Number3d offset, HashMap<Object3d, Integer> map, Rect rect) {
-        int index = 0; // Index not equal loop index i.
-        for (int i = 0; i < parent.numChildren(); i++) {
-            Object3d obj = parent.getChildAt(i);
-            Number3d newOffset = new Number3d();
-            Number3d.add(newOffset, offset, obj.position());
-            if (obj.isRenderCacheEnabled()) {
-                for (int j = 0; j < obj.getVertices().size(); j++) {
-                    Number3d point = obj.getVertices().getPoints().getAsNumber3d(j);
-                    Number3d.add(point, newOffset, point);
-                    Uv uv = obj.getVertices().getUvs().getAsUv(j);
-                    Bitmap bitmap = obj.getRenderingCache();
-                    if (bitmap != null) {
-                        uv.v = uv.v / map.size() + (float)map.get(obj) / rect.height();
-                    }
-                    Number3d normal = obj.getVertices().getNormals().getAsNumber3d(j);
-                    Color4 color = null;
-                    if (obj.getVertices().hasColors()) {
-                        color = obj.getVertices().getColors().getAsColor4(j);
-                        color.a = 255;
-                    } else {
-                        color = new Color4();
-                    }
+    void buildRenderingCache(Vertices vertices, FacesBufferedList faces, Object3d obj, Number3d offset, HashMap<Object3d, Integer> map, Rect rect) {
+        if (obj.isRenderCacheEnabled()) {
+            for (int j = 0; j < obj.getVertices().size(); j++) {
+                Number3d point = obj.getVertices().getPoints().getAsNumber3d(j);
+                Number3d.add(point, offset, point);
+                Uv uv = obj.getVertices().getUvs().getAsUv(j);
+                Bitmap bitmap = obj.getRenderingCache();
+                if (bitmap != null) {
+                    uv.v = uv.v / map.size() + (float)map.get(obj) / rect.height();
+                }
+                Number3d normal = obj.getVertices().getNormals().getAsNumber3d(j);
+                Color4 color = null;
+                if (obj.getVertices().hasColors()) {
+                    color = obj.getVertices().getColors().getAsColor4(j);
+                    color.a = 255;
+                } else {
+                    color = new Color4();
+                }
 
-                    vertices.addVertex(point, uv, normal, color);
-                }
-                for (int j = 0; j < obj.getFaces().size(); j++) {
-                    Face face = obj.getFaces().get(j);
-                    face.a = (short) (face.a + index * obj.getVertices().size());
-                    face.b = (short) (face.b + index * obj.getVertices().size());
-                    face.c = (short) (face.c + index * obj.getVertices().size());
-                    faces.add(face);
-                }
-                index++;
+                vertices.addVertex(point, uv, normal, color);
             }
-
-            if (obj instanceof Object3dContainer) {
-                buildRenderingCache(vertices, faces, (Object3dContainer) obj, newOffset, map, rect);
+            for (int j = 0; j < obj.getFaces().size(); j++) {
+                int index = vertices.size() / obj.getVertices().size() - 1;
+                Face face = obj.getFaces().get(j);
+                face.a = (short) (face.a + index * obj.getVertices().size());
+                face.b = (short) (face.b + index * obj.getVertices().size());
+                face.c = (short) (face.c + index * obj.getVertices().size());
+                faces.add(face);
+            }
+        }
+        if (obj instanceof Object3dContainer) {
+            Number3d newOffset = new Number3d();
+            Object3dContainer container = (Object3dContainer)obj;
+            for (int i = 0; i < container.numChildren(); i++) {
+                Object3d child = container.getChildAt(i);
+                Number3d.add(newOffset, offset, child.position());
+                buildRenderingCache(vertices, faces, child, newOffset, map, rect);
             }
         }
     }
 
-    void computeTextureSize(Object3dContainer obj, Rect rect) {
+    void computeTextureSize(Object3d obj, Rect rect) {
         if (obj.isRenderCacheEnabled()) {
             Bitmap bitmap = obj.getRenderingCache();
             if (bitmap != null) {
@@ -1041,15 +1040,16 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
                 rect.bottom += bitmap.getHeight();
             }
         }
-        for (int i = 0; obj instanceof Object3dContainer && i < obj.numChildren(); i++) {
-            Object3d child = obj.getChildAt(i);
-            if (child instanceof Object3dContainer) {
-                computeTextureSize((Object3dContainer) child, rect);
+        if (obj instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer)obj;
+            for (int i = 0; i < container.numChildren(); i++) {
+                Object3d child = container.getChildAt(i);
+                computeTextureSize(child, rect);
             }
         }
     }
 
-    void drawTextureMap(Object3dContainer obj, Canvas canvas, Paint paint, int[] offset, HashMap<Object3d, Integer> map) {
+    void drawTextureMap(Object3d obj, Canvas canvas, Paint paint, int[] offset, HashMap<Object3d, Integer> map) {
         if (obj.isRenderCacheEnabled()) {
             Bitmap bitmap = obj.getRenderingCache();
             if (bitmap != null) {
@@ -1058,10 +1058,11 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
                 offset[0] += bitmap.getHeight();
             }
         }
-        for (int i = 0; obj instanceof Object3dContainer && i < obj.numChildren(); i++) {
-            Object3d child = obj.getChildAt(i);
-            if (child instanceof Object3dContainer) {
-                drawTextureMap((Object3dContainer) child, canvas, paint, offset, map);
+        if (obj instanceof Object3dContainer) {
+            Object3dContainer container = (Object3dContainer)obj;
+            for (int i = 0; i < container.numChildren(); i++) {
+                Object3d child = container.getChildAt(i);
+                drawTextureMap(child, canvas, paint, offset, map);
             }
         }
     }
@@ -1072,7 +1073,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
         // Following are only for render cache.
         // Condition on visibility for this have already handled in Object3d render
         // onManageLayerTexture entrance.
-        if (numChildren() == 0 || !isRenderCacheEnabled()) {
+        if (numChildren() == 0 || !checkRenderCacheBuilder()) {
             return;
         }
 
@@ -1107,7 +1108,7 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
         if (rect.width() != 0 && rect.height() != 0) {
             container = createTextureBitmap(rect.width(), rect.height(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(container);
-            drawTextureMap((Object3dContainer) this.parent(), canvas, new Paint(), new int[1], map);
+            drawTextureMap((Object3dContainer) this, canvas, new Paint(), new int[1], map);
         }
 
         buildRenderingCache(map, rect);
