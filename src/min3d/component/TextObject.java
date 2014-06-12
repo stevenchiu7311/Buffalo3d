@@ -122,7 +122,7 @@ public class TextObject extends ComponentBase {
         int measuredWidth = mTextView.getMeasuredWidth();
         int measuredHeight = mTextView.getMeasuredHeight();
         if (!mHasShape && (mMeasuredWidth != measuredWidth || mMeasuredHeight != measuredHeight)) {
-            createVertices(measuredWidth / mRatio, measuredHeight / mRatio, 1f, 1f);
+            layout(measuredWidth / mRatio, measuredHeight / mRatio);
         }
 
         String textTexId = (mTextView != null)?PREFIX_TEXT + mTextView.toString():PREFIX_TEXT;
@@ -166,30 +166,31 @@ public class TextObject extends ComponentBase {
         }
     }
 
-    private void createVertices(float width, float height, float uRatio, float vRatio) {
+    public void layout(float width, float height) {
+        super.layout(width, height);
+
         float w = width / 2;
         float h = height / 2;
         float d = mDepth / 2;
         short ul, ur, lr, ll;
-        float uvX = uRatio, uvY = vRatio;
-
+        float u = 1f, v = 1f;
         if (getVertices().size() == 0) {
             ul = getVertices().addVertex(-w, +h, d, 0f, 0f, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            ur = getVertices().addVertex(+w, +h, d, uvX, 0f, 0, 0, 1, (short) 0,
+            ur = getVertices().addVertex(+w, +h, d, u, 0f, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            lr = getVertices().addVertex(+w, -h, d, uvX, uvY, 0, 0, 1, (short) 0,
+            lr = getVertices().addVertex(+w, -h, d, u, v, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
-            ll = getVertices().addVertex(-w, -h, d, 0f, uvY, 0, 0, 1, (short) 0,
+            ll = getVertices().addVertex(-w, -h, d, 0f, v, 0, 0, 1, (short) 0,
                     (short) 0, (short) 0, (short) 255);
             Utils.addQuad(this, ul, ur, lr, ll);
         } else {
             getVertices().overwriteVerts(
                     new float[] { -w, +h, d, +w, +h, d, +w, -h, d, -w, -h, d });
             getVertices().setUv(0, 0f, 0f);
-            getVertices().setUv(1, uvX, 0f);
-            getVertices().setUv(2, uvX, uvY);
-            getVertices().setUv(3, 0f, uvY);
+            getVertices().setUv(1, u, 0f);
+            getVertices().setUv(2, u, v);
+            getVertices().setUv(3, 0f, v);
         }
     }
 

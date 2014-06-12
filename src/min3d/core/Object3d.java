@@ -535,7 +535,7 @@ public class Object3d implements Callback
     float mMaxX,mMaxY,mMaxZ;
     Number3d mCompVect = new Number3d();
     FloatBuffer[] mAabbBuffer = new FloatBuffer[1];
-    boolean mObtainAABB = false;
+    boolean mAabbUpdated = false;
 
     /* Variable for ES 2.0 */
     float[] mMVPMatrix = new float[16];
@@ -1586,7 +1586,7 @@ public class Object3d implements Callback
         }
 
         if (getVertices().size() > 0) {
-            if (!mObtainAABB) {
+            if (!mAabbUpdated) {
                 mMinX = mMinY = mMinZ = Float.MAX_VALUE;
                 mMaxX = mMaxY = mMaxZ = Float.MIN_VALUE;
                 for (int idx = 0; idx < points.length; idx++) {
@@ -1616,7 +1616,7 @@ public class Object3d implements Callback
                         }
                     }
                 }
-                mObtainAABB = true;
+                mAabbUpdated = true;
             }
 
             mCenter.x = (mMinX + mMaxX) / 2;
@@ -3513,6 +3513,7 @@ public class Object3d implements Callback
                 }
             }
         }*/
+        mAabbUpdated = false;
         mPrivateFlags &= ~FORCE_LAYOUT;
     }
 

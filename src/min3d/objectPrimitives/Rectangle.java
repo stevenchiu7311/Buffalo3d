@@ -44,6 +44,7 @@ public class Rectangle extends Object3dContainer {
     }
 
     public void layout(float w, float h) {
+        super.layout(w, h);
         float oldW = getWidth();
         float oldH = getHeight();
         if (w != oldW || h != oldH) {
