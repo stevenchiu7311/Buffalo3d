@@ -190,7 +190,8 @@ public class TextureManager
      * Used by Renderer
      */
     protected void recyleUnlinkedTextures() {
-        for (String id:mWillBeRemoved) {
+        for (int i = 0; i < mWillBeRemoved.size(); i++) {
+            String id = mWillBeRemoved.get(i);
             if (contains(id)) {
                 deleteTexture(id);
             }

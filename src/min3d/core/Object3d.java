@@ -482,6 +482,7 @@ public class Object3d implements Callback
     private int mBackgroundResource;
     private boolean mBackgroundSizeChanged;
     private int[] mDrawableState = null;
+    private StringBuilder mBackgroundTexId;
 
     /* Variable for Touch handler */
     Number3d mCoordinate = null;
@@ -1444,8 +1445,19 @@ public class Object3d implements Callback
 
     protected void onManageLayerTexture() {
         mPrivateFlags = (mPrivateFlags & ~DIRTY_MASK) | DRAWN;
+        String backgroundTexId;
+        if (mBGDrawable != null) {
+            if (mBackgroundTexId == null) {
+                mBackgroundTexId = new StringBuilder(PREFIX_BACKGROUND);
+            }
+            mBackgroundTexId.delete(PREFIX_BACKGROUND.length(), mBackgroundTexId.capacity());
+            mBackgroundTexId.append(mBGDrawable.toString());
+            mBackgroundTexId.append(mBGDrawable.getState());
+            backgroundTexId = mBackgroundTexId.toString();
+        } else {
+            backgroundTexId = PREFIX_BACKGROUND;
+        }
 
-        String backgroundTexId = (mBGDrawable != null)?PREFIX_BACKGROUND + mBGDrawable.toString() + mBGDrawable.getState():PREFIX_BACKGROUND;
         String replaced = null;
         for (String id:getTextures().getIds()) {
             if (id.contains(PREFIX_BACKGROUND) && !id.equals(PREFIX_BACKGROUND)) {

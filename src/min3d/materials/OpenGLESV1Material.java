@@ -188,9 +188,8 @@ public class OpenGLESV1Material extends AMaterial {
            }
        }
 
-       Light[] lights = lightList.toArray();
-       for (int i = 0; i < lights.length; i++){
-           Light light = lights[i];
+       for (int i = 0; i < lightList.size(); i++){
+           Light light = lightList.get(i);
            UNIFORM_LIST_ID id;
            if (light.isDirty()){
                if (light.position.isDirty()){

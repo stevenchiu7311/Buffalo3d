@@ -44,6 +44,7 @@ public class TextObject extends ComponentBase {
     private TextView mTextView;
     private float mRatio;
     private float mMaxWidth = Integer.MAX_VALUE;
+    private StringBuilder mTextTexId;
 
     public TextObject(GContext context, float width, float height, float depth,
             Color4[] sixColor4s, Boolean useUvs, Boolean useNormals,
@@ -125,7 +126,13 @@ public class TextObject extends ComponentBase {
             layout(measuredWidth / mRatio, measuredHeight / mRatio);
         }
 
-        String textTexId = (mTextView != null)?PREFIX_TEXT + mTextView.toString():PREFIX_TEXT;
+        if (mTextTexId == null) {
+            mTextTexId = new StringBuilder(PREFIX_TEXT);
+        }
+        mTextTexId.append(mTextView.toString());
+
+        String textTexId = mTextTexId.toString();
+        mTextTexId.delete(PREFIX_TEXT.length(), mTextTexId.capacity());
         destroyLastTextRes();
         if (mTextView != null) {
             if (measuredWidth > 0 && measuredHeight > 0) {

@@ -94,6 +94,8 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
 	protected ArrayList<Object3d> mChildren = new ArrayList<Object3d>();
 
     private Object3d mMotionTarget = null;
+    private ArrayList<Object3d> mDepthTestList = new ArrayList<Object3d>();
+    private DepthSort mDepthSort = new DepthSort(DepthSort.UP);
 
 	public Object3dContainer(GContext context)
 	{
@@ -341,8 +343,9 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
                 ev.setAction(MotionEvent.ACTION_DOWN);
 
                 Object3dContainer container = (Object3dContainer) this;
-                ArrayList<Object3d> children = (ArrayList<Object3d>) container.children().clone();
-                Collections.sort(children, new DepthSort(DepthSort.UP));
+                mDepthTestList.addAll(container.children());
+                ArrayList<Object3d> children = mDepthTestList;
+                Collections.sort(children, mDepthSort);
                 for (int i = children.size() - 1; i >= 0; i--) {
                     if ((children.get(i).getVisibility() & VISIBILITY_MASK) == GONE) {
                         continue;
@@ -356,17 +359,20 @@ public class Object3dContainer extends Object3d implements IObject3dContainer, I
                     }
 
                     boolean find = false;
-                    for (Object3d obj : list) {
+                    for (int j = 0; j < list.size(); j++) {
+                        Object3d obj = list.get(j);
                         find = contain(child,obj);
                     }
 
                     if (child != null && find) {
                         if (child.dispatchTouchEvent(ray, ev, list)) {
                             mMotionTarget = child;
+                            mDepthTestList.clear();
                             return true;
                         }
                     }
                 }
+                mDepthTestList.clear();
             }
         }
 

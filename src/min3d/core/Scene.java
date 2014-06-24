@@ -608,7 +608,8 @@ public class Scene implements IObject3dContainer, IDirtyParent
             list = mDownHitList;
         } else {
             // Only check whether pointer is still on these object.
-            for (Object3d obj : mDownHitList) {
+            for (int i = 0; i < mDownHitList.size(); i++) {
+                Object3d obj = mDownHitList.get(i);
                 obj.containAABB();
             }
             list = (ArrayList<Object3d>) mGContext.getRenderer().getPickedObject(ray, mObject3dContainer);
