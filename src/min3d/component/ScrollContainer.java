@@ -34,7 +34,6 @@ public class ScrollContainer extends Object3dContainer {
     public final static float FLING_DECELERATION_INTERPOLATOR = 1.5f;
 
     private final static int CURRENT_VELOCITY_UNIT = 30;
-    private final static int FLING_MIN_VELOCITY_VALUE = 100;
     private final static int MAX_DURATION_VALUE = 2000;
 
     private final static int BASE_PARAMETER_FLING = 9000;
@@ -568,14 +567,22 @@ public class ScrollContainer extends Object3dContainer {
                         .getYVelocity(pointerId);
                 float scroll = ((mMode == Mode.X) ? mScroller.getCurrX() : mScroller.getCurrY());
                 float length = ((mMode == Mode.X) ? mContentWidth : mContentHeight);
-                if (Math.abs(initialVelocity) > FLING_MIN_VELOCITY_VALUE
-                        && scroll >= mPadding && scroll <= (length + mPadding)) {
-                    if (mItemSize != 0) {
-                        int preDuration = (int)((float)Math.abs(initialVelocity) / BASE_PARAMETER_FLING * 1000);
-                        preDuration = (preDuration <= 0) ? DURATION_SCROLLING_AUTOALIGN : preDuration;
-                        int duration = (int)(preDuration * (Math.sqrt(0.4 * (MAX_DURATION_VALUE / preDuration))));
-                        flingWithAlign(initialVelocity, duration);
-                    } else {
+                if (scroll >= mPadding && scroll <= (length + mPadding)) { // In valid scroll range
+                    if (mItemSize != 0) { // Align mode
+                        if (Math.abs(initialVelocity) > mMinimumVelocity) {
+                            // To do: Fix flingWithAlign function for ScrollContainer applied new FloatScroller
+                            // Trigger fling and to a align position
+                            int preDuration = (int)((float)Math.abs(initialVelocity) / BASE_PARAMETER_FLING * 1000);
+                            preDuration = (preDuration <= 0) ? DURATION_SCROLLING_AUTOALIGN : preDuration;
+                            int duration = (int)(preDuration * (Math.sqrt(0.4 * (MAX_DURATION_VALUE / preDuration))));
+                            flingWithAlign(-initialVelocity, duration);
+                        } else { // Scroll and up to align position
+                            scrollWithAlign(-initialVelocity, DURATION_SCROLLING_AUTOALIGN);
+                        }
+                    } else if (Math.abs(initialVelocity) > 0.5f) {
+                        // 0.5f is a minimum parameter to avoid Float scroller duration is calculated to 0.
+                        // In non-align mode, use fling to handle all velocity except for 0.
+                        // Scroller cannot handle velocity 0.
                         fling(-initialVelocity);
                     }
                 } else {

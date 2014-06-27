@@ -801,7 +801,7 @@ public class FloatOverScroller {
         private int getSplineFlingDuration(float velocity) {
             final double l = getSplineDeceleration(velocity);
             final double decelMinusOne = DECELERATION_RATE - 1.0;
-            return (int) (7500.0 * Math.exp(l / decelMinusOne));
+            return (int) (10000.0 * Math.exp(l / decelMinusOne));
         }
 
         private void fitOnBounceCurve(float start, float end, float velocity) {
