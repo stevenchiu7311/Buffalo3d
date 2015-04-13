@@ -1,0 +1,446 @@
+// Uniforms
+uniform bool uUseTexture;
+uniform bool textureEnabled[NUM_TEXTURES];
+
+void processLight()
+{
+    v_frontColor = aColor;
+    vec4 color;
+    color = aColor/255.0;
+
+    if (u_lightingEnabled) {
+        vertexPositionInEye = uMMatrix * aPosition;
+        calcLighting();
+    } else {
+        v_frontColor = color;
+    }
+}
+
+// Uniforms
+uniform bool u_texture0MatrixEnabled;
+uniform mat4 u_textureMatrix[NUM_TEXTURES];
+uniform mat4 u_texture1Matrix;
+
+void calcTextureCoordinates()
+{
+#if defined(MULTIPLE_TEXTURE)
+    if (textureEnabled[0]) {
+        v_texCoord[0] = (u_textureMatrix[0] * vec4(aTextureCoord,c_onef,c_onef)).st;
+    }
+    if (textureEnabled[1]) {
+        v_texCoord[1] = (u_textureMatrix[1] * vec4(aTextureCoord,c_onef,c_onef)).st;
+    }
+#else
+    v_texCoord[0] = (u_textureMatrix[0] * vec4(aTextureCoord,c_onef,c_onef)).st;
+#endif
+
+}
+
+// Structs
+struct Light {
+    // all lights
+    vec4 position;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+
+    float constantAttenuation;
+    float linearAttenuation;
+    float quadraticAttenuation;
+
+    vec3 spotDirection;
+    float spotExponent;
+    float spotCutoffAngleCos;
+};
+
+struct Material {
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 emission;
+    float shininess;
+};
+
+
+uniform Light light[8];
+uniform bool light_enable[8];
+uniform Material u_material;
+uniform bool u_lightModelLocalViewerEnabled;
+uniform bool u_lightModelTwoSideEnabled;
+uniform vec4 u_globalAmbientColor;
+uniform int u_lightingAccuracy;
+
+// Functions
+
+vec4 calcPerVertexLighting();
+
+void calcLighting()
+{
+    v_frontColor = calcPerVertexLighting();
+}
+
+// Functions
+vec4 calcDirectionalLight(Light light);
+vec4 calcDirectionalLightWithLocalViewer(Light light);
+vec4 calcPointLight(Light light);
+vec4 calcPointLightWithLocalViewer(Light light);
+vec4 calcSpotLight(Light light);
+vec4 calcSpotLightWithLocalViewer(Light light);
+float calcBasicAttenuationFactor(Light light, vec3 lightVector);
+float calcSpotFactor(Light light, vec3 lightVector);
+vec4 calcLight(Light light);
+vec4 calcLight0(Light light);
+vec4 calcLight1(Light light);
+vec4 calcLight2(Light light);
+vec4 calcLight3(Light light);
+vec4 calcLight4(Light light);
+vec4 calcLight5(Light light);
+vec4 calcLight6(Light light);
+vec4 calcLight7(Light light);
+
+vec4 mat_ambient_color;
+vec4 mat_diffuse_color;
+
+vec4 calcPerVertexLighting()
+{
+    //vec4 color;
+    mat_ambient_color = u_material_color_enable ? aColor : u_material.ambient;
+    mat_diffuse_color = u_material_color_enable ? aColor : u_material.diffuse;
+    vec4 color = mat_ambient_color * u_globalAmbientColor;
+    color += u_material.emission;
+
+#if !defined(COMMON_USED)
+    int i;
+    for(i = c_zero; i < 8; i++) {
+        if(light_enable[i]) {
+            color += calcLight(light[i]);
+        }
+    }
+#else
+    #if defined(LIGHT0)
+    color += calcLight0(light[0]);
+    #endif
+
+    #if defined(LIGHT1)
+    color += calcLight1(light[1]);
+    #endif
+
+    #if defined(LIGHT2)
+    color += calcLight2(light[2]);
+    #endif
+
+    #if defined(LIGHT3)
+    color += calcLight3(light[3]);
+    #endif
+
+    #if defined(LIGHT4)
+    color += calcLight4(light[4]);
+    #endif
+
+    #if defined(LIGHT5)
+    color += calcLight5(light[5]);
+    #endif
+
+    #if defined(LIGHT6)
+    color += calcLight6(light[6]);
+    #endif
+
+    #if defined(LIGHT7)
+    color += calcLight7(light[7]);
+    #endif
+#endif
+    color.a = mat_diffuse_color.a;
+    return clamp(color, c_zerof, c_onef);
+}
+
+vec4 calcLight(Light light)
+{
+    vec4 color;
+    if (light.position.w != c_zerof) {
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    } else {
+        color = calcDirectionalLight(light);
+    }
+
+    return color;
+}
+
+vec4 calcLight0(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT0_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight1(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT1_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight2(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT2_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight3(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT3_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight4(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT4_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight5(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT5_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight6(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT6_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+vec4 calcLight7(Light light)
+{
+    vec4 color;
+    #if defined(LIGHT7_W)
+        if (light.spotCutoffAngleCos > -c_onef) {
+            color = calcSpotLight(light);
+        } else {
+            color = calcPointLight(light);
+        }
+    #else
+        color = calcDirectionalLight(light);
+    #endif
+    return color;
+}
+
+float calcBasicAttenuationFactor(Light light, vec3 lightVector)
+{
+    vec3 attenuationDistance;
+    attenuationDistance.x = c_onef;
+    attenuationDistance.z = dot(lightVector, lightVector);
+    attenuationDistance.y = sqrt(attenuationDistance.z);
+    return c_onef / dot(attenuationDistance, vec3(light.constantAttenuation, light.linearAttenuation, light.quadraticAttenuation));
+}
+
+float calcSpotFactor(Light light, vec3 lightVector)
+{
+    float spotFactor = dot(normalize(-lightVector), normalize(light.spotDirection));
+    if (spotFactor >= light.spotCutoffAngleCos) {
+        return pow(spotFactor, light.spotExponent);
+    } else {
+        return c_zerof;
+    }
+}
+
+vec4 calcDirectionalLight(Light light)
+{
+    vec3 lightVector = light.position.xyz;
+    vec3 eyeVector = vec3(c_zerof, c_zerof, c_onef);
+
+    vec3 halfVector = normalize(eyeVector + lightVector); // TODO: This could be precomputed
+    float cosL = max(c_zerof, dot(normal, lightVector));
+    float cosH = dot(normal, halfVector);
+
+    vec4 color = (light.ambient * mat_ambient_color);
+    color += (light.diffuse * mat_diffuse_color) * cosL;
+
+    if (cosH > c_zerof) {
+        color += (u_material.specular * light.specular) * pow(cosH, u_material.shininess);
+    }
+
+    return color;
+}
+
+vec4 calcDirectionalLightWithLocalViewer(Light light)
+{
+    vec3 lightVector = light.position.xyz;
+    vec3 eyeVector = normalize(-vertexPositionInEye.xyz);
+    vec3 halfVector = normalize(eyeVector + lightVector);
+    float cosL = max(c_zerof, dot(normal, lightVector));
+    float cosH = dot(normal, halfVector);
+
+    vec4 color = (light.ambient * u_material.ambient);
+    color += (light.diffuse * u_material.diffuse) * cosL;
+    if (cosH > c_zerof) {
+        color += (u_material.specular * light.specular) * pow(cosH, u_material.shininess);
+    }
+
+    return color;
+}
+
+vec4 calcPointLight(Light light)
+{
+    vec3 lightVector = light.position.xyz - vertexPositionInEye.xyz;
+
+    // TODO: if clause here because of heavy computation?
+    float attenuationFactor = calcBasicAttenuationFactor(light, lightVector);
+
+    lightVector = normalize(lightVector);
+
+    vec3 eyeVector = vec3(c_zerof, c_zerof, c_onef);
+
+    vec3 halfVector = normalize(eyeVector + lightVector);
+    float cosL = max(c_zerof, dot(normal, lightVector));
+    float cosH = dot(normal, halfVector);
+
+    vec4 color = (light.ambient * u_material.ambient);
+    color += (light.diffuse * u_material.diffuse) * cosL;
+    if (cosH > c_zerof) {
+        color += (u_material.specular * light.specular) * pow(cosH, u_material.shininess);
+    }
+    color *= attenuationFactor;
+    return color;
+}
+
+
+vec4 calcPointLightWithLocalViewer(Light light)
+{
+    vec3 lightVector = light.position.xyz - vertexPositionInEye.xyz;
+
+    // TODO: if clause here because of heavy computation?
+    float attenuationFactor = calcBasicAttenuationFactor(light, lightVector);
+
+    lightVector = normalize(lightVector);
+
+    vec3 eyeVector = normalize(-vertexPositionInEye.xyz);
+
+    vec3 halfVector = normalize(eyeVector + lightVector);
+    float cosL = max(c_zerof, dot(normal, lightVector));
+    float cosH = dot(normal, halfVector);
+
+    vec4 color = (light.ambient * u_material.ambient);
+    color += (light.diffuse * u_material.diffuse) * cosL;
+    if (cosH > c_zerof) {
+        color += (u_material.specular * light.specular) * pow(cosH, u_material.shininess);
+    }
+    color *= attenuationFactor;
+    return color;
+}
+
+vec4 calcSpotLight(Light light)
+{
+    vec3 lightVector = light.position.xyz - vertexPositionInEye.xyz;
+
+    // TODO: if clause here because of heavy computation?
+    float attenuationFactor = calcBasicAttenuationFactor(light, lightVector);
+    attenuationFactor *= calcSpotFactor(light, lightVector);
+
+    lightVector = normalize(lightVector);
+
+    vec3 eyeVector = vec3(c_zerof, c_zerof, c_onef);
+
+    vec3 halfVector = normalize(eyeVector + lightVector);
+    float cosL = max(c_zerof, dot(normal, lightVector));
+    float cosH = dot(normal, halfVector);
+
+    vec4 color = (light.ambient * u_material.ambient);
+    color += (light.diffuse * u_material.diffuse) * cosL;
+    if (cosH > c_zerof) {
+        color += (u_material.specular * light.specular) * pow(cosH, u_material.shininess);
+    }
+    color *= attenuationFactor;
+    return color;
+}
+
+vec4 calcSpotLightWithLocalViewer(Light light)
+{
+    vec3 lightVector = light.position.xyz - vertexPositionInEye.xyz;
+
+    // TODO: if clause here because of heavy computation?
+    float attenuationFactor = calcBasicAttenuationFactor(light, lightVector);
+    attenuationFactor *= calcSpotFactor(light, lightVector);
+
+    lightVector = normalize(lightVector);
+
+    vec3 eyeVector = normalize(-vertexPositionInEye.xyz);
+
+    vec3 halfVector = normalize(eyeVector + lightVector);
+    float cosL = max(c_zerof, dot(normal, lightVector));
+    float cosH = dot(normal, halfVector);
+
+    vec4 color = (light.ambient * u_material.ambient);
+    color += (light.diffuse * u_material.diffuse) * cosL;
+    if (cosH > c_zerof) {
+        color += (u_material.specular * light.specular) * pow(cosH, u_material.shininess);
+    }
+    color *= attenuationFactor;
+    return color;
+}
+
+

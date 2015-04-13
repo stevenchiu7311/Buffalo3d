@@ -1,0 +1,4 @@
+void calcTextureColorContribution(inout vec4 color)
+{
+    color = texture2D(uTexture0, v_texCoord0);
+}
