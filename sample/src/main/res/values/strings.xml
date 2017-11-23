@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">min3D framework examples</string>
-    <string name="splashTitle">Studying the source of this app is the best way to start learning Buffalo3d based on min3D:\n (Buffalo3d) \n (min3D) http://code.google.com/p/min3d</string>
+    <string name="splashTitle">Studying the source of this app is the best way to start learning Buffalo3d based on min3D:\n (Buffalo3d) https://github.com/stevenchiu7311/Buffalo3d \n (min3D) http://code.google.com/p/min3d</string>
     <string name="projectUrl">http://code.google.com/p/min3d</string>
     <string name="myBlogUrl">http://www.zeropointnine.com/blog</string>
     <string name="introduction">"This is an example of placing a 3D scene within a conventional XML-based Android layout."</string>
